@@ -100,7 +100,8 @@ function AppWelcome({ onEnter }) {
         </div>
         <div style={{ padding: '0 24px 28px', display: 'grid', gap: 10 }}>
           <Button tone="primary" size="lg" block onClick={onEnter}>Entrar con mi número</Button>
-          <Button tone="outline" size="lg" block icon="whatsapp">Pedir por WhatsApp</Button>
+          <Button tone="outline" size="lg" block icon="whatsapp"
+            onClick={() => window.open(mextizzaWhatsappLink('Hola, quiero hacer un pedido en Mextizza.'), '_blank', 'noopener')}>Pedir por WhatsApp</Button>
         </div>
       </div>
     </Phone>
