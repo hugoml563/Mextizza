@@ -6,13 +6,14 @@ const PAGOS = ['Efectivo', 'Transferencia', 'Tarjeta'];
    Two hard gates before an order can be placed:
    1. the address has to fall inside the 3 km radius (ui_kits/delivery-zone.js)
    2. a payment method has to be chosen — nothing is preselected */
-function DeliveryForm({ compact = false, attempted = false, onValidChange }) {
+function DeliveryForm({ compact = false, attempted = false, onValidChange, onDataChange }) {
   const [nombre, setNombre] = React.useState('');
   const [tel, setTel] = React.useState('');
   const [calle, setCalle] = React.useState('');
   const [colonia, setColonia] = React.useState('');
   const [horario, setHorario] = React.useState('Lo antes posible (≤30 min)');
   const [pago, setPago] = React.useState(null);
+  const [notas, setNotas] = React.useState('');
 
   const digits = tel.replace(/\D/g, '');
   const telOk = digits.length === 10;
@@ -21,6 +22,9 @@ function DeliveryForm({ compact = false, attempted = false, onValidChange }) {
   const valid = !!nombre.trim() && telOk && !!calle.trim() && zonaOk && !!pago;
 
   React.useEffect(() => { onValidChange && onValidChange(valid); }, [valid]);
+  React.useEffect(() => {
+    onDataChange && onDataChange({ nombre, telefono: digits, calle, colonia, km: zona ? zona.km : null, horario, pago, notas });
+  }, [nombre, digits, calle, colonia, horario, pago, notas]);
 
   const gap = compact ? 12 : 14;
   const tone = zona ? (zona.estado === 'dentro' ? 'ok' : zona.estado === 'limite' ? 'warn' : 'block') : 'ok';
@@ -72,7 +76,9 @@ function DeliveryForm({ compact = false, attempted = false, onValidChange }) {
         hint={attempted && !pago ? 'Elige una forma de pago para continuar.' : 'Se cobra al entregar. El envío ya está incluido en el precio.'}
         style={{ marginTop: gap + 4 }} />
 
-      <Field label="Notas" as="textarea" rows={2} placeholder="Sin cebolla, timbre 2" style={{ marginTop: gap }} />
+      <Field label="Notas" as="textarea" rows={2} placeholder="Sin cebolla, timbre 2" value={notas}
+        onChange={e => setNotas(e.target.value)}
+        style={{ marginTop: gap }} />
     </div>
   );
 }

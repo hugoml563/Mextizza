@@ -145,6 +145,9 @@ function doGet(e) {
     if (e.parameter.action === 'listar_abiertas') {
       return jsonOut_({ ok: true, ordenes: listarAbiertas_() });
     }
+    if (e.parameter.action === 'listar_hoy') {
+      return jsonOut_({ ok: true, ordenes: listarHoy_() });
+    }
     if (e.parameter.action === 'catalogo') {
       return jsonOut_({ ok: true, productos: rowsAsObjects_(sheet_(SHEETS.productos)), complementos: rowsAsObjects_(sheet_(SHEETS.complementos)) });
     }
@@ -246,6 +249,23 @@ function findOrdenRow_(sh, folio) {
 /** Arma las órdenes abiertas (no entregadas ni canceladas) con sus líneas, para el Centro de Ventas. */
 function listarAbiertas_() {
   const ordenes = rowsAsObjects_(sheet_(SHEETS.ordenes)).filter(o => o.estado && o.estado !== 'entregada' && o.estado !== 'cancelada');
+  return armarOrdenes_(ordenes);
+}
+
+/** Arma TODAS las órdenes de hoy (cualquier estado), para el corte del día y las pestañas
+ *  de Entregadas/Canceladas del Centro de Ventas. */
+function listarHoy_() {
+  const hoy = new Date();
+  hoy.setHours(0, 0, 0, 0);
+  const ordenes = rowsAsObjects_(sheet_(SHEETS.ordenes)).filter(o => {
+    if (!o.folio || !o.t_recibida) return false;
+    const t = new Date(o.t_recibida);
+    return t >= hoy;
+  });
+  return armarOrdenes_(ordenes);
+}
+
+function armarOrdenes_(ordenes) {
   const items = rowsAsObjects_(sheet_(SHEETS.ordenItems));
   const addons = rowsAsObjects_(sheet_(SHEETS.itemComplementos));
 

@@ -1,9 +1,29 @@
-const { Wordmark, TapeStripe, FramedPanel, Button, Badge, Field, QtyStepper, MenuItem, Icon } = window.MextizzaDesignSystem_8a35ee;
+const { Wordmark, TapeStripe, FramedPanel, Button, Badge, Field, QtyStepper, MenuItem, Icon, StatusNote } = window.MextizzaDesignSystem_8a35ee;
 
 function CartDrawer({ open, lines, onClose, onQty, step, setStep }) {
   const [ready, setReady] = React.useState(false);
   const [attempted, setAttempted] = React.useState(false);
+  const [entrega, setEntrega] = React.useState(null);
+  const [enviando, setEnviando] = React.useState(false);
+  const [error, setError] = React.useState(null);
+  const [folio, setFolio] = React.useState(null);
   const subtotal = lines.reduce((s, l) => s + (l.price + (l.addonTotal || 0)) * l.qty, 0);
+
+  const confirmar = async () => {
+    if (step === 'cart') return setStep('checkout');
+    if (!ready) return setAttempted(true);
+    setError(null);
+    setEnviando(true);
+    try {
+      const { folio } = await mextizzaCrearOrden({ canal: 'Web', lines, entrega });
+      setFolio(folio);
+      setStep('done');
+    } catch (err) {
+      setError('No se pudo enviar el pedido. Intenta de nuevo, o escríbenos por WhatsApp.');
+    } finally {
+      setEnviando(false);
+    }
+  };
 
   React.useEffect(() => {
     if (!open) return;
@@ -52,7 +72,10 @@ function CartDrawer({ open, lines, onClose, onQty, step, setStep }) {
           ))}
 
           {step === 'checkout' && (
-            <DeliveryForm compact attempted={attempted} onValidChange={setReady} />
+            <>
+              <DeliveryForm compact attempted={attempted} onValidChange={setReady} onDataChange={setEntrega} />
+              {error && <StatusNote tone="block" title="Ups" style={{ marginTop: 12 }}>{error}</StatusNote>}
+            </>
           )}
 
           {step === 'done' && (
@@ -63,7 +86,7 @@ function CartDrawer({ open, lines, onClose, onQty, step, setStep }) {
                 <p style={{ fontFamily: 'var(--font-body)', fontSize: 13, lineHeight: 1.6, color: 'var(--text-muted)' }}>
                   Entra al horno en cuanto lo confirmemos por WhatsApp. Llega en 30 minutos o menos.
                 </p>
-                <Badge tone="dark">Pedido #1042</Badge>
+                <Badge tone="dark">Pedido {folio}</Badge>
               </div>
             </FramedPanel>
           )}
@@ -80,13 +103,9 @@ function CartDrawer({ open, lines, onClose, onQty, step, setStep }) {
               <span style={{ fontFamily: 'var(--font-label)', fontSize: 11, letterSpacing: 1, textTransform: 'uppercase' }}>Total <span style={{ textTransform: 'none', letterSpacing: 0, color: 'var(--text-muted)' }}>· envío incluido</span></span>
               <span style={{ fontFamily: 'var(--font-body)', fontWeight: 800, fontSize: 22, color: 'var(--text-price)' }}>${subtotal}</span>
             </div>
-            <Button tone="primary" size="lg" block iconAfter="chevronRight"
-              onClick={() => {
-                if (step === 'cart') return setStep('checkout');
-                if (!ready) return setAttempted(true);
-                setStep('done');
-              }}>
-              {step === 'cart' ? 'Continuar' : 'Confirmar pedido'}
+            <Button tone="primary" size="lg" block iconAfter="chevronRight" disabled={enviando}
+              onClick={confirmar}>
+              {step === 'cart' ? 'Continuar' : enviando ? 'Enviando…' : 'Confirmar pedido'}
             </Button>
             {step === 'checkout' && !ready && (
               <p style={{ fontFamily: 'var(--font-body)', fontSize: 11.5, color: 'var(--text-muted)', textAlign: 'center', marginTop: 9 }}>

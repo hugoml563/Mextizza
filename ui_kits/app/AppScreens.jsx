@@ -1,5 +1,5 @@
 const DS = window.MextizzaDesignSystem_8a35ee;
-const { Wordmark, TapeStripe, Stamp, DotRow, FramedPanel, Button, Badge, Field, QtyStepper, MenuItem, Icon } = DS;
+const { Wordmark, TapeStripe, Stamp, DotRow, FramedPanel, Button, Badge, Field, QtyStepper, MenuItem, Icon, StatusNote } = DS;
 
 /* Resilient reference: the compiled bundle may lag a fresh component by one build. */
 const ART_FALLBACK = {
@@ -304,6 +304,24 @@ function AppCart({ lines, onQty, onConfirm, tab, onTab, count }) {
   const subtotal = lines.reduce((s, l) => s + (l.price + (l.addonTotal || 0)) * l.qty, 0);
   const [ready, setReady] = React.useState(false);
   const [attempted, setAttempted] = React.useState(false);
+  const [entrega, setEntrega] = React.useState(null);
+  const [enviando, setEnviando] = React.useState(false);
+  const [error, setError] = React.useState(null);
+
+  const confirmar = async () => {
+    if (!ready) return setAttempted(true);
+    setError(null);
+    setEnviando(true);
+    try {
+      const { folio } = await mextizzaCrearOrden({ canal: 'App', lines, entrega });
+      onConfirm(folio);
+    } catch (err) {
+      setError('No se pudo enviar el pedido. Intenta de nuevo, o escríbenos por WhatsApp.');
+    } finally {
+      setEnviando(false);
+    }
+  };
+
   return (
     <Phone>
       <div style={{ flex: 'none', background: 'var(--surface-page)', position: 'relative', paddingBottom: 16, borderBottom: 'var(--border-paper)' }}>
@@ -323,7 +341,8 @@ function AppCart({ lines, onQty, onConfirm, tab, onTab, count }) {
         {lines.length > 0 && (
           <div style={{ marginTop: 24, paddingTop: 20, borderTop: 'var(--border-paper)' }}>
             <div style={{ fontFamily: 'var(--font-label)', fontSize: 10, letterSpacing: 1, textTransform: 'uppercase', color: 'var(--rosa-mexicano-texto)', marginBottom: 12 }}>Entrega y pago</div>
-            <DeliveryForm compact attempted={attempted} onValidChange={setReady} />
+            <DeliveryForm compact attempted={attempted} onValidChange={setReady} onDataChange={setEntrega} />
+            {error && <StatusNote tone="block" title="Ups" style={{ marginTop: 12 }}>{error}</StatusNote>}
           </div>
         )}
       </div>
@@ -333,8 +352,8 @@ function AppCart({ lines, onQty, onConfirm, tab, onTab, count }) {
             <span style={{ fontFamily: 'var(--font-body)', fontSize: 12.5, color: 'var(--text-muted)' }}>Envío incluido en el precio</span>
             <span style={{ fontFamily: 'var(--font-body)', fontWeight: 800, fontSize: 20, color: 'var(--text-price)' }}>${subtotal}</span>
           </div>
-          <Button tone="primary" size="lg" block iconAfter="chevronRight"
-            onClick={() => ready ? onConfirm() : setAttempted(true)}>{`Confirmar · $${subtotal}`}</Button>
+          <Button tone="primary" size="lg" block iconAfter="chevronRight" disabled={enviando}
+            onClick={confirmar}>{enviando ? 'Enviando…' : `Confirmar · $${subtotal}`}</Button>
           {!ready && (
             <p style={{ fontFamily: 'var(--font-body)', fontSize: 11, color: 'var(--text-muted)', textAlign: 'center', marginTop: 8 }}>
               Faltan datos: dirección dentro del radio y forma de pago.
