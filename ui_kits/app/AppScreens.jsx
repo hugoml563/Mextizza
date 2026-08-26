@@ -67,7 +67,7 @@ function TabBar({ tab, onTab, count }) {
           <button key={k} onClick={() => onTab(k)} style={{
             background: 'transparent', border: 'none', cursor: 'pointer', padding: '14px 0 6px',
             display: 'grid', justifyItems: 'center', gap: 5, position: 'relative',
-            color: on ? 'var(--rosa-mexicano)' : 'var(--gris-texto)'
+            color: on ? 'var(--rosa-mexicano-texto)' : 'var(--gris-texto)'
           }}>
             <Icon name={ic} size={22} />
             <span style={{ fontFamily: 'var(--font-label)', fontSize: 9, letterSpacing: 0.5, textTransform: 'uppercase' }}>{l}</span>
@@ -125,7 +125,7 @@ function AppMenu({ onAdd, onOpen, tab, onTab, count, added }) {
       <div style={{ flex: 1, overflowY: 'auto', padding: '18px 20px 24px', background: 'var(--surface-card)' }}>
         {MEXTIZZA_MENU.map(g => (
           <div key={g.cat} style={{ marginBottom: 24 }}>
-            <div style={{ fontFamily: 'var(--font-label)', fontSize: 10, letterSpacing: 1, textTransform: 'uppercase', color: 'var(--rosa-mexicano)', marginBottom: 10 }}>{g.title}</div>
+            <div style={{ fontFamily: 'var(--font-label)', fontSize: 10, letterSpacing: 1, textTransform: 'uppercase', color: 'var(--rosa-mexicano-texto)', marginBottom: 10 }}>{g.title}</div>
             {g.items.map((it, j) => (
               <MenuItem key={it.id} name={it.name} description={it.desc} price={it.price} photo={it.photo} photoSize={58}
                 divider={j < g.items.length - 1} onClick={() => onOpen(it)}
@@ -152,7 +152,7 @@ function AppDetail({ item, onBack, onAdd, onCustomize }) {
         {item.photo && <div style={{ position: 'absolute', inset: '0 0 55% 0', background: 'linear-gradient(rgba(26,26,26,.45),transparent)', zIndex: 1 }} />}
         <div style={{ position: 'relative', zIndex: 2 }}><StatusBar dark={!!item.photo} /></div>
         <button onClick={onBack} aria-label="Volver" style={{
-          position: 'absolute', top: 44, left: 16, zIndex: 3, width: 38, height: 38, borderRadius: 'var(--radius-sm)',
+          position: 'absolute', top: 44, left: 16, zIndex: 3, width: 44, height: 44, borderRadius: 'var(--radius-sm)',
           background: 'var(--surface-card)', border: 'var(--border-frame)', color: 'var(--negro-carbon)', cursor: 'pointer',
           display: 'grid', placeItems: 'center'
         }}><Icon name="chevronLeft" size={20} /></button>
@@ -180,7 +180,7 @@ function AppDetail({ item, onBack, onAdd, onCustomize }) {
           display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12
         }}>
           <span>
-            <span style={{ display: 'block', fontFamily: 'var(--font-label)', fontSize: 10, letterSpacing: 1, textTransform: 'uppercase', color: 'var(--rosa-mexicano)' }}>Complementos</span>
+            <span style={{ display: 'block', fontFamily: 'var(--font-label)', fontSize: 10, letterSpacing: 1, textTransform: 'uppercase', color: 'var(--text-body)' }}>Complementos</span>
             <span style={{ display: 'block', fontFamily: 'var(--font-body)', fontWeight: 700, fontSize: 14, marginTop: 3 }}>¿Más queso? ¿Más peperoni?</span>
           </span>
           <Icon name="chevronRight" size={20} color="var(--rosa-mexicano)" />
@@ -213,7 +213,7 @@ function AppAddons({ item, onBack, onAdd }) {
         <StatusBar />
         <div style={{ padding: '2px 20px 16px', display: 'flex', alignItems: 'flex-start', gap: 12 }}>
           <button onClick={onBack} aria-label="Volver" style={{
-            width: 34, height: 34, flex: 'none', marginTop: 4, borderRadius: 'var(--radius-sm)',
+            width: 44, height: 44, flex: 'none', marginTop: 4, borderRadius: 'var(--radius-sm)',
             background: 'transparent', border: 'var(--border-frame)', color: 'var(--negro-carbon)',
             cursor: 'pointer', display: 'grid', placeItems: 'center'
           }}><Icon name="chevronLeft" size={18} /></button>
@@ -230,7 +230,7 @@ function AppAddons({ item, onBack, onAdd }) {
       <div style={{ flex: 1, overflowY: 'auto', padding: '16px 20px 20px', background: 'var(--surface-card)' }}>
         {MEXTIZZA_ADDONS.map(g => (
           <div key={g.id} style={{ marginBottom: 22 }}>
-            <div style={{ fontFamily: 'var(--font-label)', fontSize: 10, letterSpacing: 1, textTransform: 'uppercase', color: 'var(--rosa-mexicano)' }}>{g.title}</div>
+            <div style={{ fontFamily: 'var(--font-label)', fontSize: 10, letterSpacing: 1, textTransform: 'uppercase', color: 'var(--rosa-mexicano-texto)' }}>{g.title}</div>
             {g.note && <div style={{ fontFamily: 'var(--font-body)', fontSize: 12, color: 'var(--text-muted)', marginTop: 3 }}>{g.note}</div>}
             <div style={{ marginTop: 10 }}>
               {g.items.map((it, j) => {
@@ -254,7 +254,7 @@ function AppAddons({ item, onBack, onAdd }) {
                       <span style={{ flex: 1, fontFamily: 'var(--font-body)', fontWeight: n ? 700 : 500, fontSize: 14, color: 'var(--text-body)' }}>{it.name}</span>
                       <span style={{ fontFamily: 'var(--font-body)', fontWeight: 700, fontSize: 13.5, color: 'var(--text-price)', minWidth: 42, textAlign: 'right' }}>+${it.price}</span>
                     </button>
-                    {n > 0 && <QtyStepper value={n} min={0} onChange={v => bump(it.id, v)} size={34} />}
+                    {n > 0 && <QtyStepper value={n} min={0} onChange={v => bump(it.id, v)} size={44} />}
                   </div>
                 );
               })}
@@ -302,12 +302,12 @@ function AppCart({ lines, onQty, onConfirm, tab, onTab, count }) {
             description={l.addonNames && l.addonNames.length ? '+ ' + l.addonNames.join(', ') : l.desc}
             price={(l.price + (l.addonTotal || 0)) * l.qty}
             divider={i < lines.length - 1}
-            action={<QtyStepper value={l.qty} min={0} onChange={n => onQty(l.key || l.id, n)} size={36} />} />
+            action={<QtyStepper value={l.qty} min={0} onChange={n => onQty(l.key || l.id, n)} size={44} />} />
         )) : <p style={{ fontFamily: 'var(--font-body)', fontSize: 14, color: 'var(--text-muted)', paddingTop: 8 }}>Tu pedido está vacío.</p>}
 
         {lines.length > 0 && (
           <div style={{ marginTop: 24, paddingTop: 20, borderTop: 'var(--border-paper)' }}>
-            <div style={{ fontFamily: 'var(--font-label)', fontSize: 10, letterSpacing: 1, textTransform: 'uppercase', color: 'var(--rosa-mexicano)', marginBottom: 12 }}>Entrega y pago</div>
+            <div style={{ fontFamily: 'var(--font-label)', fontSize: 10, letterSpacing: 1, textTransform: 'uppercase', color: 'var(--rosa-mexicano-texto)', marginBottom: 12 }}>Entrega y pago</div>
             <DeliveryForm compact attempted={attempted} onValidChange={setReady} />
           </div>
         )}
