@@ -18,17 +18,20 @@ const PATHS = {
   user: 'M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2M12 11a4 4 0 100-8 4 4 0 000 8z',
   bag: 'M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4zM3 6h18M16 10a4 4 0 01-8 0',
   star: 'M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01z',
-  search: 'M11 19a8 8 0 100-16 8 8 0 000 16zM21 21l-4.35-4.35'
+  search: 'M11 19a8 8 0 100-16 8 8 0 000 16zM21 21l-4.35-4.35',
+  instagram: ['M17 2H7a5 5 0 00-5 5v10a5 5 0 005 5h10a5 5 0 005-5V7a5 5 0 00-5-5z', 'M16 11.37A4 4 0 1112.63 8 4 4 0 0116 11.37z', 'M17.5 6.5h.01'],
+  facebook: 'M18 2h-3a5 5 0 00-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 011-1h3z'
 };
 
 export function Icon({ name, size = 20, color = 'currentColor', strokeWidth = 2, style, ...rest }) {
   const d = PATHS[name];
   if (!d) return null;
+  const paths = Array.isArray(d) ? d : [d];
   return (
     <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color}
       strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round"
       aria-hidden="true" style={{ display: 'block', flex: 'none', ...style }} {...rest}>
-      <path d={d} />
+      {paths.map((p, i) => <path key={i} d={p} />)}
     </svg>
   );
 }

@@ -97,6 +97,16 @@ function AppWelcome({ onEnter }) {
           <p style={{ fontFamily: 'var(--font-body)', fontSize: 14, lineHeight: 1.6, color: 'var(--text-muted)', marginTop: 30 }}>
             {MEXTIZZA_FACTS.estilo}. Entregamos en Lomas Lindas y colonias vecinas.
           </p>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 18, marginTop: 22 }}>
+            <a href={MEXTIZZA_SOCIAL.instagram} target="_blank" rel="noopener" aria-label="Mextizza en Instagram"
+              style={{ display: 'flex', color: 'var(--text-muted)', borderBottom: 'none' }}>
+              <Icon name="instagram" size={20} />
+            </a>
+            <a href={MEXTIZZA_SOCIAL.facebook} target="_blank" rel="noopener" aria-label="Mextizza en Facebook"
+              style={{ display: 'flex', color: 'var(--text-muted)', borderBottom: 'none' }}>
+              <Icon name="facebook" size={20} />
+            </a>
+          </div>
         </div>
         <div style={{ padding: '0 24px 28px', display: 'grid', gap: 10 }}>
           <Button tone="primary" size="lg" block onClick={onEnter}>Entrar con mi número</Button>

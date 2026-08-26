@@ -64,4 +64,8 @@ const MEXTIZZA_FACTS = {
 function mextizzaWhatsappLink(mensaje) {
   return 'https://wa.me/' + MEXTIZZA_FACTS.whatsapp + '?text=' + encodeURIComponent(mensaje);
 }
-Object.assign(window, { MEXTIZZA_MENU, MEXTIZZA_ADDONS, MEXTIZZA_FACTS, mextizzaWhatsappLink });
+const MEXTIZZA_SOCIAL = {
+  instagram: 'https://www.instagram.com/mextizzamx/',
+  facebook: 'https://www.facebook.com/search/top?q=mextizza'
+};
+Object.assign(window, { MEXTIZZA_MENU, MEXTIZZA_ADDONS, MEXTIZZA_FACTS, mextizzaWhatsappLink, MEXTIZZA_SOCIAL });

@@ -199,7 +199,20 @@ function WebSocial() {
   return (
     <section className="reveal" style={{ background: 'var(--surface-page)', paddingBottom: 76 }}>
       <div style={webShell.page}>
-        <SectionLabel>En redes</SectionLabel>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12 }}>
+          <SectionLabel>En redes</SectionLabel>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 18, marginBottom: 20 }}>
+            <a href={MEXTIZZA_SOCIAL.instagram} target="_blank" rel="noopener" aria-label="Mextizza en Instagram"
+              style={{ display: 'flex', alignItems: 'center', gap: 7, borderBottom: 'none', color: 'var(--negro-carbon)' }}>
+              <Icon name="instagram" size={18} />
+              <span style={{ fontFamily: 'var(--font-body)', fontWeight: 600, fontSize: 13 }}>@mextizzamx</span>
+            </a>
+            <a href={MEXTIZZA_SOCIAL.facebook} target="_blank" rel="noopener" aria-label="Mextizza en Facebook"
+              style={{ display: 'flex', alignItems: 'center', borderBottom: 'none', color: 'var(--negro-carbon)' }}>
+              <Icon name="facebook" size={18} />
+            </a>
+          </div>
+        </div>
         <div className="web-social-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 16 }}>
           <SocialTile treatment="flat" background="var(--negro-carbon)" headlineColor="var(--blanco-hueso)" headline={<>48 horas<br />de fermento</>} kicker="Horno de piedra" kickerColor="var(--dorado-masa)" />
           <SocialTile treatment="flat" background="var(--rosa-mexicano)" headlineColor="var(--blanco)" headline={<>Hecha por<br />mexicanos</>} kicker="Con técnica italiana" kickerColor="var(--blanco)" />
@@ -218,13 +231,23 @@ function WebFooter() {
       <div className="web-footer-grid" style={{ ...webShell.page, display: 'grid', gridTemplateColumns: '1.4fr 1fr 1fr', gap: 28 }}>
         <div>
           <Lockup variant="completo" tone="hueso" size={36} align="left" base="../../" subtitle="Pizzería" tagline="Horneada como allá, gozada como acá" />
+          <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginTop: 22 }}>
+            <a href={MEXTIZZA_SOCIAL.instagram} target="_blank" rel="noopener" aria-label="Mextizza en Instagram"
+              className="footer-icon-link" style={{ display: 'flex', color: 'var(--blanco-hueso)', opacity: 0.8, borderBottom: 'none' }}>
+              <Icon name="instagram" size={19} />
+            </a>
+            <a href={MEXTIZZA_SOCIAL.facebook} target="_blank" rel="noopener" aria-label="Mextizza en Facebook"
+              className="footer-icon-link" style={{ display: 'flex', color: 'var(--blanco-hueso)', opacity: 0.8, borderBottom: 'none' }}>
+              <Icon name="facebook" size={19} />
+            </a>
+          </div>
         </div>
         {[['Pedidos', ['WhatsApp Business', 'Sitio web', 'App Mextizza']], ['Operación', [MEXTIZZA_FACTS.zona, 'Radio de 3 km', 'Sólo entrega, sin salón']]].map(([t, items]) => (
           <div key={t}>
             <div style={{ fontFamily: 'var(--font-label)', fontSize: 10, letterSpacing: 1, textTransform: 'uppercase', color: 'var(--dorado-masa)', marginBottom: 14 }}>{t}</div>
             {items.map(i => i === 'WhatsApp Business' ? (
               <a key={i} href={mextizzaWhatsappLink('Hola, quiero hacer un pedido en Mextizza.')} target="_blank" rel="noopener"
-                className="footer-wa-link"
+                className="footer-icon-link"
                 style={{ display: 'block', fontFamily: 'var(--font-body)', fontSize: 13, lineHeight: 1.9, color: 'var(--blanco-hueso)', opacity: 0.7, borderBottom: 'none' }}>{i}</a>
             ) : (
               <div key={i} style={{ fontFamily: 'var(--font-body)', fontSize: 13, lineHeight: 1.9, color: 'var(--blanco-hueso)', opacity: 0.7 }}>{i}</div>
