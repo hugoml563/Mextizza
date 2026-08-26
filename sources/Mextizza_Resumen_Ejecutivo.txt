@@ -1,0 +1,94 @@
+MEXTIZZA
+Resumen Ejecutivo — Análisis Financiero y de Costeo
+Pizzería dark-kitchen · Col. Lomas Lindas, Atizapán de Zaragoza, Edo. Méx. · Estilo Nueva York, fermentación en frío 48h
+1. Resumen General
+Este documento consolida el análisis financiero de Mextizza: costeo real de receta (BOM) por producto, estructura de precio, inversión inicial, punto de equilibrio y proyección de flujo de caja a 12 meses. El modelo completo vive en un archivo Excel interactivo; este resumen presenta los resultados clave para revisión rápida.
+2. Metodología de Precio: Mercado, no Costo
+El precio de venta ($215 MXN promedio por pizza) se fijó con base en el rango observado en la competencia directa de Atizapán ($190-235 MXN), no como un margen aplicado sobre el costo del ingrediente. El costo de insumos se usa después, como verificador de que el food cost resultante sea saludable (25-33% es el rango típico de la industria).
+Comparación: aplicar 'costo + 30%' sobre el costo BOM promedio ($61.93) daría un precio de apenas $80.51 — muy por debajo de lo que el mercado local ya paga, y con food cost de ~77%, insostenible para cubrir gastos fijos.
+3. Costeo por Producto (BOM — Bill of Materials)
+Cada producto se costeó ingrediente por ingrediente. La masa (NY, fermentación fría 48h) y la salsa de tomate son recetas fijas compartidas por varios productos, evitando duplicar costos.
+Producto
+Costo real (MXN)
+Pizza Rolls (entrada)
+$11.03
+Brownie de chocolate
+$8.80
+Empanada de carne deshebrada
+$13.02
+Dos Quesos
+$54.81
+Salsa de Vodka
+$57.71
+Hawaiana
+$58.91
+Pepperoni Hot Honey
+$62.11
+Jamón Serrano con Arúgula
+$67.09
+Cochinita Pibil (rotativa)
+$70.94
+Costo promedio (6 pizzas principales): $61.93 MXN
+Componentes fijos de referencia: Masa Base $3.84/pizza · Salsa de Tomate $8.48/porción.
+Nota de riesgo: el jitomate (insumo de la salsa) ha oscilado entre $11 y $80/kg durante 2026 por la crisis de escasez y el posterior Acuerdo Nacional del Jitomate — es el ingrediente de mayor variabilidad de costo y conviene monitorearlo de cerca.
+4. Estructura de Precio y Margen
+Concepto
+Valor
+Ticket promedio por orden
+$336 MXN
+Food cost (calculado desde BOM)
+28.8%
+Costo variable total por orden
+$167.02 MXN
+Margen de contribución por orden
+$168.98 MXN (50.3%)
+5. Inversión Inicial (CAPEX)
+No incluye renta de local — el espacio ya está disponible.
+Concepto
+Monto (MXN)
+Horno importado (costo + envío + aranceles)
+$39,831.58
+Mesa de acero, utensilios, moldes, cortadores
+$6,000
+Refrigeración, amasadora, POS, empaque, fotografía, trámites legales
+$0 (ya disponibles / por confirmar)
+Capital de trabajo (colchón operativo)
+$4,000
+TOTAL INVERSIÓN INICIAL
+$49,831.58
+Varios rubros están en $0 en el supuesto actual — confirmar si ya se cuenta con ese equipo/servicio o si falta presupuestarlo antes de tomarlo como definitivo.
+6. Punto de Equilibrio
+Métrica
+Valor
+Órdenes/mes necesarias para equilibrio
+~14
+Órdenes/día necesarias para equilibrio
+~0.55
+Pedidos/día objetivo (supuesto)
+14
+¿Volumen objetivo cubre el equilibrio?
+Sí, con amplio margen
+Recuperación de inversión (payback)
+~0.84 meses
+El punto de equilibrio tan bajo refleja el OPEX fijo mensual actual ($2,400) — validar que esta cifra sea realista una vez que se definan sueldos, marketing y otros gastos fijos que hoy están en $0.
+7. Flujo de Caja Proyectado (12 meses)
+Hito
+Flujo acumulado (MXN)
+Mes 1 (rampa de adopción 40%)
+-$27,628
+Mes 6 (100% del volumen objetivo)
++$209,478
+Mes 12
++$564,125
+8. Riesgos y Supuestos a Validar
+Precio del jitomate: alta volatilidad en 2026, impacta directamente el costo de 5 de 9 productos del menú.
+OPEX fijo mensual ($2,400) asume $0 en sueldos de fundadores, marketing digital, software y ayudante de cocina — confirmar si esto es temporal o estructural.
+CAPEX en $0 para refrigeración ampliada, amasadora y POS — confirmar si ya se cuenta con este equipo o si falta presupuestarlo.
+Pizza de Jamón Serrano con Arúgula: además de ser la más cara de producir, compite directo con la oferta ya existente de Artigiano Pizza Rústica (líder de reputación en la zona) — valorar diferenciarla.
+Los datos de costo de insumos son estimados de mercado / cotizaciones iniciales — deben validarse con proveedor real antes de operar.
+9. Próximos Pasos Sugeridos
+Confirmar con Ricardo las cantidades reales de receta (el BOM usa estimados razonables, no medidos).
+Cotizar los rubros de CAPEX que están en $0.
+Definir si los fundadores cobrarán sueldo desde el lanzamiento o solo utilidades.
+Actualizar el modelo conforme se tengan cotizaciones reales de proveedor.
+Documento generado a partir del modelo financiero interactivo (Excel). Para el detalle completo de fórmulas y supuestos editables, consultar el archivo mextizza_plan_financiero.xlsx.

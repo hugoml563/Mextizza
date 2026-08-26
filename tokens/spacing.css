@@ -1,0 +1,38 @@
+/* Mextizza — spacing & size foundations. Values are the ones the source mockup actually uses. */
+:root{
+--space-2:2px; /* @kind spacing */
+--space-6:6px; /* @kind spacing */
+--space-10:10px; /* @kind spacing */
+--space-12:12px; /* @kind spacing */
+--space-14:14px; /* @kind spacing */
+--space-16:16px; /* @kind spacing */
+--space-20:20px; /* @kind spacing */
+--space-24:24px; /* @kind spacing */
+--space-28:28px; /* @kind spacing */
+--space-32:32px; /* @kind spacing */
+--space-48:48px; /* @kind spacing */
+--space-56:56px; /* @kind spacing */
+--space-72:72px; /* @kind spacing */
+--space-96:96px; /* @kind spacing */
+
+/* Composite paddings seen in the mockup */
+--pad-swatch-label:var(--space-12) var(--space-14); /* @kind spacing */
+--pad-card:var(--space-20) var(--space-24); /* @kind spacing */
+--pad-frame:var(--space-28); /* @kind spacing */
+--pad-hero:var(--space-56) var(--space-32); /* @kind spacing */
+--pad-page:var(--space-48) var(--space-24) var(--space-96); /* @kind spacing */
+
+/* Rhythm */
+--gap-tight:var(--space-10); /* @kind spacing */
+--gap-row:var(--space-16); /* @kind spacing */
+--gap-grid:var(--space-28); /* @kind spacing */
+--stack-section:var(--space-72); /* @kind spacing */
+
+/* Layout */
+--measure-page:1080px; /* @kind spacing */
+--measure-prose:620px; /* @kind spacing */
+--stamp-size:130px; /* @kind spacing */
+--swatch-fill-h:120px; /* @kind spacing */
+--dot-size:16px; /* @kind spacing */
+--strip-h:10px; /* @kind spacing */
+}

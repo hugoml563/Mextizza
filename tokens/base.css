@@ -1,0 +1,11 @@
+/* Mextizza — minimal element defaults so any consuming page starts on-brand. */
+*{box-sizing:border-box}
+body{margin:0;background:var(--surface-page);color:var(--text-body);font:var(--type-body);-webkit-font-smoothing:antialiased}
+a{color:var(--text-accent);text-decoration:none;border-bottom:1px solid transparent;transition:var(--transition-base)}
+a:hover{color:var(--accent-hover);border-bottom-color:var(--accent-hover)}
+a:active{color:var(--accent-press)}
+:focus-visible{outline:none;box-shadow:var(--focus-ring)}
+h1,h2,h3{font-family:var(--font-display);font-weight:var(--fw-regular);line-height:var(--lh-tight);margin:0}
+p{margin:0;text-wrap:pretty}
+img,svg{display:block;max-width:100%}
+button{font-family:var(--font-body)}

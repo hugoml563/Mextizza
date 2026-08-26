@@ -1,0 +1,40 @@
+/* Mextizza — radii, shadows, motion, textures.
+   Still a printed object, just eased a step: corners are gently rounded rather than
+   square, and cards carry one low soft shadow. Hard offset "print" shadows stay, but
+   only on the things that should read as stamped: buttons, stickers, stamps. */
+:root{
+/* Radii */
+--radius-sm:6px; /* @kind radius */
+--radius-md:10px; /* @kind radius */
+--radius-lg:14px; /* @kind radius */
+--radius-pill:999px; /* @kind radius */
+--radius-circle:50%; /* @kind radius */
+
+/* Hard offset prints — stamped things only */
+--shadow-print:2px 2px 0 var(--negro-carbon); /* @kind shadow */
+--shadow-print-inverse:2px 2px 0 var(--blanco-hueso); /* @kind shadow */
+--shadow-emboss:-1px -1px 0 var(--blanco-08); /* @kind shadow */
+--shadow-wordmark:none; /* @kind shadow */
+--ring-dot:0 0 0 2px var(--negro-08); /* @kind shadow */
+--shadow-lift:0 2px 0 var(--negro-carbon); /* @kind shadow */
+
+/* Soft, low elevation — cards and menus resting on paper */
+--shadow-soft:0 1px 2px rgba(26,26,26,.05),0 4px 12px rgba(26,26,26,.05); /* @kind shadow */
+--shadow-raised:0 2px 4px rgba(26,26,26,.06),0 10px 24px rgba(26,26,26,.07); /* @kind shadow */
+
+/* Motion — short, no bounce, no spring */
+--ease-standard:cubic-bezier(0.2,0,0.2,1); /* @kind other */
+--dur-fast:120ms; /* @kind other */
+--dur-base:180ms; /* @kind other */
+--transition-base:all var(--dur-base) var(--ease-standard); /* @kind other */
+
+/* Rotations — hand-stamped feel */
+--tilt-stamp:rotate(-6deg); /* @kind other */
+--tilt-sticker:rotate(-2deg); /* @kind other */
+
+/* The 4-colour sealing-tape strip: the brand's signature texture */
+--stripe-tape:repeating-linear-gradient(45deg,var(--rosa-mexicano) 0 10px,var(--gris-asfalto) 10px 20px,var(--terracota-horno) 20px 30px,var(--dorado-masa) 30px 40px); /* @kind other */
+
+/* Diagonal split used on social tiles */
+--split-diagonal:linear-gradient(135deg,var(--negro-carbon) 45%,var(--rosa-mexicano) 45%,var(--rosa-mexicano) 55%,var(--negro-carbon) 55%); /* @kind other */
+}

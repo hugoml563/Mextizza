@@ -1,0 +1,192 @@
+<!doctype html><html lang="es"><head><meta charset="utf-8"><title>Centro de ventas Mextizza — definición del sistema</title><link rel="stylesheet" href="../styles.css"><style>doc-page:not(:defined){visibility:hidden}
+doc-page{--ink:var(--negro-carbon);--muted:var(--gris-texto)}
+h1{font-family:var(--font-display);font-size:38px;line-height:1.1;letter-spacing:1px;margin:0 0 6px}
+.lede{font-family:var(--font-body);font-size:16px;line-height:1.6;color:var(--muted);margin:0 0 8px;max-width:44em}
+.meta{font-family:var(--font-label);font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--terracota-horno);margin:0 0 30px;padding-bottom:18px;border-bottom:3px solid var(--ink);max-width:none}
+h2{font-family:var(--font-display);font-size:25px;line-height:1.2;margin:34px 0 4px;padding-top:16px;border-top:1px solid var(--hueso-linea)}
+h2 .n{font-family:var(--font-label);font-size:11px;letter-spacing:2px;color:var(--rosa-mexicano);display:block;margin-bottom:7px}
+h3{font-family:var(--font-body);font-weight:700;font-size:15px;letter-spacing:.3px;margin:22px 0 6px}
+p,li{font-family:var(--font-body);font-size:14px;line-height:1.62;color:var(--ink)}
+p{margin:0 0 11px;max-width:46em}
+ul,ol{margin:0 0 13px;padding-left:20px}li{margin-bottom:5px}
+strong{font-weight:700}
+em{font-style:normal;font-family:var(--font-mono);font-size:12.5px;background:var(--hueso-hondo);padding:1px 5px;border-radius:3px}
+table{width:100%;border-collapse:collapse;margin:8px 0 18px;font-family:var(--font-body);font-size:12.5px}
+th{text-align:left;font-family:var(--font-label);font-size:9.5px;letter-spacing:1px;text-transform:uppercase;color:var(--muted);border-bottom:2px solid var(--ink);padding:0 10px 6px 0;vertical-align:bottom}
+td{padding:8px 10px 8px 0;border-bottom:1px solid var(--hueso-linea);vertical-align:top;line-height:1.5}
+td:last-child,th:last-child{padding-right:0}
+.callout{background:var(--surface-accent-soft);border:2px solid var(--rosa-mexicano);border-radius:var(--radius-md);padding:15px 17px;margin:16px 0;break-inside:avoid;orphans:3;widows:3}
+.callout.warm{background:var(--surface-warm-soft);border-color:var(--terracota-horno)}
+.callout.dough{background:var(--surface-dough);border-color:var(--dorado-masa)}
+.callout p{margin:0;font-size:13.5px;max-width:none}
+.callout .t{font-family:var(--font-label);font-size:10px;letter-spacing:1.5px;text-transform:uppercase;color:var(--terracota-horno);margin-bottom:6px}
+.callout .t.rosa{color:var(--rosa-mexicano)}
+.flow{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:6px 0 18px;break-inside:avoid}
+.flow div{border:1px solid var(--hueso-linea);border-radius:var(--radius-sm);padding:11px 12px;font-family:var(--font-body);font-size:12px;line-height:1.45}
+.flow b{display:block;font-family:var(--font-label);font-size:9.5px;letter-spacing:1px;text-transform:uppercase;color:var(--rosa-mexicano);margin-bottom:5px}
+.fase{break-inside:avoid;border-left:3px solid var(--dorado-masa);padding:2px 0 2px 15px;margin:0 0 20px}
+.fase h3{margin-top:0;font-family:var(--font-display);font-weight:400;font-size:19px;letter-spacing:.5px}
+.fase .crit{font-size:12.5px;color:var(--muted);font-family:var(--font-body);margin:8px 0 0}
+code{font-family:var(--font-mono);font-size:12px}
+.no{color:var(--muted)}
+footer.pie{font-family:var(--font-label);font-size:9px;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted);display:flex;justify-content:space-between}
+</style></head><body>
+<doc-page margin="0.8in">
+<div slot="footer" class="pie"><span>Mextizza · Centro de ventas</span><span>Definición v1 · borrador para discusión</span></div>
+
+<h1>Centro de ventas Mextizza</h1>
+<p class="lede">Cómo pasar de tres canales sueltos a una sola base que genera la comanda, rastrea cada orden y cierra la caja del día. Documento de definición: qué se construye, en qué orden, y qué todavía no.</p>
+<p class="meta">Dark kitchen · Lomas Lindas, Atizapán · ~10 pedidos/día al arrancar</p>
+
+<h2><span class="n">01 · El problema</span>Tres entradas, una cocina, un par de manos</h2>
+<p>Hoy los pedidos van a llegar por tres puertas distintas — la app, el sitio y WhatsApp — y las tres terminan en el mismo horno. El riesgo no es técnico, es de memoria: cuando el canal <em>es</em> el registro, la orden vive en un chat, el precio se recuerda de cabeza y el corte del día se reconstruye al final con capturas de pantalla.</p>
+<p>Y hay una restricción operativa que manda sobre todo el diseño: <strong>quien opera el sistema es la misma persona que hornea.</strong> Tiene harina en las manos, treinta segundos entre pizzas y una tablet montada en la pared. Cualquier sistema que le pida escribir mientras cocina se va a abandonar en la semana dos.</p>
+
+<div class="callout"><div class="t rosa">El principio que ordena todo lo demás</div><p><strong>Una sola tabla de verdad: <em>ordenes</em>.</strong> Los tres canales escriben ahí y en ningún otro lado. La comanda de cocina no es un documento aparte — es una <em>vista</em> de esa tabla filtrada por estado. El corte de caja es otra vista. El reporte de ventas por producto es otra. Si algo se ve distinto en la cocina y en la caja, es porque hay dos tablas donde debía haber una.</p></div>
+
+<h2><span class="n">02 · Modelo de datos</span>Siete tablas, y ni una más al arrancar</h2>
+<p>Este modelo está pensado para vivir hoy en Airtable y migrarse después a Postgres <strong>sin renombrar un solo campo</strong>. Ese es el punto de la fase híbrida: la herramienta cambia, el modelo no.</p>
+
+<h3>ordenes — el corazón</h3>
+<table><thead><tr><th>Campo</th><th>Tipo</th><th>Por qué existe</th></tr></thead><tbody>
+<tr><td><code>folio</code></td><td>texto</td><td>Legible en voz alta: <code>MX-0142</code>. Es lo que el cliente dice por teléfono.</td></tr>
+<tr><td><code>canal</code></td><td>app / web / whatsapp / mostrador</td><td>Sin esto no puedes saber qué canal vale la pena empujar.</td></tr>
+<tr><td><code>estado</code></td><td>ver sección 03</td><td>Un solo campo controla la comanda, el seguimiento del cliente y las métricas de tiempo.</td></tr>
+<tr><td><code>cliente_id</code></td><td>relación</td><td>Liga al teléfono. De aquí salen los clientes recurrentes.</td></tr>
+<tr><td><code>direccion</code>, <code>colonia</code>, <code>km</code></td><td>texto, texto, número</td><td><code>km</code> se calcula al capturar, con la misma fórmula que ya usa el sitio. Queda guardado: es la evidencia de por qué se aceptó o rechazó.</td></tr>
+<tr><td><code>pago_metodo</code></td><td>efectivo / SPEI / terminal / en línea</td><td>Obligatorio desde el día uno — ya es obligatorio en el checkout.</td></tr>
+<tr><td><code>pago_estado</code></td><td>pendiente / pagado / fallido</td><td>Separado del método. Un pedido en efectivo está "pendiente" hasta que se entrega.</td></tr>
+<tr><td><code>subtotal</code>, <code>total</code></td><td>número</td><td>Se congelan al confirmar. <strong>Nunca se recalculan</strong> desde el catálogo: si mañana sube un precio, las órdenes viejas no deben moverse.</td></tr>
+<tr><td><code>t_recibida</code> … <code>t_entregada</code></td><td>5 marcas de tiempo</td><td>Se escriben solas al cambiar de estado. Son los "tiempos: horno, salida, entrega" sin capturar nada.</td></tr>
+<tr><td><code>reparto</code></td><td>texto / relación</td><td>Quién la llevó.</td></tr>
+<tr><td><code>notas</code></td><td>texto</td><td>"Sin cebolla, timbre 2."</td></tr>
+<tr><td><code>motivo_cancelacion</code></td><td>texto</td><td>Vacío casi siempre. Cuando no lo está, es el dato más valioso del mes.</td></tr>
+</tbody></table>
+
+<h3>Las otras seis</h3>
+<table><thead><tr><th>Tabla</th><th>Qué guarda</th><th>Nota de diseño</th></tr></thead><tbody>
+<tr><td><code>orden_items</code></td><td>Cada pizza de la orden: producto, cantidad, precio unitario congelado.</td><td>Una fila por línea, no un campo de texto con todo junto. De aquí sale "ventas por producto" sin trabajo extra.</td></tr>
+<tr><td><code>item_complementos</code></td><td>Los complementos de <em>esa</em> línea: doble provolone, peperoni extra.</td><td>Cuelga del ítem, no de la orden — dos pizzas iguales con complementos distintos son dos líneas distintas. La app y el sitio ya funcionan así.</td></tr>
+<tr><td><code>productos</code></td><td>El catálogo: nombre, descripción, precio vigente, activo sí/no.</td><td><strong>La única fuente de precios.</strong> La app, el sitio y la captura manual leen de aquí; nadie teclea un precio.</td></tr>
+<tr><td><code>complementos</code></td><td>Los 15 complementos, agrupados, con precio.</td><td>Igual: una sola fuente. "Complementos más pedidos" sale de cruzar esta con <code>item_complementos</code>.</td></tr>
+<tr><td><code>clientes</code></td><td>Teléfono (llave), nombre, dirección habitual, colonia, número de pedidos.</td><td>El teléfono de 10 dígitos es la llave natural — ya es campo obligatorio en el checkout. Al segundo pedido, la captura manual se llena sola.</td></tr>
+<tr><td><code>insumos</code> + <code>movimientos</code></td><td>Existencias y consumos.</td><td><strong>Fase 2, no fase 0.</strong> Ver sección 07.</td></tr>
+</tbody></table>
+
+<h2><span class="n">03 · Ciclo de vida</span>Seis estados y una regla de oro</h2>
+<div class="flow">
+<div><b>1 · Recibida</b>Entró por cualquier canal. Aún no se cocina nada.</div>
+<div><b>2 · Confirmada</b>Dirección dentro del radio y pago resuelto. Entra a la fila.</div>
+<div><b>3 · En horno</b>Se está cocinando. Arranca el reloj que le prometiste al cliente.</div>
+<div><b>4 · Lista</b>Salió del horno, empacada, esperando salir.</div>
+<div><b>5 · En camino</b>Asignada a un reparto.</div>
+<div><b>6 · Entregada</b>Cobrada y cerrada. Cuenta para el corte del día.</div>
+</div>
+<p><strong>Cancelada</strong> puede ocurrir desde cualquier estado y siempre pide un motivo. No se borra la orden: se marca.</p>
+
+<div class="callout dough"><div class="t">Regla de oro</div><p>El estado <strong>solo avanza con un toque</strong>, nunca escribiendo. Un botón grande por estado, en orden, en la tablet. Eso es lo que hace que un sistema sobreviva a una cocina: si avanzar una orden cuesta más que tocar un botón, nadie lo va a hacer con las manos sucias, y a las dos semanas el sistema está vacío y el chat de WhatsApp vuelve a ser la verdad.</p></div>
+
+<h2><span class="n">04 · Los tres canales</span>Cómo entra cada pedido</h2>
+<h3>App y sitio web — ya están diseñados</h3>
+<p>Escriben directo a <code>ordenes</code>. El checkout que ya construimos captura exactamente lo que la tabla necesita: nombre, teléfono de 10 dígitos, calle, colonia, horario, forma de pago y notas — y ya bloquea las direcciones fuera del radio de 3 km antes de que la orden exista. Estado inicial: <strong>Confirmada</strong> si el pago en línea fue aprobado, <strong>Recibida</strong> si se cobra al entregar.</p>
+
+<h3>WhatsApp capturado a mano — el caso que importa hoy</h3>
+<p>Es el canal principal al arrancar y el que más fácil se degrada. Necesita <strong>una pantalla de captura de 30 segundos</strong>, no un formulario de administración:</p>
+<ul>
+<li>Teléfono primero. Si ya existe, el nombre, la dirección y la colonia se llenan solos.</li>
+<li>Productos como botones grandes con foto, no como lista desplegable.</li>
+<li>Complementos en el mismo tap que el producto.</li>
+<li>El total se calcula solo, del catálogo. Quien captura nunca teclea un precio.</li>
+<li>Un botón: <strong>Crear comanda</strong>. La orden nace ya en la fila de cocina.</li>
+</ul>
+<p>Ese formulario es la pieza de software más rentable de todo el sistema, porque es la que evita la doble captura.</p>
+
+<h3>WhatsApp automatizado — fase 3</h3>
+<p>Catálogo de WhatsApp Business para pedir sin salir del chat, con un webhook que escribe en la misma tabla. Vale la pena cuando el volumen de WhatsApp pase de unos 15 pedidos al día; antes de eso, capturar a mano cuesta menos que mantener la integración.</p>
+
+<h2><span class="n">05 · La pantalla de comandas</span>Diseñada para manos ocupadas</h2>
+<p>Es la única pantalla que se usa <em>durante</em> el servicio, así que sus reglas no son estéticas, son operativas:</p>
+<ul>
+<li><strong>Una columna por estado</strong> (Confirmada → En horno → Lista → En camino). El trabajo se ve de izquierda a derecha.</li>
+<li><strong>Un toque por avance</strong>, botones de 64 px o más. Sin menús, sin confirmaciones de "¿seguro?".</li>
+<li><strong>Orden por hora prometida</strong>, no por hora de llegada.</li>
+<li><strong>El color es urgencia</strong>, no decoración: rosa = va bien, dorado = se está acercando al límite, terracota = ya se pasó.</li>
+<li><strong>Sin scroll horizontal y sin nada que se esconda.</strong> Si no cabe, la fila está demasiado larga y eso también es información.</li>
+<li><strong>Cero teclado.</strong> Todo lo que se teclea, se teclea en la captura, no en la comanda.</li>
+</ul>
+<p>La tablet montada es la pantalla principal; el teléfono es el espejo para cuando quien hornea sale a recibir o a entregar. Misma vista, misma base, sin modo especial.</p>
+
+<h2><span class="n">06 · Pagos y corte de caja</span>Tres son un campo, uno es una integración</h2>
+<table><thead><tr><th>Método</th><th>Qué implica en el sistema</th><th>Fase</th></tr></thead><tbody>
+<tr><td>Efectivo al entregar</td><td>Un campo. <code>pago_estado</code> pasa a <em>pagado</em> cuando la orden se entrega.</td><td>0</td></tr>
+<tr><td>Transferencia SPEI</td><td>Un campo más el comprobante. Se confirma a mano viendo la cuenta.</td><td>0</td></tr>
+<tr><td>Terminal física</td><td>Un campo. La conciliación es contra el corte de la terminal.</td><td>0</td></tr>
+<tr><td>Tarjeta en línea</td><td><strong>La única integración real.</strong> Mercado Pago cubre tarjeta y SPEI en un solo proveedor; el webhook de pago aprobado es lo que mueve la orden a <em>Confirmada</em> sin que nadie la toque.</td><td>1</td></tr>
+</tbody></table>
+<div class="callout warm"><div class="t">Advertencia honesta</div><p>Aceptar cuatro métodos desde el día uno es una decisión de operación, no de software: son cuatro conciliaciones distintas al cerrar el día. Con 10 pedidos diarios se lleva a mano en diez minutos. A partir de unos 40, el pago en línea deja de ser un lujo y se vuelve la forma de no dedicar una hora diaria a cuadrar.</p></div>
+<p>El <strong>corte de caja</strong> es una vista: órdenes del día en estado Entregada, agrupadas por <code>pago_metodo</code>, con el total y el conteo. No requiere programar nada — requiere que las órdenes estén bien capturadas, que es de lo que trata todo este documento.</p>
+
+<h2><span class="n">07 · Los ocho rastreos</span>Qué se puede medir desde el día uno</h2>
+<p>Pediste rastrear ocho cosas. Seis salen gratis del modelo de arriba; dos cuestan trabajo real y por eso van después.</p>
+<table><thead><tr><th>Rastreo</th><th>De dónde sale</th><th>Fase</th></tr></thead><tbody>
+<tr><td>Corte de caja diario</td><td>Vista de <code>ordenes</code> por <code>pago_metodo</code></td><td>0 — gratis</td></tr>
+<tr><td>Tiempos: horno, salida, entrega</td><td>Las 5 marcas de tiempo, escritas por los cambios de estado</td><td>0 — gratis</td></tr>
+<tr><td>Ventas por producto</td><td><code>orden_items</code></td><td>0 — gratis</td></tr>
+<tr><td>Complementos más pedidos</td><td><code>item_complementos</code></td><td>0 — gratis</td></tr>
+<tr><td>Clientes recurrentes</td><td><code>clientes</code>, llave = teléfono</td><td>0 — gratis</td></tr>
+<tr><td>Cancelaciones y quejas</td><td><code>motivo_cancelacion</code></td><td>0 — gratis</td></tr>
+<tr><td>Reparto asignado</td><td>Campo <code>reparto</code>; útil de verdad cuando haya más de un repartidor</td><td>1</td></tr>
+<tr><td><strong>Inventario de insumos</strong></td><td>Requiere receta por producto (cuánto queso lleva cada pizza) y descuento automático por venta. Es un proyecto propio.</td><td>2</td></tr>
+</tbody></table>
+<div class="callout"><div class="t rosa">La trampa a evitar</div><p>El inventario es lo que hunde los sistemas nuevos. Necesita una receta exacta por producto, mermas, y disciplina para registrar cada compra — y si un solo eslabón se rompe, los números mienten y dejan de usarse. Con 10 pedidos al día, contar el queso una vez por semana en una hoja aparte es más confiable que un módulo de inventario a medio llenar. Constrúyelo cuando las recetas estén estandarizadas y el volumen lo justifique.</p></div>
+
+<h2><span class="n">08 · Plan por fases</span>Con criterios de salida, no con fechas</h2>
+
+<div class="fase"><h3>Fase 0 — El sistema mínimo honesto</h3>
+<p>Airtable con las cinco tablas de operación (<code>ordenes</code>, <code>orden_items</code>, <code>item_complementos</code>, <code>productos</code>, <code>complementos</code>, <code>clientes</code>), un formulario de captura rápida para WhatsApp, y la vista de comandas en la tablet. Los pedidos de app y web se capturan a mano en esta fase, igual que los de WhatsApp.</p>
+<p class="crit"><strong>Criterio de salida:</strong> 30 días seguidos operando sin que ningún pedido viva solamente en un chat, y el corte de caja saliendo del sistema y no de la memoria.</p></div>
+
+<div class="fase"><h3>Fase 1 — Los canales escriben solos</h3>
+<p>App y sitio escriben a la misma base por API. Se integra el pago en línea (Mercado Pago) y su webhook. Aquí desaparece la doble captura de los canales digitales y el sistema empieza a ahorrar tiempo en vez de pedirlo.</p>
+<p class="crit"><strong>Criterio de salida:</strong> cero capturas manuales para pedidos de app y web durante dos semanas.</p></div>
+
+<div class="fase"><h3>Fase 2 — Insumos y márgenes</h3>
+<p>Recetas por producto, existencias, consumo automático por venta. Reporte de margen real por pizza contra el costeo del plan.</p>
+<p class="crit"><strong>Criterio de salida:</strong> las recetas están estandarizadas y no cambian de semana a semana.</p></div>
+
+<div class="fase"><h3>Fase 3 — A medida</h3>
+<p>Migración a base de datos propia (Supabase/Postgres) con la pantalla de comandas hecha a la medida, y WhatsApp automatizado con catálogo.</p>
+<p class="crit"><strong>Disparadores de migración</strong> — con cualquiera basta: más de 40 pedidos al día · dos o más personas usando el sistema al mismo tiempo · el momento en que la herramienta sin código empiece a cobrar por volumen de registros · la primera vez que necesites algo que la herramienta simplemente no hace.</p></div>
+
+<h2><span class="n">09 · Lo que no hay que construir todavía</span>Mil noes por cada sí</h2>
+<ul>
+<li class="no"><strong>App de repartidor.</strong> Con un radio de 3 km y un repartidor, un mensaje resuelve lo mismo.</li>
+<li class="no"><strong>Programa de lealtad.</strong> Primero hay que saber quién es recurrente; el dato ya se está guardando y decidirás con él en la mano.</li>
+<li class="no"><strong>Multi-sucursal.</strong> Nada en el modelo lo impide después; nada en él debe complicarse por ello ahora.</li>
+<li class="no"><strong>Predicción de demanda.</strong> Necesita meses de historia. Estás generándola.</li>
+<li class="no"><strong>Facturación automática.</strong> Con este volumen, se resuelve por fuera.</li>
+</ul>
+
+<h2><span class="n">10 · Riesgos</span>Lo que puede romper esto</h2>
+<table><thead><tr><th>Riesgo</th><th>Mitigación</th></tr></thead><tbody>
+<tr><td><strong>Doble captura.</strong> El motivo número uno por el que se abandonan estos sistemas.</td><td>La captura manual tiene que ser más rápida que anotar en papel. Si no lo es, no está terminada.</td></tr>
+<tr><td><strong>Precios desincronizados</strong> entre el menú impreso, la app, el sitio y la cabeza de quien captura.</td><td>Una sola tabla <code>productos</code>. El menú impreso se genera desde ella, no se escribe aparte.</td></tr>
+<tr><td><strong>Órdenes fuera del radio</strong> aceptadas por error en la captura manual.</td><td>El formulario manual usa la misma validación de 3 km que ya tiene el sitio, y pide confirmación explícita en la franja de 3–5 km.</td></tr>
+<tr><td><strong>El teléfono como llave.</strong> Dos personas en la misma casa, un número mal escrito.</td><td>Validar 10 dígitos (ya se hace) y aceptar que un duplicado ocasional es preferible a una llave más complicada.</td></tr>
+<tr><td><strong>Pedidos fuera de horario.</strong></td><td>Horario de operación en el catálogo, y el checkout cerrado fuera de él. Un pedido que no puedes cocinar es peor que ningún pedido.</td></tr>
+</tbody></table>
+
+<h2><span class="n">11 · Decisiones pendientes</span>Lo que necesito de ustedes para seguir</h2>
+<ol>
+<li><strong>Horario de operación</strong> y días de servicio — define cuándo el checkout está abierto.</li>
+<li><strong>Quién reparte</strong> al arrancar: ¿uno de los dos, o alguien contratado por viaje?</li>
+<li><strong>Política de cancelación</strong>: hasta qué estado se puede cancelar sin costo.</li>
+<li><strong>Tiempo prometido</strong> como número oficial: el plan dice 30 minutos puerta a puerta. ¿Es promesa o es aspiración? La pantalla de comandas colorea contra ese número.</li>
+<li><strong>Confirmar los precios de complementos</strong> — los 15 que están hoy en el sistema los inferí del costeo, no de una lista suya.</li>
+</ol>
+
+<div class="callout"><div class="t rosa">Siguiente entregable</div><p>Con este documento aprobado, sigue el diseño de las dos pantallas que faltan, en el mismo sistema visual que la app y el sitio: <strong>la pantalla de comandas de cocina</strong> (la de la tablet, la que se usa con harina en las manos) y <strong>la captura rápida de WhatsApp</strong>. El panel de administración con ventas y cortes va después — es el que menos urge, porque en fase 0 lo cubren las vistas de la herramienta.</p></div>
+
+</doc-page>
+<script src="./doc-page.js"></script>
+</body></html>

@@ -1,0 +1,41 @@
+<!-- @dsCard group="Components" viewport="700x900" name="UI primitives" subtitle="Buttons, badges, fields, required radio group, status notes, stepper, menu card & rows, icons" -->
+<!doctype html><html lang="es"><head><meta charset="utf-8"><link rel="stylesheet" href="../../styles.css"><script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script><script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script><script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script><script src="../../_ds_bundle.js"></script><style>body{padding:16px;background:var(--surface-page)}.lbl{font:var(--type-mono);font-size:10px;color:var(--text-muted);margin:14px 0 7px}.row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}.cols{display:grid;grid-template-columns:1fr 1fr;gap:16px;align-items:start}</style></head><body><div id="root"></div><script type="text/babel">
+const { Button, Badge, Field, RadioGroup, StatusNote, QtyStepper, MenuCard, MenuItem, Icon } = window.MextizzaDesignSystem_8a35ee;
+function Card(){
+const [q,setQ]=React.useState(2);
+const [pago,setPago]=React.useState(null);
+return <div>
+<div className="lbl">Button — tonos</div>
+<div className="row"><Button tone="primary" icon="cart">Agregar al pedido</Button><Button tone="dark" icon="whatsapp">Pedir por WhatsApp</Button><Button tone="warm">Catering</Button><Button tone="outline">Ver menú</Button><Button tone="ghost" iconAfter="chevronRight">Detalles</Button></div>
+<div className="lbl">Button — tamaños y deshabilitado</div>
+<div className="row"><Button size="sm">Small</Button><Button size="md">Medium</Button><Button size="lg">Large</Button><Button disabled>Agotado</Button></div>
+<div className="lbl">Badge</div>
+<div className="row"><Badge>Nueva</Badge><Badge tone="dorado">Rotativa</Badge><Badge tone="terracota">Fermento 48h</Badge><Badge tone="dark">Catering</Badge><Badge tone="quiet">Sin gluten</Badge></div>
+<div className="lbl">Icon — set sustituido (Lucide, trazo 2px)</div>
+<div className="row">{Icon.names.map(n=><Icon key={n} name={n} size={20} color="var(--negro-carbon)" />)}</div>
+<div className="cols" style={{marginTop:18}}>
+<div>
+<div className="lbl">MenuCard + MenuItem</div>
+<MenuCard kicker="Mains" title="Pizzas de la casa">
+  <MenuItem name="Pizza Provola" description="Doble queso, doble provolone. Simple y por eso funciona." price={195} />
+  <MenuItem name="Pizza Traviesa" description="Peperoni con un toque de miel picante… dulce, picante y un poco atrevida." price={215} />
+  <MenuItem name="Pizza Cochinita" description="Cochinita pibil, frijoles refritos y cebolla morada." price={270} badge={<Badge tone="dorado">Del mes</Badge>} divider={false} action={<QtyStepper value={q} onChange={setQ} />} />
+</MenuCard>
+</div>
+<div>
+<div className="lbl">Field + QtyStepper</div>
+<Field label="Nombre" required placeholder="Tu nombre" />
+<Field label="Teléfono" required type="tel" placeholder="55 1234 5678" invalid hint="Necesitamos 10 dígitos para confirmarte por WhatsApp." style={{marginTop:12}} />
+<Field label="Notas" as="textarea" rows={2} placeholder="Sin cebolla, timbre 2" style={{marginTop:12}} />
+<div className="lbl">RadioGroup — obligatorio, nada preseleccionado</div>
+<RadioGroup label="Forma de pago" required options={['Efectivo','Transferencia','Tarjeta']} value={pago} onChange={setPago} invalid={!pago} hint={pago?'Se cobra al entregar.':'Elige una forma de pago para continuar.'} />
+<div className="lbl">StatusNote</div>
+<StatusNote tone="ok" title="Dentro del radio de reparto">A 0.6 km de la cocina. Llega en 30 minutos o menos.</StatusNote>
+<StatusNote tone="warn" title="Zona de excepción" style={{marginTop:8}}>A 4.3 km. Lo confirmamos a mano por WhatsApp.</StatusNote>
+<StatusNote tone="block" title="Fuera de la zona de reparto" style={{marginTop:8}}>A 7.6 km. Todavía no llegamos hasta allá.</StatusNote>
+<div className="row" style={{marginTop:12}}><QtyStepper value={1} /><QtyStepper value={q} onChange={setQ} size={44} /></div>
+</div>
+</div>
+</div>}
+ReactDOM.createRoot(document.getElementById('root')).render(<Card/>);
+</script></body></html>

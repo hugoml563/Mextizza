@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<!-- @template name="Centro de ventas" description="Tablero de tablet para recibir y avanzar órdenes de web, app y WhatsApp con un solo toque, más el corte del día." -->
+<helmet>
+<script src="./ds-base.js"></script>
+<style>body{margin:0;background:#2b2b2b;font-family:'Oswald',sans-serif}@keyframes mxpulse{0%,100%{opacity:1}50%{opacity:.35}}</style>
+</helmet>
+<div style="width:1194px;height:834px;margin:0 auto;background:#F5F0E8;color:#1A1A1A;display:flex;flex-direction:column;overflow:hidden">
+
+<div style="height:8px;background:repeating-linear-gradient(45deg,#E4007C 0 10px,#4A4A4A 10px 20px,#C1502E 20px 30px,#D9A65C 30px 40px);flex:none"></div>
+
+<div style="flex:none;display:flex;align-items:center;gap:24px;padding:14px 22px;border-bottom:3px solid #1A1A1A;background:#F5F0E8">
+<img src="../../assets/lockup-pala.png" alt="Mextizza" style="height:52px;display:block">
+<div style="flex:none;padding-left:20px;border-left:2px solid rgba(0,0,0,.12)">
+<div style="font-family:'Bungee',cursive;font-size:11px;letter-spacing:2px;text-transform:uppercase;color:#C1502E">Centro de ventas</div>
+<div style="font-size:12.5px;font-weight:700;color:#6b6b6b;margin-top:3px">{{ fecha }} · {{ reloj }}</div>
+</div>
+<div style="flex:1"></div>
+<div style="display:flex;gap:10px">
+<div style="min-width:104px;padding:8px 14px;background:#FFFFFF;border:2px solid #1A1A1A;border-radius:6px">
+<div style="font-size:10.5px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:#6b6b6b">Órdenes hoy</div>
+<div style="font-family:'Bungee',cursive;font-size:22px;line-height:1.1;margin-top:2px">{{ corte.ordenes }}</div>
+</div>
+<div style="min-width:104px;padding:8px 14px;background:#FFFFFF;border:2px solid #1A1A1A;border-radius:6px">
+<div style="font-size:10.5px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:#6b6b6b">Vendido</div>
+<div style="font-family:'Bungee',cursive;font-size:22px;line-height:1.1;margin-top:2px;color:#C1502E">{{ corte.total }}</div>
+</div>
+<div style="min-width:104px;padding:8px 14px;background:#1A1A1A;border:2px solid #1A1A1A;border-radius:6px">
+<div style="font-size:10.5px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:#D9A65C">En cocina</div>
+<div style="font-family:'Bungee',cursive;font-size:22px;line-height:1.1;margin-top:2px;color:#FFFFFF">{{ corte.activas }}</div>
+</div>
+</div>
+</div>
+
+<div style="flex:1;display:flex;min-height:0">
+
+<div style="flex:1;display:flex;flex-direction:column;min-width:0;padding:16px 18px 0">
+<div style="flex:none;display:flex;gap:8px;margin-bottom:14px">
+<sc-for list="{{ filtros }}" as="f" hint-placeholder-count="6">
+<sc-if value="{{ f.activo }}" hint-placeholder-val="{{ true }}">
+<button onClick="{{ f.set }}" style="flex:1;padding:10px 8px;border:2px solid #1A1A1A;border-radius:6px;font-family:'Oswald',sans-serif;font-size:12px;font-weight:700;letter-spacing:1px;text-transform:uppercase;cursor:pointer;background:#1A1A1A;color:#F5F0E8;display:flex;flex-direction:column;align-items:center;gap:2px" style-hover="opacity:.85">
+<span>{{ f.label }}</span>
+<span style="font-family:'Bungee',cursive;font-size:15px">{{ f.count }}</span>
+</button>
+</sc-if>
+<sc-if value="{{ f.inactivo }}" hint-placeholder-val="{{ false }}">
+<button onClick="{{ f.set }}" style="flex:1;padding:10px 8px;border:2px solid #1A1A1A;border-radius:6px;font-family:'Oswald',sans-serif;font-size:12px;font-weight:700;letter-spacing:1px;text-transform:uppercase;cursor:pointer;background:#FFFFFF;color:#1A1A1A;display:flex;flex-direction:column;align-items:center;gap:2px" style-hover="opacity:.85">
+<span>{{ f.label }}</span>
+<span style="font-family:'Bungee',cursive;font-size:15px">{{ f.count }}</span>
+</button>
+</sc-if>
+</sc-for>
+</div>
+
+<div style="flex:1;overflow:auto;padding-bottom:18px;display:flex;flex-direction:column;gap:12px">
+<sc-for list="{{ visibles }}" as="o" hint-placeholder-count="4">
+<div style="background:#FFFFFF;border:2px solid #1A1A1A;border-radius:8px;display:flex;align-items:stretch;overflow:hidden">
+<sc-if value="{{ o.esNuevo }}" hint-placeholder-val="{{ true }}"><div style="flex:none;width:10px;background:#E4007C"></div></sc-if>
+<sc-if value="{{ o.esHorno }}" hint-placeholder-val="{{ false }}"><div style="flex:none;width:10px;background:#C1502E"></div></sc-if>
+<sc-if value="{{ o.esListo }}" hint-placeholder-val="{{ false }}"><div style="flex:none;width:10px;background:#D9A65C"></div></sc-if>
+<sc-if value="{{ o.esReparto }}" hint-placeholder-val="{{ false }}"><div style="flex:none;width:10px;background:#4A4A4A"></div></sc-if>
+<sc-if value="{{ o.esEntregado }}" hint-placeholder-val="{{ false }}"><div style="flex:none;width:10px;background:#2E7D5B"></div></sc-if>
+<sc-if value="{{ o.esCancelado }}" hint-placeholder-val="{{ false }}"><div style="flex:none;width:10px;background:#9a9a9a"></div></sc-if>
+<div style="flex:1;display:flex;gap:18px;align-items:stretch;padding:14px 16px;min-width:0">
+<div style="flex:1;min-width:0">
+<div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+<span style="font-family:'Bungee',cursive;font-size:17px">{{ o.folio }}</span>
+<sc-if value="{{ o.esWeb }}" hint-placeholder-val="{{ true }}"><span style="padding:3px 9px;border-radius:99px;background:#C1502E;color:#FFFFFF;font-size:10.5px;font-weight:700;letter-spacing:1.2px;text-transform:uppercase">Web</span></sc-if>
+<sc-if value="{{ o.esApp }}" hint-placeholder-val="{{ false }}"><span style="padding:3px 9px;border-radius:99px;background:#E4007C;color:#FFFFFF;font-size:10.5px;font-weight:700;letter-spacing:1.2px;text-transform:uppercase">App</span></sc-if>
+<sc-if value="{{ o.esWhats }}" hint-placeholder-val="{{ false }}"><span style="padding:3px 9px;border-radius:99px;background:#2E7D5B;color:#FFFFFF;font-size:10.5px;font-weight:700;letter-spacing:1.2px;text-transform:uppercase">WhatsApp</span></sc-if>
+<sc-if value="{{ o.esMostradorCanal }}" hint-placeholder-val="{{ false }}"><span style="padding:3px 9px;border-radius:99px;background:#4A4A4A;color:#FFFFFF;font-size:10.5px;font-weight:700;letter-spacing:1.2px;text-transform:uppercase">Mostrador</span></sc-if>
+<span style="padding:3px 9px;border-radius:99px;border:2px solid #1A1A1A;font-size:10.5px;font-weight:700;letter-spacing:1.2px;text-transform:uppercase">{{ o.tipo }}</span>
+<sc-if value="{{ o.aTiempo }}" hint-placeholder-val="{{ true }}"><span style="font-size:12px;font-weight:700;color:#6b6b6b">{{ o.espera }}</span></sc-if>
+<sc-if value="{{ o.tarde }}" hint-placeholder-val="{{ false }}"><span style="font-size:12px;font-weight:700;color:#E4007C;animation:mxpulse 1.4s ease-in-out infinite">{{ o.espera }}</span></sc-if>
+</div>
+<div style="font-size:14.5px;font-weight:700;margin-top:7px">{{ o.cliente }} · <span style="color:#6b6b6b;font-weight:400">{{ o.destino }}</span></div>
+<div style="margin-top:8px;display:flex;flex-direction:column;gap:3px">
+<sc-for list="{{ o.lineas }}" as="l" hint-placeholder-count="2">
+<div style="display:flex;justify-content:space-between;gap:12px;font-size:13px;border-bottom:1px dashed rgba(0,0,0,.12);padding-bottom:3px">
+<span><b>{{ l.cant }}×</b> {{ l.nombre }}</span>
+<span style="color:#C1502E;font-weight:700">{{ l.importe }}</span>
+</div>
+</sc-for>
+</div>
+</div>
+<div style="flex:none;width:236px;display:flex;flex-direction:column;justify-content:space-between;gap:10px;padding-left:18px;border-left:2px dashed rgba(0,0,0,.14)">
+<div>
+<div style="display:flex;justify-content:space-between;align-items:baseline">
+<span style="font-size:11px;font-weight:700;letter-spacing:1.2px;text-transform:uppercase;color:#6b6b6b">Total</span>
+<span style="font-family:'Bungee',cursive;font-size:21px;color:#C1502E">{{ o.total }}</span>
+</div>
+<div style="margin-top:5px;font-size:12px;font-weight:700">{{ o.pago }} · <sc-if value="{{ o.pagado }}" hint-placeholder-val="{{ true }}"><span style="color:#2E7D5B">pagado</span></sc-if><sc-if value="{{ o.porCobrar }}" hint-placeholder-val="{{ false }}"><span style="color:#E4007C">por cobrar</span></sc-if></div>
+</div>
+<div style="display:flex;gap:8px">
+<button onClick="{{ o.avanzar }}" style="flex:1;padding:14px 8px;border:none;border-radius:6px;background:#1A1A1A;color:#FFFFFF;font-family:'Bungee',cursive;font-size:12px;letter-spacing:1px;text-transform:uppercase;cursor:pointer;min-height:48px" style-hover="background:#C1502E">{{ o.siguiente }}</button>
+<button onClick="{{ o.cancelar }}" style="flex:none;width:48px;min-height:48px;border:2px solid #1A1A1A;border-radius:6px;background:transparent;color:#1A1A1A;font-family:'Oswald',sans-serif;font-size:18px;font-weight:700;cursor:pointer" style-hover="background:#E4007C;color:#FFFFFF;border-color:#E4007C">×</button>
+</div>
+</div>
+</div>
+</div>
+</sc-for>
+<sc-if value="{{ vacio }}" hint-placeholder-val="{{ false }}">
+<div style="margin:auto;text-align:center;padding:60px 20px;color:#9a9a9a">
+<div style="font-family:'Bungee',cursive;font-size:16px;letter-spacing:1px;text-transform:uppercase">Sin órdenes en este estado</div>
+<div style="font-size:13px;font-weight:700;margin-top:6px">Las nuevas entran aquí en automático.</div>
+</div>
+</sc-if>
+</div>
+</div>
+
+<sc-if value="{{ verCorte }}" hint-placeholder-val="{{ true }}">
+<div style="flex:none;width:288px;background:#FFFFFF;border-left:3px solid #1A1A1A;padding:18px;overflow:auto">
+<div style="display:flex;align-items:center;gap:10px;font-family:'Bungee',cursive;font-size:11px;letter-spacing:1px;text-transform:uppercase;margin-bottom:14px">Corte del día<span style="flex:1;height:2px;background:#1A1A1A;opacity:.15"></span></div>
+<sc-for list="{{ corte.pagos }}" as="p" hint-placeholder-count="4">
+<div style="display:flex;justify-content:space-between;align-items:center;padding:9px 0;border-bottom:1px dashed rgba(0,0,0,.14)">
+<div><div style="font-size:13px;font-weight:700">{{ p.nombre }}</div><div style="font-size:11px;color:#6b6b6b">{{ p.n }} órdenes</div></div>
+<div style="font-weight:800;font-size:14.5px;color:#C1502E">{{ p.monto }}</div>
+</div>
+</sc-for>
+<div style="display:flex;justify-content:space-between;align-items:baseline;margin-top:12px;padding:12px 14px;background:#1A1A1A;border-radius:6px">
+<span style="font-size:11px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:#D9A65C">Efectivo en caja</span>
+<span style="font-family:'Bungee',cursive;font-size:18px;color:#FFFFFF">{{ corte.efectivo }}</span>
+</div>
+
+<div style="display:flex;align-items:center;gap:10px;font-family:'Bungee',cursive;font-size:11px;letter-spacing:1px;text-transform:uppercase;margin:26px 0 12px">Más vendido<span style="flex:1;height:2px;background:#1A1A1A;opacity:.15"></span></div>
+<sc-for list="{{ corte.productos }}" as="pr" hint-placeholder-count="4">
+<div style="margin-bottom:9px">
+<div style="display:flex;justify-content:space-between;font-size:12.5px;font-weight:700"><span>{{ pr.nombre }}</span><span>{{ pr.n }}</span></div>
+<svg viewBox="0 0 100 7" preserveAspectRatio="none" style="display:block;width:100%;height:7px;margin-top:4px;border-radius:99px;overflow:hidden"><rect x="0" y="0" width="100" height="7" fill="rgba(0,0,0,0.08)"></rect><rect x="0" y="0" width="{{ pr.pct }}" height="7" fill="#E4007C"></rect></svg>
+</div>
+</sc-for>
+
+<div style="display:flex;align-items:center;gap:10px;font-family:'Bungee',cursive;font-size:11px;letter-spacing:1px;text-transform:uppercase;margin:26px 0 12px">Canales<span style="flex:1;height:2px;background:#1A1A1A;opacity:.15"></span></div>
+<sc-for list="{{ corte.canales }}" as="c" hint-placeholder-count="3">
+<div style="display:flex;justify-content:space-between;padding:7px 0;border-bottom:1px dashed rgba(0,0,0,.14);font-size:12.5px;font-weight:700"><span>{{ c.nombre }}</span><span style="color:#C1502E">{{ c.n }}</span></div>
+</sc-for>
+
+<div style="margin-top:22px;padding:12px 14px;border:2px dashed #C1502E;border-radius:6px;font-size:11.5px;font-weight:700;line-height:1.5;color:#4A4A4A">Cada cambio de estado se guarda con hora. De ahí salen los tiempos de horno y de reparto.</div>
+</div>
+</sc-if>
+
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:1194,&quot;height&quot;:834},&quot;verCorte&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;Tablero&quot;},&quot;umbralAlerta&quot;:{&quot;editor&quot;:&quot;int&quot;,&quot;default&quot;:20,&quot;min&quot;:5,&quot;max&quot;:60,&quot;step&quot;:5,&quot;unit&quot;:&quot;min&quot;,&quot;tsType&quot;:&quot;number&quot;,&quot;section&quot;:&quot;Tablero&quot;},&quot;fecha&quot;:{&quot;editor&quot;:&quot;text&quot;,&quot;default&quot;:&quot;Martes 25 de agosto&quot;,&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Tablero&quot;}}">
+const FLUJO = ['nuevo','horno','listo','reparto','entregado'];
+const META = {
+  nuevo:    { label:'Nuevos',     color:'#E4007C', cta:'A horno' },
+  horno:    { label:'En horno',   color:'#C1502E', cta:'Listo' },
+  listo:    { label:'Listos',     color:'#D9A65C', cta:'Salió' },
+  reparto:  { label:'En reparto', color:'#4A4A4A', cta:'Entregado' },
+  entregado:{ label:'Entregados', color:'#2E7D5B', cta:'Cerrado' },
+  cancelado:{ label:'Cancelados', color:'#9a9a9a', cta:'—' }
+};
+const CANAL_BG = { Web:'#C1502E', App:'#E4007C', WhatsApp:'#2E7D5B', Mostrador:'#4A4A4A' };
+const money = n => '$' + n.toLocaleString('es-MX');
+
+const SEED = [
+  { folio:'#1042', cliente:'Ana Rueda',      canal:'WhatsApp', tipo:'Reparto',   destino:'Av. Hidalgo 214 · Zona 2', pago:'Efectivo',  pagado:false, min:3,  estado:'nuevo',
+    lineas:[{cant:2,nombre:'Pizza Roni',importe:420},{cant:1,nombre:'Aderezo de la casa',importe:25}] },
+  { folio:'#1041', cliente:'Beto Salgado',   canal:'App',      tipo:'Reparto',   destino:'Calle Morelos 88 · Zona 1', pago:'Tarjeta en línea', pagado:true, min:9, estado:'horno',
+    lineas:[{cant:1,nombre:'Pizza Chisi',importe:215},{cant:1,nombre:'Orilla rellena',importe:45},{cant:2,nombre:'Refresco 600ml',importe:60}] },
+  { folio:'#1040', cliente:'Lucía Ontiveros',canal:'Web',      tipo:'Mostrador', destino:'Pasa por ella 8:40 pm', pago:'Transferencia', pagado:true, min:16, estado:'listo',
+    lineas:[{cant:1,nombre:'Pizza Traviesa',importe:215}] },
+  { folio:'#1039', cliente:'Familia Zúñiga', canal:'WhatsApp', tipo:'Reparto',   destino:'Priv. del Roble 12 · Zona 3', pago:'Terminal', pagado:false, min:24, estado:'reparto',
+    lineas:[{cant:3,nombre:'Pizza Combinada',importe:570},{cant:1,nombre:'Pizza Aloha',importe:180}] },
+  { folio:'#1038', cliente:'Diego Farías',   canal:'App',      tipo:'Mostrador', destino:'Recogida 8:05 pm', pago:'Efectivo', pagado:true, min:41, estado:'entregado',
+    lineas:[{cant:1,nombre:'Pizza Provola',importe:195},{cant:1,nombre:'Aderezo de la casa',importe:25}] },
+  { folio:'#1037', cliente:'Karla Méndez',   canal:'Web',      tipo:'Reparto',   destino:'Fuera de radio · cancelada', pago:'Tarjeta en línea', pagado:false, min:52, estado:'cancelado',
+    lineas:[{cant:1,nombre:'Pizza Serranita',importe:245}] }
+];
+
+class Component extends DCLogic {
+  state = { ordenes: SEED.map(o => ({ ...o })), filtro: 'activas', reloj: '20:34' };
+
+  total(o) { return o.lineas.reduce((s,l) => s + l.importe, 0); }
+
+  avanzar(i) {
+    this.setState(s => {
+      const ordenes = s.ordenes.slice();
+      const o = { ...ordenes[i] };
+      const k = FLUJO.indexOf(o.estado);
+      if (k > -1 && k < FLUJO.length - 1) o.estado = FLUJO[k + 1];
+      o.min = 0;
+      ordenes[i] = o;
+      return { ordenes };
+    });
+  }
+
+  cancelar(i) {
+    this.setState(s => {
+      const ordenes = s.ordenes.slice();
+      ordenes[i] = { ...ordenes[i], estado: 'cancelado' };
+      return { ordenes };
+    });
+  }
+
+  renderVals() {
+    const { ordenes, filtro } = this.state;
+    const umbral = this.props.umbralAlerta ?? 20;
+    const activos = ['nuevo','horno','listo','reparto'];
+
+    const grupos = { activas: ordenes.filter(o => activos.includes(o.estado)).length };
+    for (const k of Object.keys(META)) grupos[k] = ordenes.filter(o => o.estado === k).length;
+
+    const claves = ['activas', ...FLUJO, 'cancelado'];
+    const filtros = claves.map(k => ({
+      label: k === 'activas' ? 'En curso' : META[k].label,
+      count: grupos[k],
+      activo: filtro === k,
+      inactivo: filtro !== k,
+      set: () => this.setState({ filtro: k })
+    }));
+
+    const visibles = ordenes
+      .map((o, i) => ({ o, i }))
+      .filter(({ o }) => filtro === 'activas' ? activos.includes(o.estado) : o.estado === filtro)
+      .map(({ o, i }) => {
+        const tarde = o.min >= umbral && activos.includes(o.estado);
+        return {
+          folio: o.folio, cliente: o.cliente, canal: o.canal, tipo: o.tipo, destino: o.destino,
+          esNuevo: o.estado === 'nuevo', esHorno: o.estado === 'horno', esListo: o.estado === 'listo',
+          esReparto: o.estado === 'reparto', esEntregado: o.estado === 'entregado', esCancelado: o.estado === 'cancelado',
+          esWeb: o.canal === 'Web', esApp: o.canal === 'App', esWhats: o.canal === 'WhatsApp', esMostradorCanal: o.canal === 'Mostrador',
+          espera: o.min + ' min',
+          tarde, aTiempo: !tarde,
+          lineas: o.lineas.map(l => ({ cant: l.cant, nombre: l.nombre, importe: money(l.importe) })),
+          total: money(this.total(o)),
+          pago: o.pago,
+          pagado: !!o.pagado,
+          porCobrar: !o.pagado,
+          siguiente: META[o.estado].cta,
+          avanzar: () => this.avanzar(i),
+          cancelar: () => this.cancelar(i)
+        };
+      });
+
+    const cerradas = ordenes.filter(o => o.estado !== 'cancelado');
+    const suma = cerradas.reduce((s,o) => s + this.total(o), 0);
+
+    const porPago = {};
+    for (const o of cerradas) {
+      const p = porPago[o.pago] || (porPago[o.pago] = { nombre: o.pago, n: 0, monto: 0 });
+      p.n++; p.monto += this.total(o);
+    }
+    const efectivo = (porPago['Efectivo'] || { monto: 0 }).monto;
+
+    const conteo = {};
+    for (const o of cerradas) for (const l of o.lineas) conteo[l.nombre] = (conteo[l.nombre] || 0) + l.cant;
+    const orden = Object.entries(conteo).sort((a,b) => b[1] - a[1]).slice(0, 5);
+    const tope = orden.length ? orden[0][1] : 1;
+
+    const canales = {};
+    for (const o of cerradas) canales[o.canal] = (canales[o.canal] || 0) + 1;
+
+    return {
+      fecha: this.props.fecha ?? 'Martes 25 de agosto',
+      reloj: this.state.reloj,
+      filtros, visibles,
+      vacio: visibles.length === 0,
+      verCorte: this.props.verCorte ?? true,
+      corte: {
+        ordenes: cerradas.length,
+        total: money(suma),
+        activas: ordenes.filter(o => o.estado === 'horno' || o.estado === 'nuevo').length,
+        efectivo: money(efectivo),
+        pagos: Object.values(porPago).map(p => ({ nombre: p.nombre, n: p.n, monto: money(p.monto) })),
+        productos: orden.map(([nombre, n]) => ({ nombre, n, pct: Math.round(n / tope * 100) })),
+        canales: Object.entries(canales).map(([nombre, n]) => ({ nombre, n }))
+      }
+    };
+  }
+}
+</script>
+</body>
+</html>

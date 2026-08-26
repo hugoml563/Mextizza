@@ -1,0 +1,237 @@
+<!doctype html><html lang="es"><head><meta charset="utf-8"><title>Centro de ventas — guía de arranque</title><link rel="stylesheet" href="../styles.css"><style>doc-page:not(:defined){visibility:hidden}
+doc-page{--ink:var(--negro-carbon);--muted:var(--gris-texto)}
+h1{font-family:var(--font-display);font-size:38px;line-height:1.1;letter-spacing:1px;margin:0 0 6px}
+.lede{font-family:var(--font-body);font-size:16px;line-height:1.6;color:var(--muted);margin:0 0 8px;max-width:44em}
+.meta{font-family:var(--font-label);font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--terracota-horno);margin:0 0 30px;padding-bottom:18px;border-bottom:3px solid var(--ink);max-width:none}
+h2{font-family:var(--font-display);font-size:25px;line-height:1.2;margin:34px 0 4px;padding-top:16px;border-top:1px solid var(--hueso-linea)}
+h2 .n{font-family:var(--font-label);font-size:11px;letter-spacing:2px;color:var(--rosa-mexicano);display:block;margin-bottom:7px}
+h3{font-family:var(--font-body);font-weight:700;font-size:15px;letter-spacing:.3px;margin:22px 0 6px}
+p,li{font-family:var(--font-body);font-size:14px;line-height:1.62;color:var(--ink)}
+p{margin:0 0 11px;max-width:46em}
+ul,ol{margin:0 0 13px;padding-left:20px}li{margin-bottom:5px}
+ol.pasos{padding-left:0;list-style:none;counter-reset:p}
+ol.pasos>li{counter-increment:p;position:relative;padding-left:34px;margin-bottom:11px}
+ol.pasos>li::before{content:counter(p);position:absolute;left:0;top:1px;width:22px;height:22px;border-radius:50%;background:var(--negro-carbon);color:var(--blanco-hueso);font-family:var(--font-label);font-size:11px;display:grid;place-items:center}
+strong{font-weight:700}
+em{font-style:normal;font-family:var(--font-mono);font-size:12.5px;background:var(--hueso-hondo);padding:1px 5px;border-radius:3px}
+table{width:100%;border-collapse:collapse;margin:8px 0 18px;font-family:var(--font-body);font-size:12.5px}
+th{text-align:left;font-family:var(--font-label);font-size:9.5px;letter-spacing:1px;text-transform:uppercase;color:var(--muted);border-bottom:2px solid var(--ink);padding:0 10px 6px 0;vertical-align:bottom}
+td{padding:8px 10px 8px 0;border-bottom:1px solid var(--hueso-linea);vertical-align:top;line-height:1.5}
+td:last-child,th:last-child{padding-right:0}
+.callout{background:var(--surface-accent-soft);border:2px solid var(--rosa-mexicano);border-radius:var(--radius-md);padding:15px 17px;margin:16px 0;break-inside:avoid;orphans:3;widows:3}
+.callout.warm{background:var(--surface-warm-soft);border-color:var(--terracota-horno)}
+.callout.dough{background:var(--surface-dough);border-color:var(--dorado-masa)}
+.callout p{margin:0;font-size:13.5px;max-width:none}
+.callout p+p{margin-top:8px}
+.callout .t{font-family:var(--font-label);font-size:10px;letter-spacing:1.5px;text-transform:uppercase;color:var(--terracota-horno);margin-bottom:6px}
+.callout .t.rosa{color:var(--rosa-mexicano)}
+.dia{break-inside:avoid;border-left:3px solid var(--dorado-masa);padding:2px 0 2px 15px;margin:0 0 22px}
+.dia h3{margin-top:0;font-family:var(--font-display);font-weight:400;font-size:20px;letter-spacing:.5px}
+.dia .t{font-family:var(--font-label);font-size:9.5px;letter-spacing:1.5px;text-transform:uppercase;color:var(--rosa-mexicano);margin-bottom:3px}
+.check{list-style:none;padding-left:0}
+.check li{position:relative;padding-left:26px;margin-bottom:6px}
+.check li::before{content:"";position:absolute;left:0;top:3px;width:14px;height:14px;border:2px solid var(--negro-carbon);border-radius:3px}
+code{font-family:var(--font-mono);font-size:12px}
+footer.pie{font-family:var(--font-label);font-size:9px;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted);display:flex;justify-content:space-between}
+</style></head><body>
+<doc-page margin="0.8in">
+<div slot="footer" class="pie"><span>Mextizza · Guía de arranque</span><span>Fase 0 · Airtable</span></div>
+
+<h1>Por dónde empezar</h1>
+<p class="lede">La definición dice <em>qué</em> construir. Esta guía dice <em>qué haces el lunes</em>: cinco días de trabajo para tener el centro de ventas operando, paso por paso, sin escribir una línea de código.</p>
+<p class="meta">Fase 0 · Airtable · una persona · cinco tardes</p>
+
+<h2><span class="n">Antes de empezar</span>Lo que vas a tener el viernes</h2>
+<p>Al terminar la semana tienes tres cosas funcionando, y nada más — eso es a propósito:</p>
+<ol class="pasos">
+<li><strong>Una base de datos</strong> con el catálogo real y las órdenes de los tres canales.</li>
+<li><strong>Un formulario de captura rápida</strong> que abres en el teléfono cuando entra un WhatsApp.</li>
+<li><strong>Una pantalla de comandas</strong> en la tablet, con las órdenes en columnas por estado y un toque para avanzarlas.</li>
+</ol>
+
+<div class="callout dough"><div class="t">La única regla de esta semana</div><p><strong>No construyas nada que no vayas a usar el lunes siguiente.</strong> La tentación va a ser agregar campos "por si acaso": inventario, lealtad, un reporte bonito. Cada campo extra es un campo que alguien tiene que llenar con harina en las manos. El modelo ya está definido — sigue la lista y para cuando se acabe.</p></div>
+
+<h2><span class="n">Día 1 · unas 2 horas</span>Crear la base y las tablas</h2>
+
+<div class="dia"><div class="t">Paso previo</div><h3>La cuenta</h3>
+<p>Crea una cuenta en Airtable y una base nueva llamada <strong>Mextizza — Operación</strong>. Borra la tabla de ejemplo que viene por defecto.</p>
+<p>El orden en que creas las tablas <strong>importa</strong>: las que se relacionan tienen que existir antes. Ve de arriba abajo.</p></div>
+
+<h3>1. productos</h3>
+<p>El catálogo. Es la única fuente de precios de todo el negocio.</p>
+<table><thead><tr><th>Campo</th><th>Tipo en Airtable</th><th>Detalle</th></tr></thead><tbody>
+<tr><td>nombre</td><td>Single line text</td><td>Campo principal. "Pizza Serranita"</td></tr>
+<tr><td>descripcion</td><td>Long text</td><td>La del menú, tal cual</td></tr>
+<tr><td>categoria</td><td>Single select</td><td>Pizzas · Especial del mes · Postres y bebidas</td></tr>
+<tr><td>precio</td><td>Currency</td><td>MXN, 0 decimales</td></tr>
+<tr><td>activo</td><td>Checkbox</td><td>Marcado. Desmarcar en vez de borrar</td></tr>
+<tr><td>foto</td><td>Attachment</td><td>Las cuatro que ya tenemos</td></tr>
+</tbody></table>
+
+<h3>2. complementos</h3>
+<table><thead><tr><th>Campo</th><th>Tipo</th><th>Detalle</th></tr></thead><tbody>
+<tr><td>nombre</td><td>Single line text</td><td>Campo principal</td></tr>
+<tr><td>grupo</td><td>Single select</td><td>Más queso · Más carne · Verduras · El último toque</td></tr>
+<tr><td>precio</td><td>Currency</td><td>MXN</td></tr>
+<tr><td>activo</td><td>Checkbox</td><td>Marcado</td></tr>
+</tbody></table>
+
+<h3>3. clientes</h3>
+<table><thead><tr><th>Campo</th><th>Tipo</th><th>Detalle</th></tr></thead><tbody>
+<tr><td>telefono</td><td>Phone number</td><td><strong>Campo principal.</strong> Es la llave: 10 dígitos</td></tr>
+<tr><td>nombre</td><td>Single line text</td><td></td></tr>
+<tr><td>direccion</td><td>Single line text</td><td>La habitual</td></tr>
+<tr><td>colonia</td><td>Single select</td><td>Las 14 colonias del radio</td></tr>
+<tr><td>notas</td><td>Long text</td><td>"Timbre 2", "perro en el patio"</td></tr>
+</tbody></table>
+
+<h3>4. ordenes</h3>
+<p>La tabla que importa. Créala después de las tres anteriores para poder ligarla.</p>
+<table><thead><tr><th>Campo</th><th>Tipo</th><th>Detalle</th></tr></thead><tbody>
+<tr><td>num</td><td>Autonumber</td><td>Lo genera Airtable solo</td></tr>
+<tr><td>folio</td><td>Formula</td><td><strong>Campo principal.</strong> <code>"MX-" &amp; RIGHT("0000" &amp; {num}, 4)</code> → <code>MX-0142</code></td></tr>
+<tr><td>canal</td><td>Single select</td><td>App · Web · WhatsApp · Mostrador</td></tr>
+<tr><td>estado</td><td>Single select</td><td>Los 6 estados + Cancelada, <strong>en ese orden</strong> — el orden define las columnas de la comanda</td></tr>
+<tr><td>cliente</td><td>Link to clientes</td><td>Un solo registro</td></tr>
+<tr><td>telefono</td><td>Lookup</td><td>Del cliente ligado</td></tr>
+<tr><td>direccion</td><td>Single line text</td><td>Se copia al capturar: la dirección de <em>esta</em> orden</td></tr>
+<tr><td>colonia</td><td>Single select</td><td>Las mismas 14</td></tr>
+<tr><td>km</td><td>Number</td><td>1 decimal. Se teclea de la tabla de la sección "Distancias"</td></tr>
+<tr><td>pago_metodo</td><td>Single select</td><td>Efectivo · SPEI · Terminal · En línea</td></tr>
+<tr><td>pago_estado</td><td>Single select</td><td>Pendiente · Pagado · Fallido</td></tr>
+<tr><td>total</td><td>Rollup</td><td>De <code>orden_items</code> → suma de <code>importe</code></td></tr>
+<tr><td>t_recibida</td><td>Created time</td><td>Automático</td></tr>
+<tr><td>t_confirmada</td><td>Date + time</td><td>Lo llena una automatización (día 4)</td></tr>
+<tr><td>t_horno</td><td>Date + time</td><td>Igual</td></tr>
+<tr><td>t_salida</td><td>Date + time</td><td>Igual</td></tr>
+<tr><td>t_entregada</td><td>Date + time</td><td>Igual</td></tr>
+<tr><td>reparto</td><td>Single select</td><td>Los nombres de quienes reparten</td></tr>
+<tr><td>notas</td><td>Long text</td><td></td></tr>
+<tr><td>motivo_cancelacion</td><td>Long text</td><td></td></tr>
+</tbody></table>
+
+<h3>5. orden_items</h3>
+<table><thead><tr><th>Campo</th><th>Tipo</th><th>Detalle</th></tr></thead><tbody>
+<tr><td>orden</td><td>Link to ordenes</td><td></td></tr>
+<tr><td>producto</td><td>Link to productos</td><td></td></tr>
+<tr><td>cantidad</td><td>Number</td><td>Entero, default 1</td></tr>
+<tr><td>precio_unit</td><td>Currency</td><td><strong>Se teclea, no se calcula.</strong> Congela el precio del día</td></tr>
+<tr><td>complementos_total</td><td>Rollup</td><td>De <code>item_complementos</code> → suma de <code>precio</code></td></tr>
+<tr><td>importe</td><td>Formula</td><td><code>(precio_unit + complementos_total) * cantidad</code></td></tr>
+</tbody></table>
+
+<h3>6. item_complementos</h3>
+<table><thead><tr><th>Campo</th><th>Tipo</th><th>Detalle</th></tr></thead><tbody>
+<tr><td>item</td><td>Link to orden_items</td><td></td></tr>
+<tr><td>complemento</td><td>Link to complementos</td><td></td></tr>
+<tr><td>precio</td><td>Currency</td><td>Congelado, igual que arriba</td></tr>
+</tbody></table>
+
+<div class="callout"><div class="t rosa">Por qué se teclea el precio en vez de jalarlo</div><p>Un <em>lookup</em> al catálogo se ve más limpio, pero cuando subas un precio, <strong>todas las órdenes viejas cambiarían de total</strong> y tu corte de caja de marzo dejaría de cuadrar. Copiar el precio al momento de la venta es lo que hace que la historia sea historia. En el formulario de captura queda precargado, así que no cuesta trabajo extra.</p></div>
+
+<h2><span class="n">Día 2 · unas 2 horas</span>Cargar el catálogo</h2>
+<p>Captura los <strong>12 productos</strong> y los <strong>15 complementos</strong> que ya están definidos en el sistema de diseño. Ocho pizzas, la Cochinita como especial del mes, tres postres y bebidas. Los precios de las pizzas son los del menú entregado; los de complementos son los inferidos del costeo.</p>
+<ul class="check">
+<li>Los 12 productos, con precio y categoría</li>
+<li>Los 15 complementos, en sus cuatro grupos</li>
+<li>Las cuatro fotos que ya tenemos, en su producto</li>
+<li>Las 14 colonias como opciones del select, en <code>clientes</code> y en <code>ordenes</code></li>
+</ul>
+
+<div class="callout warm"><div class="t">Decisión que ya no puedes postergar</div><p><strong>Confirma con Ricardo los precios de los 15 complementos antes de cargarlos.</strong> Los que están hoy en el sistema los deduje del costeo de insumos por margen, no de una lista suya. Es el único dato del catálogo que no viene de un documento oficial, y una vez que empieces a vender queda congelado en cada orden.</p></div>
+
+<h3>Distancias por colonia</h3>
+<p>Para que quien captura no adivine si una dirección entra en el radio, imprime esta tabla y pégala junto a la tablet. Son las mismas distancias que ya valida el sitio web.</p>
+<table><thead><tr><th>Colonia</th><th>km</th><th>¿Se acepta?</th></tr></thead><tbody>
+<tr><td>Lomas Lindas</td><td>0.0</td><td>Sí</td></tr>
+<tr><td>Las Alamedas</td><td>0.8</td><td>Sí</td></tr>
+<tr><td>Villas de la Hacienda</td><td>0.7</td><td>Sí</td></tr>
+<tr><td>Bulevares</td><td>1.1</td><td>Sí</td></tr>
+<tr><td>Lomas de Atizapán</td><td>1.6</td><td>Sí</td></tr>
+<tr><td>Adolfo López Mateos (centro)</td><td>1.9</td><td>Sí</td></tr>
+<tr><td>Calacoaya</td><td>2.5</td><td>Sí</td></tr>
+<tr><td>Fuentes de Satélite</td><td>3.4</td><td>Solo confirmando por WhatsApp</td></tr>
+<tr><td>Hacienda de Valle Escondido</td><td>4.2</td><td>Solo confirmando por WhatsApp</td></tr>
+<tr><td>Lomas Verdes</td><td>4.9</td><td>Solo confirmando por WhatsApp</td></tr>
+<tr><td>Ciudad Satélite</td><td>5.3</td><td>No</td></tr>
+<tr><td>Echegaray</td><td>7.6</td><td>No</td></tr>
+<tr><td>Condado de Sayavedra</td><td>8.5</td><td>No</td></tr>
+<tr><td>Interlomas</td><td>17.0</td><td>No</td></tr>
+</tbody></table>
+
+<h2><span class="n">Día 3 · unas 3 horas</span>El formulario de captura</h2>
+<p>Es la pieza que más te va a ahorrar. Se abre en el teléfono mientras hablas por WhatsApp.</p>
+<ol class="pasos">
+<li>En la tabla <code>ordenes</code>, crea una vista de tipo <strong>Form</strong>. Nómbrala "Captura WhatsApp".</li>
+<li>Deja visibles <strong>solo</strong>: canal, cliente, dirección, colonia, km, pago_metodo, notas. Esconde todo lo demás — los tiempos, el folio y el total se llenan solos.</li>
+<li>Pon <code>canal</code> con valor por defecto <strong>WhatsApp</strong>, y <code>estado</code> oculto con valor por defecto <strong>Recibida</strong>.</li>
+<li>En cada campo, escribe la etiqueta como se la vas a preguntar al cliente: "¿A qué número te confirmo?", "¿Calle y número?".</li>
+<li>Guarda el enlace del formulario en la pantalla de inicio del teléfono, como si fuera una app.</li>
+</ol>
+
+<div class="callout"><div class="t rosa">La limitación honesta del día 3</div><p>Un formulario de Airtable <strong>no puede capturar la orden y sus pizzas en una sola pantalla</strong>: los productos viven en otra tabla. Al arrancar vas a crear la orden en el formulario y agregar las pizzas desde el registro, con dos toques más.</p><p>Con 10 pedidos al día eso es perfectamente vivible. Cuando empiece a estorbar, la <strong>captura rápida diseñada a medida</strong> — productos como botones grandes, complementos en el mismo toque, total automático — es la primera cosa que vale la pena programar. Es la fase 1.</p></div>
+
+<h2><span class="n">Día 4 · unas 3 horas</span>La pantalla de comandas</h2>
+<p>Va en la tablet montada. Es la única pantalla que se usa <em>durante</em> el servicio.</p>
+<ol class="pasos">
+<li>En <code>ordenes</code>, crea una vista <strong>Kanban</strong> apilada por el campo <code>estado</code>. Las columnas salen en el orden en que pusiste las opciones del select — de ahí la insistencia del día 1.</li>
+<li>Filtra: solo órdenes de <strong>hoy</strong> y que <strong>no estén</strong> Entregada ni Cancelada. La comanda solo muestra trabajo pendiente.</li>
+<li>Ordena por <code>t_recibida</code> ascendente: lo más viejo arriba.</li>
+<li>En la tarjeta deja visible solo <strong>folio, colonia, total y notas</strong>. Nada más cabe de un vistazo.</li>
+<li>Avanzar una orden = <strong>arrastrar la tarjeta</strong> a la siguiente columna. Ese es el "un toque" de la definición.</li>
+<li>Crea <strong>cuatro automatizaciones</strong>: cuando <code>estado</code> cambia a Confirmada / En horno / En camino / Entregada, escribe la hora actual en <code>t_confirmada</code> / <code>t_horno</code> / <code>t_salida</code> / <code>t_entregada</code>. Con esto los tiempos se miden sin capturar nada.</li>
+<li>Una quinta automatización: al pasar a Entregada, si <code>pago_metodo</code> es Efectivo o Terminal, pon <code>pago_estado</code> en Pagado.</li>
+<li>Abre esa vista en la tablet, en pantalla completa, y deja el dispositivo con la pantalla siempre encendida.</li>
+</ol>
+
+<h3>Las otras dos vistas que necesitas</h3>
+<ul>
+<li><strong>Corte del día</strong> — vista Grid, filtrada a hoy + Entregada, agrupada por <code>pago_metodo</code>, con la suma de <code>total</code> en cada grupo. Ese es tu corte de caja, y no requiere programar nada.</li>
+<li><strong>Ventas por producto</strong> — en <code>orden_items</code>, agrupada por producto con suma de <code>cantidad</code> e <code>importe</code>. Igual para complementos.</li>
+</ul>
+
+<h2><span class="n">Día 5 · 1 hora</span>Prueba en seco, antes de vender</h2>
+<p>No estrenes el sistema con un cliente real. Corre estos cinco casos con datos inventados y bórralos al final:</p>
+<ul class="check">
+<li>Orden normal en Lomas Lindas, efectivo, dos pizzas con complementos → llévala de Recibida a Entregada y verifica que las cuatro horas se escribieron solas.</li>
+<li>Orden en Fuentes de Satélite (3.4 km) → confirma que sabes que va con autorización.</li>
+<li>Orden en Echegaray (7.6 km) → confirma que se rechaza.</li>
+<li>Orden cancelada a medio horno, con motivo → verifica que sale de la comanda y no del historial.</li>
+<li>Revisa el corte del día: ¿el total del sistema es el de tus cinco pruebas?</li>
+</ul>
+
+<div class="callout dough"><div class="t">Si algo falla aquí, arréglalo antes de vender.</div><p>Un error de modelo cuesta media hora el día 5 y una semana de datos sucios el día 30.</p></div>
+
+<h2><span class="n">Semana 2</span>Operar de verdad</h2>
+<p>Ahora todos los pedidos entran al sistema, incluidos los de la app y el sitio — en fase 0 esos se capturan a mano igual que los de WhatsApp, cambiando el <code>canal</code>. Es doble captura, y es temporal: se elimina en fase 1.</p>
+<p>Lleva un <strong>cuaderno de la primera semana</strong> junto a la tablet, y anota solo tres cosas:</p>
+<ol class="pasos">
+<li>Cada vez que el sistema te haga más lento que el papel. <em>Qué</em> te frenó, en cinco palabras.</li>
+<li>Cada dato que quisiste consultar y no estaba.</li>
+<li>Cada pedido que terminó fuera del sistema, y por qué.</li>
+</ol>
+<p>Esas tres listas son las especificaciones de la fase 1. No las adivines de antemano — sale mejor medirlas una semana.</p>
+
+<h2><span class="n">Costo</span>Qué vas a pagar</h2>
+<table><thead><tr><th>Concepto</th><th>Costo aproximado</th><th>Nota</th></tr></thead><tbody>
+<tr><td>Airtable, plan gratuito</td><td>$0</td><td>Limitado en número de registros por base</td></tr>
+<tr><td>Airtable, plan de paga</td><td>~$20 USD / usuario / mes</td><td>Verifica el precio vigente al contratar</td></tr>
+<tr><td>Tablet + teléfono</td><td>Ya los tienes</td><td></td></tr>
+<tr><td>Programación</td><td>$0 en fase 0</td><td>Ese es el punto de esta fase</td></tr>
+</tbody></table>
+<div class="callout warm"><div class="t">Cuenta esto desde ahora</div><p>Con 10 pedidos al día generas del orden de <strong>1,200 registros al mes</strong> entre órdenes, ítems y complementos. El plan gratuito de Airtable se llena rápido con ese ritmo, así que presupuesta el plan de paga desde el primer mes — o exporta y archiva cada mes, que es trabajo manual recurrente y termina olvidándose. Pagar es más barato que perder datos.</p></div>
+
+<h2><span class="n">Después</span>Cuándo dejar de improvisar</h2>
+<p>Vuelve a la definición y pasa a fase 1 cuando se cumpla <strong>cualquiera</strong> de estas:</p>
+<ul>
+<li>La doble captura de app y web te cuesta más de 15 minutos al día.</li>
+<li>Pasas de 40 pedidos diarios.</li>
+<li>Dos personas necesitan usar el sistema al mismo tiempo.</li>
+<li>Un cliente te reclama un pedido que no aparece en el sistema.</li>
+</ul>
+
+<div class="callout"><div class="t rosa">Lo que puedo construir cuando llegues ahí</div><p>Dos pantallas, en el mismo sistema visual que la app y el sitio: <strong>la comanda de cocina a la medida</strong> (columnas por estado, botones de 64 px, color como urgencia contra el tiempo prometido) y <strong>la captura rápida de WhatsApp</strong> (teléfono primero, productos como botones con foto, total calculado solo). Las puedo diseñar antes de que las necesites, para que sepas exactamente a qué le estás apuntando.</p></div>
+
+</doc-page>
+<script src="./doc-page.js"></script>
+</body></html>

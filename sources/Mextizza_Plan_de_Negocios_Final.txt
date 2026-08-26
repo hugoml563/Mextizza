@@ -1,0 +1,311 @@
+Técnica italiana · Alma mexicana
+PLAN DE NEGOCIOS
+Versión Final — 23 de julio de 2026
+Pizzería Dark Kitchen · Col. Lomas Lindas, Atizapán de Zaragoza, Edo. Méx. (CP 52947)
+Fundadores: Hugo Martínez · Ricardo Rodríguez
+
+1. Resumen Ejecutivo
+Mextizza es una pizzería dark-kitchen que fusiona la técnica italiana (masa estilo Nueva York, fermentación fría de 48 horas) con identidad e ingredientes mexicanos, operando desde Col. Lomas Lindas, Atizapán de Zaragoza, Estado de México.
+Equipo Fundador: Hugo Martínez (Logística y Estrategia Comercial) y Ricardo Rodríguez (Chef Ejecutivo y Desarrollo de Producto).
+El negocio inicia con canal directo (WhatsApp Business, sitio web propio, app propia) y un servicio adicional de Catering los fines de semana, usando un horno móvil Gozney XL. Las apps de terceros (UberEats, Rappi, DiDi Food) se contemplan como Fase 2 condicionada, no como parte del lanzamiento.
+Lanzamiento oficial previsto: 1 de septiembre de 2026, tras una fase de pruebas técnicas de masa y horno que inicia la semana del 27 de julio.
+
+2. Identidad de Marca
+Nombre: Mextizza (formato título — solo la M en mayúscula). Wordmark en tipografía Colo Pro, con "Mexti" en dorado masa (#D9A65C) y "zza" en rosa mexicano (#E4007C), sobre fondo negro carbón (#1A1A1A).
+Subtítulo "Pizzería" en blanco hueso, y tagline "Horneada como allá, gozada como acá" en terracota (#C1502E).
+Paleta completa: dorado masa, rosa mexicano, terracota/ladrillo, negro carbón, blanco hueso (#F5F0E8).
+El lockup incluye 5 íconos de ingredientes (tomate, queso, cebolla morada, champiñón, pizza) como firma visual reconocible.
+Estética general: estilo "taller/street art" urbano, materiales honestos (ladrillo, acero, madera) como lenguaje visual para una futura expansión a local físico.
+Ver archivos de marca: logo en SVG/PNG, mockup completo de identidad visual, y guía de aplicación.
+
+3. Propuesta de Valor y Menú
+3.1 Estilo de Producto
+Estilo Nueva York: masa delgada, crujiente en la orilla, flexible al centro. Diferenciador técnico: fermentación fría de 48 horas con temperatura controlada en refrigeración (reemplaza la técnica de biga del concepto original).
+Beneficio al cliente: pizzas ligeras y altamente digeribles — la fermentación larga en frío rompe azúcares y gluten.
+3.2 Menú Final (cerrado)
+Categoría
+Producto(s)
+Starters
+Empanada de Carne Deshebrada · Pizza Rolls
+Mains
+Dos Quesos · Salsa de Vodka · Hawaiana · Pepperoni con Salsa Hot Honey · Jamón Serrano con Arúgula · Cochinita Pibil (rotativa)
+Postre
+Brownie de Chocolate (única opción)
+Precios de venta fijados con base en el rango de mercado local ($190-245 MXN por pizza), verificados contra el costo real de insumos (BOM) para asegurar un food cost saludable (~29%). Ver modelo financiero para el detalle completo por producto.
+
+4. Análisis de Mercado y Competencia
+4.1 TL;DR
+El mercado de pizza en un radio de ~5 km de Lomas Lindas está copado por dos extremos: restaurantes sit-down de horno de leña/estilo italiano artesanal (Italimo, Artigiano, Caciato, ZONA, Italianni's) y cadenas de bajo costo (Little Caesars, Domino's). Ninguno opera como dark kitchen puro 100% delivery, y ninguno ofrece masa delgada estilo Nueva York con fermentación en frío de 48h — ese es el hueco competitivo exacto que Mextizza puede ocupar.
+Radio de reparto recomendado: núcleo de 3 km (meta ≤30 min puerta a puerta) con un tope duro de 5 km, alineado con el estándar histórico de Domino's y la recomendación de Deliverect para dark kitchens.
+Los rivales más fuertes en reputación son Italimo (4.6/5 Tripadvisor, #1 de 77 restaurantes) y Caciato (~4.6 Google), pero ambos son restaurantes de mesa donde el delivery es secundario. La ventaja de Mextizza no está en competir por el comensal de terraza, sino en dominar el canal de entrega con un producto que hoy nadie hace en la zona.
+4.2 Hallazgos Clave
+Diferenciación de producto disponible y defendible: prácticamente todos los competidores artesanales se anuncian como horneados a la leña / estilo italiano. La masa delgada NY con fermentación en frío 48h no tiene equivalente local documentado.
+Nadie es dark-kitchen puro: los negocios con mejor pizza dependen de mesa/terraza; las opciones delivery-first reales son cadenas de precio bajo. Mextizza puede posicionarse en el cuadrante vacío: calidad artesanal + optimizado 100% para entrega.
+La competencia digital independiente es sorprendentemente débil: Italimo (líder de reputación) tiene ~8,000 seguidores en Instagram; Artigiano ~1,215. Una estrategia de contenido consistente puede superar rápidamente a la mayoría.
+Cuidado con homónimos: los perfiles "El Shaddai/Shadday" en redes son de Brasil/Veracruz, y "La Trattoria" de España/Nápoles/Guanajuato — ninguno es el negocio de Atizapán.
+4.3 Competidores Relevantes
+Italimo — El rival de reputación #1
+Dirección: Av. Adolfo Ruiz Cortines 255, Galerías Atizapán, CP 52977.
+Web: italimorestaurante.mx · Instagram: @italimomx (~8,068 seguidores, 64 posts).
+Rating: Tripadvisor 4.6/5, #1 de 77 restaurantes, 272 reseñas; Google ~4.4/5. Precio $$-$$$.
+Tipo: pizza italiana, pasta, buffet, música en vivo. Sit-down con terraza; delivery secundario vía Uber Eats/Rappi.
+Artigiano Pizza Rústica — La mejor pizza artesanal según reseñas
+Dirección: Calzada de los Jinetes 203, local 5, Col. Las Arboledas, CP 52950.
+Web: artigiano.com.mx · Instagram: @artigiano_pr (~1,215 seguidores).
+Rating: Tripadvisor 4.3/5 (40 reseñas), otras fichas 4.5 con ~2,000 reseñas agregadas. Precio $$-$$$.
+Tipo: horno de piedra/leña, masa hecha a mano, delgada y crocante. Ya vende una pizza de jamón serrano con arúgula — conflicto directo con nuestra oferta (ver Análisis de Riesgos).
+Ristorante Caciato
+Dirección: Plaza Centro, Av. Presidente Adolfo López Mateos 45.
+Instagram: @caciatoristoranti. Rating: Google ~4.6/5 (~440 reseñas). Precio $-$$.
+Sit-down familiar, atendido por el chef/dueño. Menú de pizzas $190-$235.
+ZONA Cocina Italiana
+Dirección: Av. Adolfo Ruiz Cortines 245-247, frente a Costco.
+Instagram: @zona.cocinaitaliana · Facebook: ~3,200 seguidores.
+Rating: Tripadvisor 4.5/5. Precio $$-$$$$. Sit-down con bar, música en vivo, terraza.
+Pizzas General Jack
+Dirección: Paseo de las Villas 59, Villas de la Hacienda.
+Rating: Google 4.3/5, 452 reseñas. Precio $-$$. Pizzería-bar sit-down, delivery activo por Uber Eats.
+Shadday's Pizza (El Shadday Pizza)
+Dirección: C. Lázaro Cárdenas 8, Ciudad López Mateos.
+Sin perfil de Instagram verificable de México (los homónimos hallados son de Brasil/Veracruz).
+Rating: Google ~3.9-4.1/5. Precio $. Fuerte componente de delivery/comida rápida.
+Italianni's — Galerías Atizapán (cadena)
+Rating: Google ~3.6/5. Precio $$-$$$. Reputación mixta — no es amenaza de producto.
+Little Caesars / Domino's (cadenas de precio bajo)
+Tres sucursales de Little Caesars cercanas (Plaza Hacienda, Las Alamedas, Lago de Guadalupe) + Domino's Lago de Guadalupe.
+Compiten solo por precio y velocidad, no por calidad artesanal — distinto segmento a Mextizza.
+Otros competidores menores en el radio: Pizzas a la Leña, Pizza Mia, Delipizza, Big Pizza, Charly Pizzas, GoPizza México, entre ~72 pizzerías pequeñas de barrio adicionales — analizadas de forma agregada, ninguna representa amenaza directa (ver Panorama Competitivo).
+4.4 Panorama Competitivo — Lectura Estratégica
+El mapa se divide en tres grupos: (a) artesanales premium sit-down (Italimo, Artigiano, Caciato, ZONA) que ganan en producto y ambiente pero tratan el delivery como accesorio; (b) cadenas de precio (Little Caesars, Domino's) que dominan delivery con producto commodity; y (c) cadena casual (Italianni's) de reputación floja. No hay ningún operador que combine producto artesanal diferenciado con una operación diseñada íntegramente para delivery — que es precisamente el posicionamiento de Mextizza. El estilo NY thin-crust además viaja mejor que la napolitana húmeda de horno de leña, dando a Mextizza una ventaja física real en el canal de entrega.
+4.5 Radio Óptimo de Reparto
+Estándar histórico: Domino's popularizó "30 minutos o menos" como benchmark mental del consumidor.
+Promedio real actual: ~36 minutos en EE.UU. (2023); rango confiable en horas no pico de 30-45 minutos.
+Recomendación para dark kitchens: Deliverect indica un radio ideal de ~3 millas (4.8 km).
+Calidad vs. velocidad: la calidad/temperatura pesa más que la velocidad pura, pero eso presupone un tiempo de tránsito acotado — cada minuto extra degrada la textura de una masa NY.
+Conclusión: núcleo de reparto de 3 km (cubre Lomas de Atizapán, Las Alamedas, Calacoaya y colonias contiguas con ≤30 min) y tope máximo de 5 km solo para pedidos programados o de bajo tráfico.
+4.6 Recomendaciones
+Fase 1 — Lanzamiento: radio de 3 km
+Umbral de éxito: ≥80% de entregas en ≤30 min y ≥90% en ≤35 min (ya integrado en los Criterios de Éxito del Soft Opening).
+Empaque anti-humedad obligatorio — ataca la queja documentada contra Artigiano (orillas quemadas/pizza reblandecida a domicilio).
+Construir marca en Instagram/TikTok con el ángulo diferenciador claro: masa NY con fermentación fría 48h.
+Fase 2 — Expansión condicionada
+Ampliar a 5 km solo si el tiempo mediano de entrega en el núcleo se mantiene ≤30 min.
+Si >20% de entregas superan los 35 min → reducir radio o reforzar logística antes de crecer.
+Si un competidor artesanal lanza un sub-brand delivery-first de masa delgada → acelerar diferenciación con menú NY exclusivo.
+4.7 Caveats del Análisis
+Ratings de Google obtenidos de portales que replican la nota (Restaurant Guru, Gastroranking, Tripadvisor) — pueden variar ±0.1-0.3.
+Seguidores de Instagram: varios conteos exactos no pudieron confirmarse por bloqueo de acceso automatizado de la plataforma.
+Homónimos descartados explícitamente: "El Shaddai/Shadday" de Brasil/Veracruz, "La Trattoria" de España/Nápoles/Guanajuato.
+Benchmarks de tiempo de entrega provienen de datos de EE.UU. y guías globales — el tráfico y topografía de Atizapán pueden requerir más prudencia con el tope de 5 km.
+
+5. Estrategia de Marketing y Modelo de Ventas
+Reemplaza la estrategia original ("Caballo de Troya" con apps desde el día 1).
+5.1 Canales de Venta (Fase 1 — Lanzamiento)
+Canal Directo — WhatsApp Business con menú digital automatizado (OlaClick/Ateb), sin comisión de plataforma.
+Sitio Web Propio — vitrina y pedidos en línea.
+App Propia — pedidos recurrentes para clientes frecuentes de la zona.
+Catering — nuevo canal de fin de semana, horno móvil Gozney XL, cobro por persona.
+5.2 Logística de Entrega
+Flotillas locales ("mandaditos") pagadas por viaje ($35-45 MXN), dentro del radio de reparto de 3-5 km.
+5.3 Marketing de Lanzamiento
+Campañas de marketing local geolocalizadas en la zona de reparto.
+Fotografía profesional de producto para todos los canales.
+Ángulo diferenciador: masa NY con fermentación fría 48h — argumento que ningún competidor local usa.
+El Catering funciona también como canal de adquisición indirecta de alto impacto.
+5.4 Fase 2 — Apps de Terceros (Condicionada)
+Activar UberEats, Rappi o DiDi Food deja de ser automático. Se evalúa solo tras alcanzar de forma sostenida el volumen objetivo de 14 pedidos/día por canal directo, y validar que el margen de contribución (50.3%) justifique absorber la comisión de hasta 30%.
+
+6. Plan de Operaciones y Cadena de Suministro
+6.1 El Reto Operativo Central
+La masa tiene un lead time de 48 horas en fermentación fría. La planeación de producción debe anticiparse dos días completos. El Catering exige 4 días mínimos de anticipación.
+6.2 Un Solo Horno, Dos Canales
+El horno Gozney XL sirve tanto a delivery como a Catering. Reglas operativas: el día de un evento de catering se cierra la dark kitchen por completo; máximo 1 evento de catering por día (límite físico); el horno es un punto único de falla que requiere seguro y plan de respaldo.
+6.3 Modelo de Capacidad y Producción de Masa
+Refrigeración: se necesita el doble de capacidad para masa "en proceso" comparado con un ciclo de 24h (partida a cotizar en CAPEX).
+Masa Base y Salsa de Tomate son recetas fijas compartidas — costeadas en el BOM del modelo financiero.
+Jitomate: insumo de mayor riesgo de variación de costo — monitorear precio SNIIM/CNE antes de cada ciclo de producción.
+6.4 Empaque
+Caja de cartón corrugado Kraft con orificios de ventilación e inserts, branding Mextizza aplicado (costo real incluido en el BOM, ~$8-9.5 MXN por pizza).
+6.5 Infraestructura Tecnológica
+POS/KDS integrando los canales directos en una sola pantalla.
+Monitor KDS para medir tiempos de horneado/ensamblaje (objetivo ≤10 min/pizza).
+Gestión de inventario EOD, cruzando ventas reales contra el BOM para detectar mermas.
+6.6 Protocolo Operativo del Catering
+Checklist de transporte y montaje del Gozney XL (objetivo ≤30-40 min).
+Ricardo cocina personalmente cada evento — punto único de falla sin respaldo capacitado todavía (ver Sección 10, Riesgos).
+Menú de catering: cliente elige de todo el menú + ensalada César o Spring Mix.
+
+7. Servicio de Catering
+Canal nuevo, activo los fines de semana. Formato de horno en vivo (Gozney XL), no entrega — justifica un precio superior al de delivery estándar.
+Parámetro
+Valor
+Precio por persona
+$235 MXN
+Mínimo de personas
+20
+Máximo de personas (1 horno)
+30
+Anticipo requerido
+30%
+Anticipación mínima
+4 días
+Food cost del catering
+23.8%
+Margen mensual estimado (4 eventos, 22 personas prom.)
++$14,166 MXN
+El precio y el mínimo de personas se calibraron para que el margen del evento supere siempre el margen de un día normal de delivery (el día se cierra por completo para el evento). Detalle completo de fórmulas en el modelo financiero (hoja Catering).
+
+8. Plan Financiero (Resumen)
+8.1 Metodología de Precio
+Los precios se fijan con base en el mercado local, no como margen sobre costo. El costo de insumos (BOM) se usa como verificador de que el food cost resultante sea saludable.
+8.2 Cifras Clave
+Métrica
+Valor
+Ticket promedio por orden
+$335 MXN
+Food cost (delivery)
+28.9%
+Margen de contribución por orden
+50.3%
+Inversión inicial total (CAPEX)
+$49,832 MXN
+Punto de equilibrio
+~0.55 pedidos/día
+Recuperación de inversión (payback)
+~0.85 meses
+Flujo acumulado proyectado a 12 meses
++$564,125 MXN
+Modelo financiero completo (BOM ingrediente por ingrediente, CAPEX, OPEX, precios de menú, punto de equilibrio, flujo de caja a 12 meses, y catering) disponible como archivo Excel interactivo separado.
+
+9. Análisis de Riesgos
+9.1 Riesgos Operativos
+Riesgo
+Prob.
+Impacto
+Mitigación
+Ricardo como punto único de falla (cocina cada evento de catering)
+Media-Alta
+Alto
+Capacitar un segundo cocinero de respaldo antes de escalar catering
+Horno Gozney XL como activo único (delivery + catering)
+Baja-Media
+Muy Alto
+Seguro de equipo, mantenimiento preventivo, identificar horno de respaldo en renta
+Masa reblandecida en trayectos largos
+Media
+Medio
+Validar con stress test antes del lanzamiento (Fase 3)
+9.2 Riesgos de Cadena de Suministro
+Riesgo
+Prob.
+Impacto
+Mitigación
+Volatilidad del precio del jitomate ($11-80/kg en 2026)
+Alta
+Medio-Alto
+Contrato de precio con proveedor, monitoreo semanal SNIIM/CNE
+Sin proveedores reales cotizados todavía
+Alta
+Medio
+Cotizar con 2-3 proveedores por insumo antes del lanzamiento
+9.3 Riesgos Financieros
+Riesgo
+Prob.
+Impacto
+Mitigación
+Supuestos de OPEX en $0 (sueldos, marketing) no sostenibles
+Alta
+Medio
+Revisar mes a mes contra gasto real; colchón de capital de trabajo
+Rampa de adopción más lenta que la proyectada
+Media
+Alto
+Monitoreo semanal de pedidos/día vs. proyección
+9.4 Riesgos de Mercado
+Riesgo
+Prob.
+Impacto
+Mitigación
+Conflicto de producto con Artigiano (jamón serrano/arúgula)
+Alta
+Medio
+Diferenciar receta o evaluar sustitución — decisión pendiente
+Crecimiento lento sin apps de terceros
+Media
+Medio
+Criterio ya definido para activar Fase 2 si es necesario
+9.5 Riesgos Legales y Regulatorios
+Riesgo
+Prob.
+Impacto
+Mitigación
+Sin seguro de responsabilidad civil para catering
+Alta
+Alto
+Contratar antes del primer evento — no operar sin esto
+Marca Mextizza sin registrar ante el IMPI
+Media
+Alto (largo plazo)
+Iniciar trámite en paralelo a la Fase 1
+
+10. Estructura Legal y Societaria
+Decisión pendiente — los socios aún no han constituido sociedad. Esta sección es una guía orientativa para cuando decidan avanzar, no una asesoría legal formal.
+10.1 Figuras Legales a Considerar
+S.A.S. — rápida y barata, constitución en línea, límite de ingresos anuales ~5 millones MXN.
+S. de R.L. de C.V. — más flexible en reparto de utilidades no proporcional al capital.
+10.2 Temas a Acordar Antes de Constituir
+% de participación entre Hugo y Ricardo.
+Roles y facultades de decisión.
+Sueldo vs. utilidades.
+Propiedad intelectual de recetas y marca.
+Cláusula de salida (buy-sell agreement) y de no competencia.
+Mecanismo de desempate y periodo mínimo de permanencia.
+10.3 Pasos Prácticos
+Convenio entre socios (documento privado, aparte del acta constitutiva).
+Constitución de la sociedad, inscripción en el Registro Público de Comercio, RFC, cuenta bancaria empresarial.
+Registro de la marca Mextizza ante el IMPI.
+
+11. Cronograma de Lanzamiento
+Fase
+Periodo
+Enfoque Principal
+1 — Pruebas Técnicas
+27 jul – 7 ago
+Masa (fermentación fría 48h), horno Gozney XL, recetas, trámites legales
+2 — Montaje Operativo
+10 – 21 ago
+POS/KDS, empaque, fotografía, canales directos, protocolo catering
+3 — Soft Opening
+24 – 30 ago
+Stress test, Friends & Family, piloto de catering
+4 — Lanzamiento Oficial
+1 sep en adelante
+Apertura canal directo, marketing local, catering activo
+
+12. Criterios de Éxito del Soft Opening
+12.1 Stress Test — Textura de la Masa
+Corteza crujiente al llegar, sin humedad visible en la caja, temperatura >50°C al centro.
+Mínimo 5 viajes de 30 min con al menos 2 sabores distintos.
+Umbral: máximo 1 de cada 5 pruebas puede fallar antes de requerir ajuste de empaque.
+12.2 Simulacro Friends & Family
+Mínimo 15-20 pedidos simulados en una sola sesión, con 3-4 pedidos simultáneos.
+Tiempo objetivo: ≤10 minutos desde pedido hasta pizza lista.
+Máximo 5% de errores de pedido.
+12.3 Piloto de Catering
+Montaje del Gozney XL en sitio: ≤30-40 minutos.
+12.4 Criterio de Entrega
+≥80% de entregas en ≤30 min, ≥90% en ≤35 min.
+12.5 Regla de Decisión
+🟢 Todo cumplido → Lanzamiento según cronograma.
+🟡 1-2 fallas leves → Ajustar y repetir esa prueba, sin mover la fecha.
+🔴 Fallas repetidas de textura o >10% de errores → Posponer 1-2 semanas.
+
+13. Próximos Pasos y Pendientes Abiertos
+Cotizar proveedores reales para los insumos clave (jitomate, quesos, embutidos).
+Contratar seguro de responsabilidad civil (catering) y de equipo (horno).
+Definir régimen fiscal y flujo de facturación.
+Registrar la marca Mextizza ante el IMPI.
+Definir calendario de contenido para redes sociales.
+Decidir la estructura societaria definitiva (Sección 10) cuando los socios estén listos.
+Capacitar a un segundo cocinero como respaldo de Ricardo para el catering.
+— Fin del documento —

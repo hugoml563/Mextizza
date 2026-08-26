@@ -1,0 +1,66 @@
+/* Mextizza — color foundations. Base values first, semantic aliases after.
+   The system is LIGHT-DOMINANT: the primary logo is the black wordmark on paper,
+   so blanco hueso is the default surface and negro carbón is ink, not background. */
+:root{
+/* Base palette (canonical hexes from the brand plan — unchanged) */
+--rosa-mexicano:#E4007C;
+--dorado-masa:#D9A65C;
+--terracota-horno:#C1502E;
+--negro-carbon:#1A1A1A;
+--blanco-hueso:#F5F0E8;
+--gris-asfalto:#4A4A4A;
+--gris-texto:#6b6b6b;
+--blanco:#FFFFFF;
+
+/* Paper tints — the light system needs more than one step of "light" */
+--hueso-hondo:#EDE6DA;
+--hueso-linea:#E2D9C9;
+
+/* Accent tints, mixed toward paper. Soft fills for banners, badges and rows. */
+--rosa-tinte:#FBE0EF;
+--dorado-tinte:#F7EBD8;
+--terracota-tinte:#F6E2DA;
+
+/* Tints & alphas */
+--negro-08:rgba(0,0,0,0.08);
+--negro-12:rgba(0,0,0,0.12);
+--negro-15:rgba(26,26,26,0.15);
+--blanco-08:rgba(255,255,255,0.08);
+--blanco-15:rgba(255,255,255,0.15);
+--blanco-85:rgba(255,255,255,0.85);
+
+/* Semantic surfaces */
+--surface-page:var(--blanco-hueso);
+--surface-card:var(--blanco);
+--surface-sunken:var(--hueso-hondo);
+--surface-inverse:var(--negro-carbon);
+--surface-muted:var(--gris-asfalto);
+--surface-accent:var(--rosa-mexicano);
+--surface-accent-soft:var(--rosa-tinte);
+--surface-warm:var(--terracota-horno);
+--surface-warm-soft:var(--terracota-tinte);
+--surface-dough:var(--dorado-tinte);
+
+/* Semantic text */
+--text-body:var(--negro-carbon);
+--text-muted:var(--gris-texto);
+--text-on-inverse:var(--blanco-hueso);
+--text-accent:var(--rosa-mexicano);
+--text-price:var(--terracota-horno);
+--text-wordmark:var(--negro-carbon);
+--text-wordmark-accent:var(--negro-carbon);
+
+/* Semantic lines */
+--border-hairline:1px solid var(--negro-08);
+--border-paper:1px solid var(--hueso-linea);
+--border-dashed:1px dashed var(--negro-12);
+--border-frame:2px solid var(--negro-carbon);
+--border-rule:3px solid var(--negro-carbon);
+--border-stamp:2px solid var(--gris-asfalto);
+
+/* Interaction */
+--accent-hover:#C70069;
+--accent-press:#A80059;
+--inverse-hover:#2A2A2A;
+--focus-ring:0 0 0 3px rgba(228,0,124,0.35);
+}

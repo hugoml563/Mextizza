@@ -1,0 +1,51 @@
+/* Mextizza — type foundations. Three roles: Colo Pro (display), Bungee (labels), Oswald (everything functional). */
+:root{
+--font-display:'Colo Pro','Oswald',sans-serif;
+--font-label:'Bungee','Oswald',cursive;
+--font-body:'Oswald','Helvetica Neue',Arial,sans-serif;
+--font-mono:'Courier New',Courier,monospace;
+
+/* Sizes lifted verbatim from the identity mockup */
+--fs-11:11px;
+--fs-115:11.5px;
+--fs-12:12px;
+--fs-125:12.5px;
+--fs-13:13px;
+--fs-14:14px;
+--fs-15:15px;
+--fs-24:24px;
+--fs-26:26px;
+--fs-38:38px;
+--fs-62:62px;
+
+--lh-tight:1.2; /* @kind font */
+--lh-label:1.3; /* @kind font */
+--lh-snug:1.4; /* @kind font */
+--lh-body:1.5; /* @kind font */
+--lh-loose:1.6; /* @kind font */
+
+--ls-0:0; /* @kind font */
+--ls-half:0.5px; /* @kind font */
+--ls-1:1px; /* @kind font */
+--ls-2:2px; /* @kind font */
+
+--fw-light:300; /* @kind font */
+--fw-regular:400; /* @kind font */
+--fw-medium:500; /* @kind font */
+--fw-semibold:600; /* @kind font */
+--fw-bold:700; /* @kind font */
+--fw-black:800; /* @kind font */
+
+/* Semantic type roles */
+--type-wordmark:var(--fw-regular) var(--fs-62)/var(--lh-tight) var(--font-display); /* @kind font */
+--type-display:var(--fw-regular) var(--fs-38)/var(--lh-tight) var(--font-display); /* @kind font */
+--type-heading:var(--fw-regular) var(--fs-26)/var(--lh-tight) var(--font-display); /* @kind font */
+--type-eyebrow:var(--fw-regular) var(--fs-11)/var(--lh-label) var(--font-label); /* @kind font */
+--type-shout:var(--fw-regular) var(--fs-24)/var(--lh-label) var(--font-label); /* @kind font */
+--type-body:var(--fw-regular) var(--fs-15)/var(--lh-body) var(--font-body); /* @kind font */
+--type-body-sm:var(--fw-regular) var(--fs-14)/var(--lh-body) var(--font-body); /* @kind font */
+--type-caption:var(--fw-regular) var(--fs-12)/var(--lh-loose) var(--font-body); /* @kind font */
+--type-item-name:var(--fw-bold) var(--fs-14)/var(--lh-snug) var(--font-body); /* @kind font */
+--type-price:var(--fw-black) var(--fs-14)/var(--lh-snug) var(--font-body); /* @kind font */
+--type-mono:var(--fw-regular) var(--fs-12)/var(--lh-snug) var(--font-mono); /* @kind font */
+}
