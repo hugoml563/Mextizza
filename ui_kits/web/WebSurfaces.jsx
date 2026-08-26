@@ -59,6 +59,31 @@ function WebHeader({ count, onCart, onNav, view }) {
 }
 
 function WebHero({ onNav }) {
+  const [mounted, setMounted] = React.useState(false);
+  const imgRef = React.useRef(null);
+
+  React.useEffect(() => {
+    const id = setTimeout(() => setMounted(true), 30);
+    return () => clearTimeout(id);
+  }, []);
+
+  React.useEffect(() => {
+    const el = imgRef.current;
+    const canTilt = el && window.matchMedia('(hover: hover) and (pointer: fine)').matches
+      && !window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (!canTilt) return;
+    const handleMove = e => {
+      const r = el.getBoundingClientRect();
+      const px = (e.clientX - r.left) / r.width - 0.5;
+      const py = (e.clientY - r.top) / r.height - 0.5;
+      el.style.transform = `rotateX(${(-py * 8).toFixed(2)}deg) rotateY(${(px * 8).toFixed(2)}deg) scale(1.015)`;
+    };
+    const handleLeave = () => { el.style.transform = ''; };
+    el.addEventListener('mousemove', handleMove);
+    el.addEventListener('mouseleave', handleLeave);
+    return () => { el.removeEventListener('mousemove', handleMove); el.removeEventListener('mouseleave', handleLeave); };
+  }, []);
+
   return (
     <section style={{ background: 'var(--surface-page)', paddingTop: 72, paddingBottom: 84 }}>
       <div className="web-hero-grid" style={{ ...webShell.page, display: 'grid', gridTemplateColumns: '1.1fr 0.9fr', gap: 56, alignItems: 'center' }}>
@@ -91,12 +116,13 @@ function WebHero({ onNav }) {
             ))}
           </div>
         </div>
-        <div style={{ position: 'relative' }}>
-          <img src="../../assets/photos/pizza-serranita.jpeg" alt="Pizza Serranita recién salida del horno de piedra" style={{
-            width: '100%', aspectRatio: '4/5', objectFit: 'cover',
-            borderRadius: 'var(--radius-lg)', boxShadow: 'var(--shadow-raised)'
-          }} />
-          <div style={{ position: 'absolute', right: -16, bottom: -16, background: 'var(--surface-page)', borderRadius: '50%' }}>
+        <div className="hero-photo-frame" style={{ position: 'relative' }}>
+          <img ref={imgRef} src="../../assets/photos/pizza-serranita.jpeg" alt="Pizza Serranita recién salida del horno de piedra"
+            className="hero-photo-img" data-mounted={mounted} style={{
+              width: '100%', aspectRatio: '4/5', objectFit: 'cover',
+              borderRadius: 'var(--radius-lg)', boxShadow: 'var(--shadow-raised)'
+            }} />
+          <div className="hero-stamp" data-mounted={mounted} style={{ position: 'absolute', right: -16, bottom: -16, background: 'var(--surface-page)', borderRadius: '50%' }}>
             <Stamp lines={['Hecho a', 'mano', 'en 48h']} size={116} />
           </div>
         </div>
