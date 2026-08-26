@@ -8,13 +8,13 @@
 const MEXTIZZA_MENU = [
   { cat: 'Del horno', title: 'Pizzas', note: 'Todas nuestras pizzas están hechas en horno de piedra, con una masa fermentada en frío 48 horas.', items: [
     { id: 'serranita', name: 'Pizza Serranita', desc: 'Jamón Serrano, arúgula fresca, queso parmesano y salsa de tomate artesanal.', price: 245, photo: '../../assets/photos/pizza-serranita.jpeg' },
-    { id: 'aloha', name: 'Pizza Aloha', desc: 'La clásica que divide opiniones, jamón, piña y salsa de tomate artesanal. Sin pena.', price: 180 },
+    { id: 'aloha', name: 'Pizza Aloha', desc: 'La clásica que divide opiniones, jamón, piña y salsa de tomate artesanal. Sin pena.', price: 180, photo: '../../assets/photos/pizza-aloha.jpeg' },
     { id: 'newyork', name: 'Pizza Newyork', desc: 'Salsa de tomate artesanal a la vodka con crema. Una capa de sabor que no vas a adivinar a la primera mordida.', price: 170, photo: '../../assets/photos/pizza-newyork.jpeg' },
     { id: 'provola', name: 'Pizza Provola', desc: 'Doble queso, doble provolone. Simple y por eso funciona.', price: 195, photo: '../../assets/photos/pizza-provola.jpeg' },
     { id: 'chisi', name: 'Pizza Chisi', desc: 'Queso monterrey, provolone, parmesano y un toque de gorgonzola… Para los que no negocian con el queso.', price: 215, photo: '../../assets/photos/pizza-chisi.jpeg' },
     { id: 'combinada', name: 'Pizza Combinada', desc: 'Jamón, champiñones, pimiento y cebolla. Para los que quieren un poco de todo.', price: 190 },
-    { id: 'roni', name: 'Pizza Roni', desc: 'Peperoni clásico, sin vueltas. La que pides cuando ya sabes lo que quieres.', price: 210 },
-    { id: 'traviesa', name: 'Pizza Traviesa', desc: 'Peperoni con un toque de miel picante… dulce, picante y un poco atrevida.', price: 215 }
+    { id: 'roni', name: 'Pizza Roni', desc: 'Peperoni clásico, sin vueltas. La que pides cuando ya sabes lo que quieres.', price: 210, photo: '../../assets/photos/pizza-roni.jpeg' },
+    { id: 'traviesa', name: 'Pizza Traviesa', desc: 'Peperoni con un toque de miel picante… dulce, picante y un poco atrevida.', price: 215, photo: '../../assets/photos/pizza-traviesa.jpeg' }
   ]},
   { cat: 'Rotativa', title: 'Pizza especial del mes', note: 'Una sola pizza rota cada mes. Ésta es la de ahora.', items: [
     { id: 'cochinita', name: 'Pizza Cochinita', desc: 'Lo que le da nombre a la casa: cochinita pibil, frijoles refritos y cebolla morada.', price: 270, flag: 'Del mes' }
