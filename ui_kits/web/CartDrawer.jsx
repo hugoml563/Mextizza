@@ -1,6 +1,6 @@
 const { Wordmark, TapeStripe, FramedPanel, Button, Badge, Field, QtyStepper, MenuItem, Icon, StatusNote } = window.MextizzaDesignSystem_8a35ee;
 
-function CartDrawer({ open, lines, onClose, onQty, step, setStep }) {
+function CartDrawer({ open, lines, onClose, onQty, step, setStep, canal = 'Web' }) {
   const [ready, setReady] = React.useState(false);
   const [attempted, setAttempted] = React.useState(false);
   const [entrega, setEntrega] = React.useState(null);
@@ -15,7 +15,7 @@ function CartDrawer({ open, lines, onClose, onQty, step, setStep }) {
     setError(null);
     setEnviando(true);
     try {
-      const { folio } = await mextizzaCrearOrden({ canal: 'Web', lines, entrega });
+      const { folio } = await mextizzaCrearOrden({ canal, lines, entrega });
       setFolio(folio);
       setStep('done');
     } catch (err) {

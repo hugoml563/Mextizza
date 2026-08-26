@@ -47,6 +47,8 @@ body{background:var(--surface-page)}
 }
 </style></head><body><div id="root"></div><script type="text/babel">
 function Site(){
+  const modoCaptura=new URLSearchParams(location.search).get('canal')==='whatsapp';
+  const canal=modoCaptura?'WhatsApp':'Web';
   const [lines,setLines]=React.useState([]);
   const [open,setOpen]=React.useState(false);
   const [step,setStep]=React.useState('cart');
@@ -71,6 +73,7 @@ function Site(){
     return ()=>io.disconnect();
   },[]);
   return <>
+    {modoCaptura && <div style={{background:'#1A1A1A',color:'#F5F0E8',textAlign:'center',padding:'8px 12px',fontFamily:'var(--font-label)',fontSize:11,letterSpacing:1,textTransform:'uppercase'}}>Modo captura · WhatsApp — este pedido se registra como canal WhatsApp</div>}
     <WebHeader count={count} view={view} onNav={nav} onCart={()=>{setOpen(true);setStep('cart');}} />
     <WebHero onNav={nav} />
     <WebMenu onAdd={add} onCustomize={setCustom} added={added} />
@@ -79,7 +82,7 @@ function Site(){
     <WebSocial />
     <WebFooter />
     <AddonsDialog item={custom} onClose={()=>setCustom(null)} onAdd={add} />
-    <CartDrawer open={open} lines={lines} step={step} setStep={setStep} onQty={qty} onClose={()=>setOpen(false)} />
+    <CartDrawer open={open} lines={lines} step={step} setStep={setStep} onQty={qty} onClose={()=>setOpen(false)} canal={canal} />
   </>;
 }
 ReactDOM.createRoot(document.getElementById('root')).render(<Site/>);
