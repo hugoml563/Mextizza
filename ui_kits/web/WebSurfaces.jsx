@@ -228,6 +228,10 @@ function WebSocial() {
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12 }}>
           <SectionLabel>En redes</SectionLabel>
           <div style={{ display: 'flex', alignItems: 'center', gap: 18, marginBottom: 20 }}>
+            <a href={mextizzaWhatsappLink('Hola, quiero hacer un pedido en Mextizza.')} target="_blank" rel="noopener" aria-label="Mextizza en WhatsApp"
+              style={{ display: 'flex', alignItems: 'center', borderBottom: 'none', color: 'var(--negro-carbon)' }}>
+              <Icon name="whatsapp" size={18} />
+            </a>
             <a href={MEXTIZZA_SOCIAL.instagram} target="_blank" rel="noopener" aria-label="Mextizza en Instagram"
               style={{ display: 'flex', alignItems: 'center', gap: 7, borderBottom: 'none', color: 'var(--negro-carbon)' }}>
               <Icon name="instagram" size={18} />
@@ -258,6 +262,10 @@ function WebFooter() {
         <div>
           <Lockup variant="completo" tone="hueso" size={36} align="left" base="../../" subtitle="Pizzería" tagline="Horneada como allá, gozada como acá" />
           <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginTop: 22 }}>
+            <a href={mextizzaWhatsappLink('Hola, quiero hacer un pedido en Mextizza.')} target="_blank" rel="noopener" aria-label="Mextizza en WhatsApp"
+              className="footer-icon-link" style={{ display: 'flex', color: 'var(--blanco-hueso)', opacity: 0.8, borderBottom: 'none' }}>
+              <Icon name="whatsapp" size={19} />
+            </a>
             <a href={MEXTIZZA_SOCIAL.instagram} target="_blank" rel="noopener" aria-label="Mextizza en Instagram"
               className="footer-icon-link" style={{ display: 'flex', color: 'var(--blanco-hueso)', opacity: 0.8, borderBottom: 'none' }}>
               <Icon name="instagram" size={19} />

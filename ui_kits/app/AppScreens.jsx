@@ -98,6 +98,10 @@ function AppWelcome({ onEnter }) {
             {MEXTIZZA_FACTS.estilo}. Entregamos en Lomas Lindas y colonias vecinas.
           </p>
           <div style={{ display: 'flex', alignItems: 'center', gap: 18, marginTop: 22 }}>
+            <a href={mextizzaWhatsappLink('Hola, quiero hacer un pedido en Mextizza.')} target="_blank" rel="noopener" aria-label="Mextizza en WhatsApp"
+              style={{ display: 'flex', color: 'var(--text-muted)', borderBottom: 'none' }}>
+              <Icon name="whatsapp" size={20} />
+            </a>
             <a href={MEXTIZZA_SOCIAL.instagram} target="_blank" rel="noopener" aria-label="Mextizza en Instagram"
               style={{ display: 'flex', color: 'var(--text-muted)', borderBottom: 'none' }}>
               <Icon name="instagram" size={20} />
