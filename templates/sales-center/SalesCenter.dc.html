@@ -62,12 +62,13 @@
 <div style="flex:1;overflow:auto;padding-bottom:18px;display:flex;flex-direction:column;gap:12px">
 <sc-for list="{{ visibles }}" as="o" hint-placeholder-count="4">
 <div style="background:#FFFFFF;border:2px solid #1A1A1A;border-radius:8px;display:flex;align-items:stretch;overflow:hidden">
-<sc-if value="{{ o.esNuevo }}" hint-placeholder-val="{{ true }}"><div style="flex:none;width:10px;background:#E4007C"></div></sc-if>
+<sc-if value="{{ o.esRecibida }}" hint-placeholder-val="{{ true }}"><div style="flex:none;width:10px;background:#E4007C"></div></sc-if>
+<sc-if value="{{ o.esConfirmada }}" hint-placeholder-val="{{ false }}"><div style="flex:none;width:10px;background:#CD0070"></div></sc-if>
 <sc-if value="{{ o.esHorno }}" hint-placeholder-val="{{ false }}"><div style="flex:none;width:10px;background:#C1502E"></div></sc-if>
-<sc-if value="{{ o.esListo }}" hint-placeholder-val="{{ false }}"><div style="flex:none;width:10px;background:#D9A65C"></div></sc-if>
-<sc-if value="{{ o.esReparto }}" hint-placeholder-val="{{ false }}"><div style="flex:none;width:10px;background:#4A4A4A"></div></sc-if>
-<sc-if value="{{ o.esEntregado }}" hint-placeholder-val="{{ false }}"><div style="flex:none;width:10px;background:#2E7D5B"></div></sc-if>
-<sc-if value="{{ o.esCancelado }}" hint-placeholder-val="{{ false }}"><div style="flex:none;width:10px;background:#9a9a9a"></div></sc-if>
+<sc-if value="{{ o.esLista }}" hint-placeholder-val="{{ false }}"><div style="flex:none;width:10px;background:#D9A65C"></div></sc-if>
+<sc-if value="{{ o.esCamino }}" hint-placeholder-val="{{ false }}"><div style="flex:none;width:10px;background:#4A4A4A"></div></sc-if>
+<sc-if value="{{ o.esEntregada }}" hint-placeholder-val="{{ false }}"><div style="flex:none;width:10px;background:#2E7D5B"></div></sc-if>
+<sc-if value="{{ o.esCancelada }}" hint-placeholder-val="{{ false }}"><div style="flex:none;width:10px;background:#9a9a9a"></div></sc-if>
 <div style="flex:1;display:flex;gap:18px;align-items:stretch;padding:14px 16px;min-width:0">
 <div style="flex:1;min-width:0">
 <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
@@ -150,30 +151,33 @@
 </div>
 </x-dc>
 <script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:1194,&quot;height&quot;:834},&quot;verCorte&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;Tablero&quot;},&quot;umbralAlerta&quot;:{&quot;editor&quot;:&quot;int&quot;,&quot;default&quot;:20,&quot;min&quot;:5,&quot;max&quot;:60,&quot;step&quot;:5,&quot;unit&quot;:&quot;min&quot;,&quot;tsType&quot;:&quot;number&quot;,&quot;section&quot;:&quot;Tablero&quot;},&quot;fecha&quot;:{&quot;editor&quot;:&quot;text&quot;,&quot;default&quot;:&quot;Martes 25 de agosto&quot;,&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Tablero&quot;}}">
-const FLUJO = ['nuevo','horno','listo','reparto','entregado'];
+const FLUJO = ['recibida','confirmada','horno','lista','camino','entregada'];
 const META = {
-  nuevo:    { label:'Nuevos',     color:'#E4007C', cta:'A horno' },
-  horno:    { label:'En horno',   color:'#C1502E', cta:'Listo' },
-  listo:    { label:'Listos',     color:'#D9A65C', cta:'Salió' },
-  reparto:  { label:'En reparto', color:'#4A4A4A', cta:'Entregado' },
-  entregado:{ label:'Entregados', color:'#2E7D5B', cta:'Cerrado' },
-  cancelado:{ label:'Cancelados', color:'#9a9a9a', cta:'—' }
+  recibida:  { label:'Recibidas',  color:'#E4007C', cta:'Confirmar' },
+  confirmada:{ label:'Confirmadas',color:'#CD0070', cta:'A horno' },
+  horno:     { label:'En horno',   color:'#C1502E', cta:'Lista' },
+  lista:     { label:'Listas',     color:'#D9A65C', cta:'Salió' },
+  camino:    { label:'En camino',  color:'#4A4A4A', cta:'Entregada' },
+  entregada: { label:'Entregadas', color:'#2E7D5B', cta:'Cerrado' },
+  cancelada: { label:'Canceladas', color:'#9a9a9a', cta:'—' }
 };
 const CANAL_BG = { Web:'#C1502E', App:'#E4007C', WhatsApp:'#2E7D5B', Mostrador:'#4A4A4A' };
 const money = n => '$' + n.toLocaleString('es-MX');
 
 const SEED = [
-  { folio:'#1042', cliente:'Ana Rueda',      canal:'WhatsApp', tipo:'Reparto',   destino:'Av. Hidalgo 214 · Zona 2', pago:'Efectivo',  pagado:false, min:3,  estado:'nuevo',
+  { folio:'#1043', cliente:'Mario Cobos',    canal:'WhatsApp', tipo:'Reparto',   destino:'Av. Lomas Lindas 9 · Zona 1', pago:'Efectivo',  pagado:false, min:1,  estado:'recibida',
+    lineas:[{cant:1,nombre:'Pizza Aloha',importe:180}] },
+  { folio:'#1042', cliente:'Ana Rueda',      canal:'WhatsApp', tipo:'Reparto',   destino:'Av. Hidalgo 214 · Zona 2', pago:'Efectivo',  pagado:false, min:3,  estado:'confirmada',
     lineas:[{cant:2,nombre:'Pizza Roni',importe:420},{cant:1,nombre:'Aderezo de la casa',importe:25}] },
   { folio:'#1041', cliente:'Beto Salgado',   canal:'App',      tipo:'Reparto',   destino:'Calle Morelos 88 · Zona 1', pago:'Tarjeta en línea', pagado:true, min:9, estado:'horno',
     lineas:[{cant:1,nombre:'Pizza Chisi',importe:215},{cant:1,nombre:'Orilla rellena',importe:45},{cant:2,nombre:'Refresco 600ml',importe:60}] },
-  { folio:'#1040', cliente:'Lucía Ontiveros',canal:'Web',      tipo:'Mostrador', destino:'Pasa por ella 8:40 pm', pago:'Transferencia', pagado:true, min:16, estado:'listo',
+  { folio:'#1040', cliente:'Lucía Ontiveros',canal:'Web',      tipo:'Mostrador', destino:'Pasa por ella 8:40 pm', pago:'Transferencia', pagado:true, min:16, estado:'lista',
     lineas:[{cant:1,nombre:'Pizza Traviesa',importe:215}] },
-  { folio:'#1039', cliente:'Familia Zúñiga', canal:'WhatsApp', tipo:'Reparto',   destino:'Priv. del Roble 12 · Zona 3', pago:'Terminal', pagado:false, min:24, estado:'reparto',
+  { folio:'#1039', cliente:'Familia Zúñiga', canal:'WhatsApp', tipo:'Reparto',   destino:'Priv. del Roble 12 · Zona 3', pago:'Terminal', pagado:false, min:24, estado:'camino',
     lineas:[{cant:3,nombre:'Pizza Combinada',importe:570},{cant:1,nombre:'Pizza Aloha',importe:180}] },
-  { folio:'#1038', cliente:'Diego Farías',   canal:'App',      tipo:'Mostrador', destino:'Recogida 8:05 pm', pago:'Efectivo', pagado:true, min:41, estado:'entregado',
+  { folio:'#1038', cliente:'Diego Farías',   canal:'App',      tipo:'Mostrador', destino:'Recogida 8:05 pm', pago:'Efectivo', pagado:true, min:41, estado:'entregada',
     lineas:[{cant:1,nombre:'Pizza Provola',importe:195},{cant:1,nombre:'Aderezo de la casa',importe:25}] },
-  { folio:'#1037', cliente:'Karla Méndez',   canal:'Web',      tipo:'Reparto',   destino:'Fuera de radio · cancelada', pago:'Tarjeta en línea', pagado:false, min:52, estado:'cancelado',
+  { folio:'#1037', cliente:'Karla Méndez',   canal:'Web',      tipo:'Reparto',   destino:'Fuera de radio · cancelada', pago:'Tarjeta en línea', pagado:false, min:52, estado:'cancelada',
     lineas:[{cant:1,nombre:'Pizza Serranita',importe:245}] }
 ];
 
@@ -197,7 +201,7 @@ class Component extends DCLogic {
   cancelar(i) {
     this.setState(s => {
       const ordenes = s.ordenes.slice();
-      ordenes[i] = { ...ordenes[i], estado: 'cancelado' };
+      ordenes[i] = { ...ordenes[i], estado: 'cancelada' };
       return { ordenes };
     });
   }
@@ -205,12 +209,12 @@ class Component extends DCLogic {
   renderVals() {
     const { ordenes, filtro } = this.state;
     const umbral = this.props.umbralAlerta ?? 20;
-    const activos = ['nuevo','horno','listo','reparto'];
+    const activos = ['recibida','confirmada','horno','lista','camino'];
 
     const grupos = { activas: ordenes.filter(o => activos.includes(o.estado)).length };
     for (const k of Object.keys(META)) grupos[k] = ordenes.filter(o => o.estado === k).length;
 
-    const claves = ['activas', ...FLUJO, 'cancelado'];
+    const claves = ['activas', ...FLUJO, 'cancelada'];
     const filtros = claves.map(k => ({
       label: k === 'activas' ? 'En curso' : META[k].label,
       count: grupos[k],
@@ -226,8 +230,8 @@ class Component extends DCLogic {
         const tarde = o.min >= umbral && activos.includes(o.estado);
         return {
           folio: o.folio, cliente: o.cliente, canal: o.canal, tipo: o.tipo, destino: o.destino,
-          esNuevo: o.estado === 'nuevo', esHorno: o.estado === 'horno', esListo: o.estado === 'listo',
-          esReparto: o.estado === 'reparto', esEntregado: o.estado === 'entregado', esCancelado: o.estado === 'cancelado',
+          esRecibida: o.estado === 'recibida', esConfirmada: o.estado === 'confirmada', esHorno: o.estado === 'horno',
+          esLista: o.estado === 'lista', esCamino: o.estado === 'camino', esEntregada: o.estado === 'entregada', esCancelada: o.estado === 'cancelada',
           esWeb: o.canal === 'Web', esApp: o.canal === 'App', esWhats: o.canal === 'WhatsApp', esMostradorCanal: o.canal === 'Mostrador',
           espera: o.min + ' min',
           tarde, aTiempo: !tarde,
@@ -242,7 +246,7 @@ class Component extends DCLogic {
         };
       });
 
-    const cerradas = ordenes.filter(o => o.estado !== 'cancelado');
+    const cerradas = ordenes.filter(o => o.estado !== 'cancelada');
     const suma = cerradas.reduce((s,o) => s + this.total(o), 0);
 
     const porPago = {};
@@ -269,7 +273,7 @@ class Component extends DCLogic {
       corte: {
         ordenes: cerradas.length,
         total: money(suma),
-        activas: ordenes.filter(o => o.estado === 'horno' || o.estado === 'nuevo').length,
+        activas: ordenes.filter(o => o.estado === 'horno' || o.estado === 'confirmada').length,
         efectivo: money(efectivo),
         pagos: Object.values(porPago).map(p => ({ nombre: p.nombre, n: p.n, monto: money(p.monto) })),
         productos: orden.map(([nombre, n]) => ({ nombre, n, pct: Math.round(n / tope * 100) })),
