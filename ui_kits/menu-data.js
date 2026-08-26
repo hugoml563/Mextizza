@@ -66,6 +66,6 @@ function mextizzaWhatsappLink(mensaje) {
 }
 const MEXTIZZA_SOCIAL = {
   instagram: 'https://www.instagram.com/mextizzamx/',
-  facebook: 'https://www.facebook.com/search/top?q=mextizza'
+  facebook: 'https://www.facebook.com/profile.php?id=61592120047383'
 };
 Object.assign(window, { MEXTIZZA_MENU, MEXTIZZA_ADDONS, MEXTIZZA_FACTS, mextizzaWhatsappLink, MEXTIZZA_SOCIAL });
