@@ -28,7 +28,8 @@ const SHEETS = {
   itemComplementos: 'item_complementos',
   productos: 'productos',
   complementos: 'complementos',
-  clientes: 'clientes'
+  clientes: 'clientes',
+  catering: 'catering'
 };
 
 const ESTADOS_ACTIVOS = ['recibida', 'confirmada', 'horno', 'lista', 'camino'];
@@ -46,6 +47,7 @@ const ITEM_COMPLEMENTOS_HEADERS = ['linea_id', 'complemento_id', 'complemento_no
 const PRODUCTOS_HEADERS = ['id', 'nombre', 'descripcion', 'categoria', 'precio', 'activo', 'foto'];
 const COMPLEMENTOS_HEADERS = ['id', 'nombre', 'grupo', 'precio', 'activo'];
 const CLIENTES_HEADERS = ['telefono', 'nombre', 'direccion', 'colonia', 'notas', 'pedidos'];
+const CATERING_HEADERS = ['folio', 'nombre', 'telefono', 'personas', 'fecha_evento', 'notas', 'estado', 'creado_en'];
 
 /** Corre esto UNA vez para crear las 6 pestañas con encabezados. No borra datos si ya existen. */
 function configurarHojas() {
@@ -56,7 +58,8 @@ function configurarHojas() {
     [SHEETS.itemComplementos, ITEM_COMPLEMENTOS_HEADERS],
     [SHEETS.productos, PRODUCTOS_HEADERS],
     [SHEETS.complementos, COMPLEMENTOS_HEADERS],
-    [SHEETS.clientes, CLIENTES_HEADERS]
+    [SHEETS.clientes, CLIENTES_HEADERS],
+    [SHEETS.catering, CATERING_HEADERS]
   ];
   specs.forEach(([nombre, headers]) => {
     let sh = ss.getSheetByName(nombre);
@@ -125,6 +128,9 @@ function doPost(e) {
         break;
       case 'cancelar':
         result = cancelarOrden_(body);
+        break;
+      case 'solicitar_catering':
+        result = crearSolicitudCatering_(body);
         break;
       default:
         throw new Error('Acción desconocida: ' + body.action);
@@ -235,6 +241,14 @@ function cancelarOrden_(body) {
   sh.getRange(index, ORDENES_HEADERS.indexOf('estado') + 1).setValue('cancelada');
   sh.getRange(index, ORDENES_HEADERS.indexOf('motivo_cancelacion') + 1).setValue(body.motivo || '');
   return { folio: body.folio, estado: 'cancelada' };
+}
+
+/** body: { token, nombre, telefono, personas, fecha_evento, notas } */
+function crearSolicitudCatering_(body) {
+  const sh = sheet_(SHEETS.catering);
+  const folio = 'CAT-' + String(sh.getLastRow()).padStart(4, '0');
+  sh.appendRow([folio, body.nombre || '', body.telefono || '', body.personas || '', body.fecha_evento || '', body.notas || '', 'nueva', new Date()]);
+  return { folio };
 }
 
 function findOrdenRow_(sh, folio) {

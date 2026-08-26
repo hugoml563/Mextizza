@@ -67,5 +67,8 @@ if (!window.__mextizzaSheetsConfigLoaded) {
   const mextizzaListarAbiertas = () => mextizzaApiGet('listar_abiertas');
   const mextizzaListarHoy = () => mextizzaApiGet('listar_hoy');
 
-  Object.assign(window, { mextizzaCrearOrden, mextizzaAvanzarEstado, mextizzaCancelarOrden, mextizzaListarAbiertas, mextizzaListarHoy });
+  const mextizzaSolicitarCatering = ({ nombre, telefono, personas, fecha_evento, notas }) =>
+    mextizzaApiPost('solicitar_catering', { nombre, telefono, personas, fecha_evento, notas });
+
+  Object.assign(window, { mextizzaCrearOrden, mextizzaAvanzarEstado, mextizzaCancelarOrden, mextizzaListarAbiertas, mextizzaListarHoy, mextizzaSolicitarCatering });
 }

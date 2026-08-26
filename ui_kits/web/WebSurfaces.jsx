@@ -1,5 +1,5 @@
 const DS = window.MextizzaDesignSystem_8a35ee;
-const { Wordmark, SectionLabel, Stamp, TapeStripe, DotRow, FramedPanel, SocialTile, Button, Badge, Field, QtyStepper, MenuCard, MenuItem, Icon } = DS;
+const { Wordmark, SectionLabel, Stamp, TapeStripe, DotRow, FramedPanel, SocialTile, Button, Badge, Field, QtyStepper, MenuCard, MenuItem, Icon, StatusNote } = DS;
 
 /* Resilient reference: the compiled bundle may lag a fresh component by one build. */
 const ART_FALLBACK = {
@@ -187,6 +187,36 @@ function WebProcess() {
 
 function WebCatering() {
   const c = MEXTIZZA_FACTS.catering;
+  const [nombre, setNombre] = React.useState('');
+  const [tel, setTel] = React.useState('');
+  const [personas, setPersonas] = React.useState('20 personas');
+  const [fecha, setFecha] = React.useState('');
+  const [attempted, setAttempted] = React.useState(false);
+  const [enviando, setEnviando] = React.useState(false);
+  const [error, setError] = React.useState(null);
+  const [folio, setFolio] = React.useState(null);
+
+  const digits = tel.replace(/\D/g, '');
+  const telOk = digits.length === 10;
+  const valid = !!nombre.trim() && telOk && !!fecha.trim();
+
+  const solicitar = async () => {
+    if (!valid) return setAttempted(true);
+    setError(null);
+    setEnviando(true);
+    try {
+      const r = await mextizzaSolicitarCatering({ nombre, telefono: digits, personas, fecha_evento: fecha });
+      setFolio(r.folio);
+      window.open(mextizzaWhatsappLink(
+        `Hola, soy ${nombre}. Quiero cotizar catering para ${personas} el ${fecha}. Mi teléfono es ${digits}.`
+      ), '_blank', 'noopener');
+    } catch (e) {
+      setError('No se pudo enviar la solicitud. Intenta de nuevo o escríbenos directo por WhatsApp.');
+    } finally {
+      setEnviando(false);
+    }
+  };
+
   return (
     <section id="catering" className="reveal" style={{ background: 'var(--surface-page)', paddingBottom: 76 }}>
       <div style={webShell.page}>
@@ -210,10 +240,32 @@ function WebCatering() {
           </FramedPanel>
           <FramedPanel variant="info">
             <h3 style={{ fontFamily: 'var(--font-display)', fontSize: 23, marginBottom: 14 }}>Solicitar fecha</h3>
-            <Field label="Nombre" placeholder="Tu nombre" />
-            <Field label="Personas" as="select" options={['20 personas', '22 personas', '25 personas', '30 personas']} style={{ marginTop: 12 }} />
-            <Field label="Fecha del evento" placeholder="dd / mm / aaaa" hint={`Necesitamos ${c.aviso} de anticipación mínima.`} style={{ marginTop: 12 }} />
-            <Button tone="warm" block style={{ marginTop: 18 }}>Solicitar cotización</Button>
+            {folio ? (
+              <StatusNote tone="ok" title="Solicitud enviada">
+                Folio {folio}. Te vamos a contactar por WhatsApp al número que dejaste para cuadrar el menú y el resto de los detalles.
+              </StatusNote>
+            ) : (
+              <>
+                <Field label="Nombre" required placeholder="Tu nombre" value={nombre}
+                  onChange={e => setNombre(e.target.value)}
+                  invalid={attempted && !nombre.trim()} />
+                <Field label="Teléfono" required type="tel" placeholder="55 1234 5678" value={tel}
+                  onChange={e => setTel(e.target.value)}
+                  invalid={attempted && !telOk}
+                  hint={attempted && !telOk ? 'Necesitamos 10 dígitos para contactarte por WhatsApp.' : 'Te contactamos por WhatsApp a este número para cuadrar los detalles.'}
+                  style={{ marginTop: 12 }} />
+                <Field label="Personas" as="select" value={personas} onChange={e => setPersonas(e.target.value)}
+                  options={['20 personas', '22 personas', '25 personas', '30 personas']} style={{ marginTop: 12 }} />
+                <Field label="Fecha del evento" required placeholder="dd / mm / aaaa" value={fecha}
+                  onChange={e => setFecha(e.target.value)}
+                  invalid={attempted && !fecha.trim()}
+                  hint={`Necesitamos ${c.aviso} de anticipación mínima.`} style={{ marginTop: 12 }} />
+                {error && <StatusNote tone="block" title="Algo falló" style={{ marginTop: 12 }}>{error}</StatusNote>}
+                <Button tone="warm" block disabled={enviando} onClick={solicitar} style={{ marginTop: 18 }}>
+                  {enviando ? 'Enviando…' : 'Solicitar cotización'}
+                </Button>
+              </>
+            )}
           </FramedPanel>
         </div>
       </div>
