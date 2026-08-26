@@ -9,3 +9,6 @@ h1,h2,h3{font-family:var(--font-display);font-weight:var(--fw-regular);line-heig
 p{margin:0;text-wrap:pretty}
 img,svg{display:block;max-width:100%}
 button{font-family:var(--font-body)}
+@media (prefers-reduced-motion: reduce){
+  *,*::before,*::after{animation-duration:0.01ms!important;animation-iteration-count:1!important;transition-duration:0.01ms!important;scroll-behavior:auto!important}
+}

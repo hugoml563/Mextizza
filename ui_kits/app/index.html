@@ -1,0 +1,28 @@
+<!-- @dsCard group="App" viewport="1600x1900" name="App Mextizza" subtitle="Seis pantallas: bienvenida, menú, detalle, complementos, pedido y seguimiento — click-through" -->
+<!doctype html><html lang="es"><head><meta charset="utf-8"><title>App Mextizza</title><link rel="stylesheet" href="../../styles.css"><script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script><script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script><script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script><script src="../../_ds_bundle.js"></script><script src="../menu-data.js"></script><script src="../delivery-zone.js"></script><script type="text/babel" src="../DeliveryForm.jsx"></script><script type="text/babel" src="AppScreens.jsx"></script><style>body{background:var(--negro-carbon);margin:0;padding:32px 24px;display:flex;justify-content:center}.stage{display:flex;gap:24px;flex-wrap:wrap;justify-content:center;align-items:flex-start}.slot{display:grid;gap:10px;justify-items:center}.cap{font-family:var(--font-label);font-size:10px;letter-spacing:1px;text-transform:uppercase;color:rgba(245,240,232,.55)}</style></head><body><div id="root"></div><script type="text/babel">
+function AppKit(){
+  const p=MEXTIZZA_MENU[0].items.find(x=>x.id==='provola');
+  const [lines,setLines]=React.useState([{...p,key:p.id,qty:1}]);
+  const [tab,setTab]=React.useState('menu');
+  const [detail,setDetail]=React.useState(MEXTIZZA_MENU[1].items.find(x=>x.id==='cochinita'));
+  const [added,setAdded]=React.useState(null);
+  const [custom,setCustom]=React.useState(MEXTIZZA_MENU[0].items.find(x=>x.id==='roni'));
+  const add=(it,q=1,extra={})=>{
+    const key=it.id+(extra.addonNames&&extra.addonNames.length?':'+extra.addonNames.join('|'):'');
+    setLines(ls=>{const e=ls.find(l=>l.key===key);return e?ls.map(l=>l.key===key?{...l,qty:l.qty+q}:l):[...ls,{...it,...extra,key,qty:q}];});
+    setAdded(it.id);setTimeout(()=>setAdded(null),900);
+  };
+  const qty=(key,n)=>setLines(ls=>n<=0?ls.filter(l=>l.key!==key):ls.map(l=>l.key===key?{...l,qty:n}:l));
+  const count=lines.reduce((s,l)=>s+l.qty,0);
+  const S=({label,children})=><div className="slot"><div>{children}</div><div className="cap">{label}</div></div>;
+  return <div className="stage">
+    <S label="Bienvenida"><AppWelcome onEnter={()=>setTab('menu')} /></S>
+    <S label="Menú"><AppMenu onAdd={add} added={added} onOpen={setDetail} tab={tab} onTab={setTab} count={count} /></S>
+    <S label="Detalle de producto"><AppDetail item={detail} onBack={()=>setTab('menu')} onAdd={add} onCustomize={setCustom} /></S>
+    <S label="Complementos"><AppAddons item={custom} onBack={()=>setTab('menu')} onAdd={add} /></S>
+    <S label="Pedido y entrega"><AppCart lines={lines} onQty={qty} onConfirm={()=>setTab('seguir')} tab="pedido" onTab={setTab} count={count} /></S>
+    <S label="Seguimiento"><AppTracking tab="seguir" onTab={setTab} count={count} /></S>
+  </div>;
+}
+ReactDOM.createRoot(document.getElementById('root')).render(<AppKit/>);
+</script></body></html>

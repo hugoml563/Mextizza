@@ -14,9 +14,11 @@ export function MenuItem({ name, description, price, photo, photoSize = 64, badg
         cursor: clickable ? 'pointer' : 'default',
         transition: 'color var(--dur-fast) var(--ease-standard)', ...style
       }}>
-      {photo && <img src={photo} alt="" style={{
+      {photo && <img src={photo} alt={name} style={{
         width: photoSize, height: photoSize, flex: 'none', objectFit: 'cover',
-        borderRadius: 'var(--radius-sm)', border: 'var(--border-paper)'
+        borderRadius: 'var(--radius-sm)', border: 'var(--border-paper)',
+        transform: hover ? 'scale(1.06)' : 'scale(1)',
+        transition: 'transform var(--dur-base) var(--ease-standard)'
       }} />}
       <div style={{ minWidth: 0, flex: 1 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>

@@ -186,7 +186,7 @@ function SectionLabel({
   rule = true,
   style
 }) {
-  return /*#__PURE__*/React.createElement("div", {
+  return /*#__PURE__*/React.createElement("h2", {
     style: {
       display: 'flex',
       alignItems: 'center',
@@ -896,14 +896,16 @@ function MenuItem({
     }
   }, photo && /*#__PURE__*/React.createElement("img", {
     src: photo,
-    alt: "",
+    alt: name,
     style: {
       width: photoSize,
       height: photoSize,
       flex: 'none',
       objectFit: 'cover',
       borderRadius: 'var(--radius-sm)',
-      border: 'var(--border-paper)'
+      border: 'var(--border-paper)',
+      transform: hover ? 'scale(1.06)' : 'scale(1)',
+      transition: 'transform var(--dur-base) var(--ease-standard)'
     }
   }), /*#__PURE__*/React.createElement("div", {
     style: {

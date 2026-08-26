@@ -1,0 +1,68 @@
+<!-- @dsCard group="Sitio web" viewport="1280x760" name="Sitio web Mextizza" subtitle="Home con menú, proceso, catering y carrito de pedido interactivo" -->
+<!doctype html><html lang="es"><head><meta charset="utf-8"><title>Mextizza — Pizzería</title><link rel="stylesheet" href="../../styles.css"><script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script><script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script><script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script><script src="../../_ds_bundle.js"></script><script src="../menu-data.js"></script><script src="../delivery-zone.js"></script><script type="text/babel" src="WebSurfaces.jsx"></script><script type="text/babel" src="../DeliveryForm.jsx"></script><script type="text/babel" src="CartDrawer.jsx"></script><script type="text/babel" src="AddonsDialog.jsx"></script><style>
+body{background:var(--surface-page)}
+@media (max-width: 860px) {
+  .web-hero-grid{grid-template-columns:1fr !important}
+  .web-menu-grid{grid-template-columns:1fr !important}
+  .web-menu-grid > div:first-child{grid-row:auto !important}
+  .web-catering-grid{grid-template-columns:1fr !important}
+  .web-process-grid{grid-template-columns:1fr !important}
+  .web-social-grid{grid-template-columns:1fr 1fr !important}
+  .web-footer-grid{grid-template-columns:1fr !important;gap:32px !important}
+}
+@media (max-width: 640px) {
+  .web-header-inner{height:auto !important;flex-wrap:wrap;row-gap:12px;padding-top:14px;padding-bottom:14px}
+  .web-header-nav{gap:16px !important;flex-wrap:wrap}
+  .web-addons-grid{grid-template-columns:1fr !important}
+}
+@media (max-width: 420px) {
+  .web-social-grid{grid-template-columns:1fr !important}
+}
+.footer-wa-link{transition:opacity var(--dur-fast) var(--ease-standard);cursor:pointer}
+.footer-wa-link:hover{opacity:1 !important}
+.web-menu-grid > div{transition:transform var(--dur-base) var(--ease-standard),box-shadow var(--dur-base) var(--ease-standard)}
+.web-menu-grid > div:hover{transform:translateY(-4px);box-shadow:var(--shadow-raised)}
+.reveal{opacity:0;transform:translateY(16px);transition:opacity .4s ease-out,transform .4s ease-out}
+.reveal.is-visible{opacity:1;transform:none}
+@media (prefers-reduced-motion: reduce) {
+  .reveal{opacity:1 !important;transform:none !important;transition:none !important}
+}
+</style></head><body><div id="root"></div><script type="text/babel">
+function Site(){
+  const [lines,setLines]=React.useState([]);
+  const [open,setOpen]=React.useState(false);
+  const [step,setStep]=React.useState('cart');
+  const [added,setAdded]=React.useState(null);
+  const [view,setView]=React.useState('home');
+  const [custom,setCustom]=React.useState(null);
+  const add=(it,q=1,extra={})=>{
+    const key=it.id+(extra.addonNames&&extra.addonNames.length?':'+extra.addonNames.join('|'):'');
+    setLines(ls=>{const e=ls.find(l=>l.key===key);return e?ls.map(l=>l.key===key?{...l,qty:l.qty+q}:l):[...ls,{...it,...extra,key,qty:q}];});
+    setAdded(it.id); setTimeout(()=>setAdded(null),900); setStep('cart'); setCustom(null);
+  };
+  const qty=(key,n)=>setLines(ls=>n<=0?ls.filter(l=>l.key!==key):ls.map(l=>l.key===key?{...l,qty:n}:l));
+  const nav=(k)=>{setView(k);const el=document.getElementById(k);window.scrollTo({top:el?el.offsetTop-90:0,behavior:'smooth'});};
+  const count=lines.reduce((s,l)=>s+l.qty,0);
+  React.useEffect(()=>{
+    const els=document.querySelectorAll('.reveal');
+    if(!els.length) return;
+    const io=new IntersectionObserver(entries=>{
+      entries.forEach(e=>{ if(e.isIntersecting){ e.target.classList.add('is-visible'); io.unobserve(e.target); } });
+    },{threshold:0.15,rootMargin:'0px 0px -60px 0px'});
+    els.forEach(el=>io.observe(el));
+    return ()=>io.disconnect();
+  },[]);
+  return <>
+    <WebHeader count={count} view={view} onNav={nav} onCart={()=>{setOpen(true);setStep('cart');}} />
+    <WebHero onNav={nav} />
+    <WebMenu onAdd={add} onCustomize={setCustom} added={added} />
+    <WebProcess />
+    <WebCatering />
+    <WebSocial />
+    <WebFooter />
+    <AddonsDialog item={custom} onClose={()=>setCustom(null)} onAdd={add} />
+    <CartDrawer open={open} lines={lines} step={step} setStep={setStep} onQty={qty} onClose={()=>setOpen(false)} />
+  </>;
+}
+ReactDOM.createRoot(document.getElementById('root')).render(<Site/>);
+</script></body></html>

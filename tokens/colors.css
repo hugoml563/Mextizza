@@ -4,6 +4,8 @@
 :root{
 /* Base palette (canonical hexes from the brand plan — unchanged) */
 --rosa-mexicano:#E4007C;
+/* Same hue, calibrated for 4.5:1 on --surface-page: raw rosa-mexicano only hits ~4.03:1 as small text on blanco-hueso. */
+--rosa-mexicano-texto:#CD0070;
 --dorado-masa:#D9A65C;
 --terracota-horno:#C1502E;
 --negro-carbon:#1A1A1A;
@@ -45,7 +47,7 @@
 --text-body:var(--negro-carbon);
 --text-muted:var(--gris-texto);
 --text-on-inverse:var(--blanco-hueso);
---text-accent:var(--rosa-mexicano);
+--text-accent:var(--rosa-mexicano-texto);
 --text-price:var(--terracota-horno);
 --text-wordmark:var(--negro-carbon);
 --text-wordmark-accent:var(--negro-carbon);
