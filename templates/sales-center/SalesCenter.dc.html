@@ -66,7 +66,7 @@
 
 <div style="flex:1;overflow:auto;padding-bottom:18px;display:flex;flex-direction:column;gap:12px">
 <sc-for list="{{ visibles }}" as="o" hint-placeholder-count="4">
-<div style="background:#FFFFFF;border:2px solid #1A1A1A;border-radius:8px;display:flex;align-items:stretch;overflow:hidden">
+<div style="flex:none;background:#FFFFFF;border:2px solid #1A1A1A;border-radius:8px;display:flex;align-items:stretch;overflow:hidden">
 <sc-if value="{{ o.esRecibida }}" hint-placeholder-val="{{ true }}"><div style="flex:none;width:10px;background:#E4007C"></div></sc-if>
 <sc-if value="{{ o.esConfirmada }}" hint-placeholder-val="{{ false }}"><div style="flex:none;width:10px;background:#CD0070"></div></sc-if>
 <sc-if value="{{ o.esHorno }}" hint-placeholder-val="{{ false }}"><div style="flex:none;width:10px;background:#C1502E"></div></sc-if>
