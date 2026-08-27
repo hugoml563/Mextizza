@@ -3285,7 +3285,8 @@ const MEXTIZZA_MENU = [{
     id: 'combinada',
     name: 'Pizza Combinada',
     desc: 'JamÃ³n, champiÃ±ones, pimiento y cebolla. Para los que quieren un poco de todo.',
-    price: 229
+    price: 229,
+    photo: '../../assets/photos/pizza-combinada.jpeg'
   }, {
     id: 'roni',
     name: 'Pizza Roni',
@@ -3315,22 +3316,26 @@ const MEXTIZZA_MENU = [{
     id: 'chocolatoso',
     name: 'Brownie',
     desc: '',
-    price: 40
+    price: 40,
+    photo: '../../assets/photos/brownie.jpg'
   }, {
     id: 'refresco-coca',
     name: 'Refresco Coca-Cola',
     desc: '600 ml',
-    price: 35
+    price: 35,
+    photo: '../../assets/photos/cocacola.jpg'
   }, {
     id: 'refresco-sprite',
     name: 'Refresco Sprite',
     desc: '600 ml',
-    price: 35
+    price: 35,
+    photo: '../../assets/photos/sprite.jpg'
   }, {
     id: 'agua',
     name: 'Agua Mineral',
     desc: '',
-    price: 35
+    price: 35,
+    photo: '../../assets/photos/agua-mineral.jpg'
   }]
 }];
 // Complementos por pizza. Los precios son INFERIDOS del BOM (costo de insumo x margen

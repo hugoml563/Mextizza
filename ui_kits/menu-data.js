@@ -12,7 +12,7 @@ const MEXTIZZA_MENU = [
     { id: 'newyork', name: 'Pizza Newyork', desc: 'Salsa de tomate artesanal a la vodka con crema. Una capa de sabor que no vas a adivinar a la primera mordida.', price: 199, photo: '../../assets/photos/pizza-newyork.jpeg' },
     { id: 'provola', name: 'Pizza Provola', desc: 'Doble queso, doble provolone. Simple y por eso funciona.', price: 229, photo: '../../assets/photos/pizza-provola.jpeg' },
     { id: 'chisi', name: 'Pizza Chisi', desc: 'Queso monterrey, provolone, parmesano y un toque de gorgonzola… Para los que no negocian con el queso.', price: 219, photo: '../../assets/photos/pizza-chisi.jpeg' },
-    { id: 'combinada', name: 'Pizza Combinada', desc: 'Jamón, champiñones, pimiento y cebolla. Para los que quieren un poco de todo.', price: 229 },
+    { id: 'combinada', name: 'Pizza Combinada', desc: 'Jamón, champiñones, pimiento y cebolla. Para los que quieren un poco de todo.', price: 229, photo: '../../assets/photos/pizza-combinada.jpeg' },
     { id: 'roni', name: 'Pizza Roni', desc: 'Peperoni clásico, sin vueltas. La que pides cuando ya sabes lo que quieres.', price: 189, photo: '../../assets/photos/pizza-roni.jpeg' },
     { id: 'traviesa', name: 'Pizza Traviesa', desc: 'Peperoni con un toque de miel picante… dulce, picante y un poco atrevida.', price: 199, photo: '../../assets/photos/pizza-traviesa.jpeg' }
   ]},
@@ -20,10 +20,10 @@ const MEXTIZZA_MENU = [
     { id: 'cochinita', name: 'Pizza Cochinita', desc: 'Lo que le da nombre a la casa: cochinita pibil, frijoles refritos y cebolla morada.', price: 229, flag: 'Del mes' }
   ]},
   { cat: 'Para cerrar', title: 'Postres y bebidas', items: [
-    { id: 'chocolatoso', name: 'Brownie', desc: '', price: 40 },
-    { id: 'refresco-coca', name: 'Refresco Coca-Cola', desc: '600 ml', price: 35 },
-    { id: 'refresco-sprite', name: 'Refresco Sprite', desc: '600 ml', price: 35 },
-    { id: 'agua', name: 'Agua Mineral', desc: '', price: 35 }
+    { id: 'chocolatoso', name: 'Brownie', desc: '', price: 40, photo: '../../assets/photos/brownie.jpg' },
+    { id: 'refresco-coca', name: 'Refresco Coca-Cola', desc: '600 ml', price: 35, photo: '../../assets/photos/cocacola.jpg' },
+    { id: 'refresco-sprite', name: 'Refresco Sprite', desc: '600 ml', price: 35, photo: '../../assets/photos/sprite.jpg' },
+    { id: 'agua', name: 'Agua Mineral', desc: '', price: 35, photo: '../../assets/photos/agua-mineral.jpg' }
   ]}
 ];
 // Complementos por pizza. Los precios son INFERIDOS del BOM (costo de insumo x margen
