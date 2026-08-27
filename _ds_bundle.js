@@ -3256,46 +3256,46 @@ const MEXTIZZA_MENU = [{
     id: 'serranita',
     name: 'Pizza Serranita',
     desc: 'JamÃ³n Serrano, arÃºgula fresca, queso parmesano y salsa de tomate artesanal.',
-    price: 245,
+    price: 229,
     photo: '../../assets/photos/pizza-serranita.jpeg'
   }, {
     id: 'aloha',
     name: 'Pizza Aloha',
     desc: 'La clÃ¡sica que divide opiniones, jamÃ³n, piÃ±a y salsa de tomate artesanal. Sin pena.',
-    price: 180
+    price: 189
   }, {
     id: 'newyork',
     name: 'Pizza Newyork',
     desc: 'Salsa de tomate artesanal a la vodka con crema. Una capa de sabor que no vas a adivinar a la primera mordida.',
-    price: 170,
+    price: 199,
     photo: '../../assets/photos/pizza-newyork.jpeg'
   }, {
     id: 'provola',
     name: 'Pizza Provola',
     desc: 'Doble queso, doble provolone. Simple y por eso funciona.',
-    price: 195,
+    price: 229,
     photo: '../../assets/photos/pizza-provola.jpeg'
   }, {
     id: 'chisi',
     name: 'Pizza Chisi',
     desc: 'Queso monterrey, provolone, parmesano y un toque de gorgonzolaâ€¦ Para los que no negocian con el queso.',
-    price: 215,
+    price: 219,
     photo: '../../assets/photos/pizza-chisi.jpeg'
   }, {
     id: 'combinada',
     name: 'Pizza Combinada',
     desc: 'JamÃ³n, champiÃ±ones, pimiento y cebolla. Para los que quieren un poco de todo.',
-    price: 190
+    price: 229
   }, {
     id: 'roni',
     name: 'Pizza Roni',
     desc: 'Peperoni clÃ¡sico, sin vueltas. La que pides cuando ya sabes lo que quieres.',
-    price: 210
+    price: 189
   }, {
     id: 'traviesa',
     name: 'Pizza Traviesa',
     desc: 'Peperoni con un toque de miel picanteâ€¦ dulce, picante y un poco atrevida.',
-    price: 215
+    price: 199
   }]
 }, {
   cat: 'Rotativa',
@@ -3305,7 +3305,7 @@ const MEXTIZZA_MENU = [{
     id: 'cochinita',
     name: 'Pizza Cochinita',
     desc: 'Lo que le da nombre a la casa: cochinita pibil, frijoles refritos y cebolla morada.',
-    price: 270,
+    price: 229,
     flag: 'Del mes'
   }]
 }, {
@@ -3313,14 +3313,19 @@ const MEXTIZZA_MENU = [{
   title: 'Postres y bebidas',
   items: [{
     id: 'chocolatoso',
-    name: 'Chocolatoso',
-    desc: 'Brownie',
+    name: 'Brownie',
+    desc: '',
     price: 40
   }, {
-    id: 'soda',
-    name: 'Soda Italiana',
-    desc: 'Fresa y LimÃ³n',
-    price: 45
+    id: 'refresco-coca',
+    name: 'Refresco Coca-Cola',
+    desc: '600 ml',
+    price: 35
+  }, {
+    id: 'refresco-sprite',
+    name: 'Refresco Sprite',
+    desc: '600 ml',
+    price: 35
   }, {
     id: 'agua',
     name: 'Agua Mineral',
