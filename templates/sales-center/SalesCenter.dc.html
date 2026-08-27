@@ -139,7 +139,7 @@
 <sc-for list="{{ corte.productos }}" as="pr" hint-placeholder-count="4">
 <div style="margin-bottom:9px">
 <div style="display:flex;justify-content:space-between;font-size:12.5px;font-weight:700"><span>{{ pr.nombre }}</span><span>{{ pr.n }}</span></div>
-<svg viewBox="0 0 100 7" preserveAspectRatio="none" style="display:block;width:100%;height:7px;margin-top:4px;border-radius:99px;overflow:hidden"><rect x="0" y="0" width="100" height="7" fill="rgba(0,0,0,0.08)"></rect><rect x="0" y="0" width="{{ pr.pct }}" height="7" fill="#E4007C"></rect></svg>
+<div style="width:100%;height:7px;margin-top:4px;border-radius:99px;overflow:hidden;background:rgba(0,0,0,0.08)"><div style="{{ pr.barStyle }}"></div></div>
 </div>
 </sc-for>
 
@@ -290,7 +290,10 @@ class Component extends DCLogic {
         activas: ordenes.filter(o => o.estado === 'horno' || o.estado === 'confirmada').length,
         efectivo: money(efectivo),
         pagos: Object.values(porPago).map(p => ({ nombre: p.nombre, n: p.n, monto: money(p.monto) })),
-        productos: orden.map(([nombre, n]) => ({ nombre, n, pct: Math.round(n / tope * 100) })),
+        productos: orden.map(([nombre, n]) => {
+          const pct = Math.round(n / tope * 100);
+          return { nombre, n, barStyle: `display:block;width:${pct}%;height:7px;border-radius:99px;background:#E4007C` };
+        }),
         canales: Object.entries(canales).map(([nombre, n]) => ({ nombre, n }))
       }
     };
