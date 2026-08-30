@@ -169,8 +169,13 @@ const META = {
 const CANAL_BG = { Web:'#C1502E', App:'#E4007C', WhatsApp:'#2E7D5B', Mostrador:'#4A4A4A' };
 const money = n => '$' + n.toLocaleString('es-MX');
 
+const fechaLarga = d => {
+  const s = d.toLocaleDateString('es-MX', { weekday: 'long', day: 'numeric', month: 'long' }).replace(',', '');
+  return s.charAt(0).toUpperCase() + s.slice(1);
+};
+
 class Component extends DCLogic {
-  state = { ordenes: [], filtro: 'activas', reloj: '20:34', error: null };
+  state = { ordenes: [], filtro: 'activas', reloj: '20:34', fechaViva: fechaLarga(new Date()), error: null };
 
   total(o) { return o.lineas.reduce((s,l) => s + l.importe, 0); }
 
@@ -186,7 +191,7 @@ class Component extends DCLogic {
   componentDidMount() {
     this.cargar();
     this._poll = setInterval(() => this.cargar(), 15000);
-    const tickReloj = () => this.setState({ reloj: new Date().toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit', hour12: false }) });
+    const tickReloj = () => this.setState({ reloj: new Date().toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit', hour12: false }), fechaViva: fechaLarga(new Date()) });
     tickReloj();
     this._reloj = setInterval(tickReloj, 30000);
   }
@@ -277,7 +282,7 @@ class Component extends DCLogic {
     for (const o of cerradas) canales[o.canal] = (canales[o.canal] || 0) + 1;
 
     return {
-      fecha: this.props.fecha ?? 'Martes 25 de agosto',
+      fecha: (this.props.fecha && this.props.fecha !== 'Martes 25 de agosto') ? this.props.fecha : this.state.fechaViva,
       reloj: this.state.reloj,
       filtros, visibles,
       vacio: visibles.length === 0,
