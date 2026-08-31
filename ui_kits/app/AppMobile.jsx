@@ -4,17 +4,73 @@
    any screen markup. Keep index.html (the "show all 6 at once" design
    review page) and this file (the real click-through) in sync when a
    screen's props change. */
+
+/* Navigation is driven through the real browser history (pushState/popstate)
+   rather than plain React state. That is deliberate: the Capacitor default
+   hardware-back behaviour is `webView.canGoBack() ? goBack() : finish()`.
+   With no history entries the WebView can never go back, so Android back
+   always hit finish() and killed the app. Pushing real entries makes the
+   built-in path do the right thing even if the JS plugin listener below
+   never attaches. */
+const NAV_ROOT = { entered: false, tab: 'menu', screen: 'list', depth: 0 };
+
+/* Survives the app being closed: an open order folio has to outlive the
+   process or the customer loses tracking for a pizza that is still being
+   made. Cart lines are kept too so a half-built order is not lost. */
+const MEXTIZZA_LS_KEY = 'mextizza.app.v1';
+function mextizzaLoadPersisted() {
+  try {
+    const raw = window.localStorage.getItem(MEXTIZZA_LS_KEY);
+    const d = raw ? JSON.parse(raw) : null;
+    return d && typeof d === 'object' ? d : null;
+  } catch (e) { return null; } // private mode / storage disabled
+}
+
 function AppMobile() {
-  const [entered, setEntered] = React.useState(false);
-  const [tab, setTab] = React.useState('menu');
-  const [screen, setScreen] = React.useState('list'); // list | detail | addons — sub-nav inside the "menu" tab
+  const saved = React.useRef(mextizzaLoadPersisted()).current;
+
+  const [nav, setNav] = React.useState(
+    saved && saved.entered ? { ...NAV_ROOT, entered: true } : NAV_ROOT
+  );
+  const navRef = React.useRef(nav);
+  navRef.current = nav;
+  const { entered, tab, screen } = nav;
+
   const [detail, setDetail] = React.useState(MEXTIZZA_MENU[1].items.find(x => x.id === 'cochinita'));
   const [custom, setCustom] = React.useState(MEXTIZZA_MENU[0].items.find(x => x.id === 'roni'));
-  const [lines, setLines] = React.useState([]);
+  const [lines, setLines] = React.useState(saved && Array.isArray(saved.lines) ? saved.lines : []);
   const [added, setAdded] = React.useState(null);
-  const [folio, setFolio] = React.useState(null);
+  const [folio, setFolio] = React.useState((saved && saved.folio) || null);
   const [toast, setToast] = React.useState(null);
   const toastTimer = React.useRef(null);
+
+  React.useEffect(() => {
+    try {
+      window.localStorage.setItem(MEXTIZZA_LS_KEY, JSON.stringify({ entered, lines, folio }));
+    } catch (e) { /* storage unavailable — degrade to in-memory only */ }
+  }, [entered, lines, folio]);
+
+  /* --- history-backed navigation --- */
+  const go = (patch) => {
+    const next = { ...navRef.current, ...patch, depth: navRef.current.depth + 1 };
+    navRef.current = next;
+    try { window.history.pushState(next, ''); } catch (e) {}
+    setNav(next);
+  };
+  const back = (steps = 1) => {
+    try { window.history.go(-steps); } catch (e) {}
+  };
+
+  React.useEffect(() => {
+    try { window.history.replaceState(navRef.current, ''); } catch (e) {}
+    const onPop = (e) => {
+      const s = e.state && typeof e.state === 'object' && e.state.tab ? e.state : NAV_ROOT;
+      navRef.current = s;
+      setNav(s);
+    };
+    window.addEventListener('popstate', onPop);
+    return () => window.removeEventListener('popstate', onPop);
+  }, []);
 
   const showToast = (msg) => {
     setToast(msg);
@@ -30,60 +86,37 @@ function AppMobile() {
     });
     setAdded(it.id); setTimeout(() => setAdded(null), 900);
   };
-  // Used from Detail/Addons (screens that leave the menu list): add the item,
-  // show a confirmation toast, then return to the menu list so the customer
-  // can keep browsing or head to the cart — instead of leaving them stranded
-  // on a screen that looks like nothing happened.
-  const addAndReturn = (it, q = 1, extra = {}) => {
+  /* Detail and Addons sit one and two history entries deep respectively, so
+     returning to the menu list is a real history rewind — that keeps the
+     back stack honest instead of piling on a forward entry. */
+  const addAndReturn = (steps) => (it, q = 1, extra = {}) => {
     add(it, q, extra);
     showToast(`${it.name} agregado al pedido`);
-    setTab('menu'); setScreen('list');
+    back(steps);
   };
   const qty = (key, n) => setLines(ls => n <= 0 ? ls.filter(l => l.key !== key) : ls.map(l => l.key === key ? { ...l, qty: n } : l));
   const count = lines.reduce((s, l) => s + l.qty, 0);
-  const goTab = (t) => { setTab(t); setScreen('list'); };
+  const goTab = (t) => go({ tab: t, screen: 'list' });
 
-  // Wire Android's hardware/gesture back button to in-app navigation instead of
-  // the Capacitor default (exit the app immediately, since this SPA never pushes
-  // browser history entries). Only runs inside the native shell — a no-op in the
-  // plain browser preview, where window.Capacitor doesn't exist.
+  /* If the JS listener does attach, this runs instead of the Capacitor
+     default; both paths end up calling the same history rewind, so behaviour
+     matches either way. Only a true root screen exits the app. */
   const handleBack = React.useCallback(() => {
-    // Plugins.App only exists when the @capacitor/app JS module has been
-    // imported through a bundler — this app loads plain scripts, so it is
-    // undefined here. nativeCallback is the low-level bridge, always present.
-    const exit = () => {
-      try {
-        const cap = window.Capacitor;
-        if (cap.Plugins && cap.Plugins.App) cap.Plugins.App.exitApp();
-        else cap.nativeCallback('App', 'exitApp', {});
-      } catch (e) {}
-    };
-    if (!entered) { exit(); return; }
-    if (tab === 'menu') {
-      if (screen === 'addons') { setScreen('detail'); return; }
-      if (screen === 'detail') { setScreen('list'); return; }
-      exit();
-      return;
-    }
-    goTab('menu');
-  }, [entered, tab, screen]);
+    if (navRef.current.depth > 0) { back(1); return; }
+    try {
+      const cap = window.Capacitor;
+      if (cap.Plugins && cap.Plugins.App) cap.Plugins.App.exitApp();
+      else cap.nativeCallback('App', 'exitApp', {});
+    } catch (e) {}
+  }, []);
 
-  // Register through the LOW-LEVEL bridge (window.Capacitor.addListener), not
-  // window.Capacitor.Plugins.App.addListener. Plugins.App is created by the
-  // @capacitor/app JS package's registerPlugin() at import time, which only
-  // happens under a bundler — this page loads plain <script> tags, so
-  // Plugins.App is permanently undefined and every previous attempt to attach
-  // through it silently no-op'd. With no JS listener attached, AppPlugin.java
-  // takes its default branch (hasListeners("backButton") == false) and calls
-  // finish() — which is exactly the "back button closes the app" report.
-  // Capacitor.addListener('App', ...) reaches the same native plugin directly.
   React.useEffect(() => {
     let handle, cancelled = false, attempts = 0;
     const tryRegister = () => {
       if (cancelled) return;
       try {
         const cap = window.Capacitor;
-        if (!(cap && cap.isNativePlatform && cap.isNativePlatform())) return; // browser preview — nothing to wire
+        if (!(cap && cap.isNativePlatform && cap.isNativePlatform())) return; // browser preview
         if (cap.Plugins && cap.Plugins.App && typeof cap.Plugins.App.addListener === 'function') {
           cap.Plugins.App.addListener('backButton', handleBack).then(h => { if (!cancelled) handle = h; }).catch(() => {});
           return;
@@ -93,7 +126,7 @@ function AppMobile() {
           return;
         }
       } catch (e) { /* fall through to retry */ }
-      if (attempts++ < 20) setTimeout(tryRegister, 150); // up to ~3s for the native bridge to be ready
+      if (attempts++ < 20) setTimeout(tryRegister, 150);
     };
     tryRegister();
     return () => { cancelled = true; try { handle && handle.remove(); } catch (e) {} };
@@ -101,28 +134,25 @@ function AppMobile() {
 
   let content;
   if (!entered) {
-    content = <AppWelcome onEnter={() => setEntered(true)} />;
+    content = <AppWelcome onEnter={() => go({ entered: true })} />;
   } else if (tab === 'menu') {
     if (screen === 'detail') {
-      content = <AppDetail item={detail} onBack={() => setScreen('list')} onAdd={addAndReturn}
-        onCustomize={(it) => { setCustom(it); setScreen('addons'); }} />;
+      content = <AppDetail item={detail} onBack={() => back(1)} onAdd={addAndReturn(1)}
+        onCustomize={(it) => { setCustom(it); go({ screen: 'addons' }); }} />;
     } else if (screen === 'addons') {
-      content = <AppAddons item={custom} onBack={() => setScreen('detail')} onAdd={addAndReturn} />;
+      content = <AppAddons item={custom} onBack={() => back(1)} onAdd={addAndReturn(2)} />;
     } else {
-      content = <AppMenu added={added} onOpen={(it) => { setDetail(it); setScreen('detail'); }}
+      content = <AppMenu added={added} onOpen={(it) => { setDetail(it); go({ screen: 'detail' }); }}
         onAdd={(it) => { add(it); showToast(`${it.name} agregado al pedido`); }}
         tab={tab} onTab={goTab} count={count} />;
     }
   } else if (tab === 'pedido') {
-    // AppCart calls onConfirm(folio) with the real backend folio — capture it
-    // so the tracking screen can show the actual order number instead of the
-    // hardcoded design placeholder, and confirm the send with a toast.
     content = <AppCart lines={lines} onQty={qty} tab={tab} onTab={goTab} count={count}
       onConfirm={(nuevoFolio) => {
         setFolio(nuevoFolio);
         setLines([]);
         showToast(nuevoFolio ? `Pedido #${nuevoFolio} enviado` : 'Pedido enviado');
-        goTab('seguir');
+        go({ tab: 'seguir', screen: 'list' });
       }} />;
   } else if (tab === 'seguir') {
     content = <AppTracking tab={tab} onTab={goTab} count={count} folio={folio} />;
