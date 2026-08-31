@@ -30,7 +30,7 @@ function AppMobile() {
   // browser history entries). Only runs inside the native shell — a no-op in the
   // plain browser preview, where window.Capacitor doesn't exist.
   const handleBack = React.useCallback(() => {
-    const exit = () => window.Capacitor && window.Capacitor.Plugins.App.exitApp();
+    const exit = () => { try { window.Capacitor.Plugins.App.exitApp(); } catch (e) {} };
     if (!entered) { exit(); return; }
     if (tab === 'menu') {
       if (screen === 'addons') { setScreen('detail'); return; }
@@ -41,11 +41,17 @@ function AppMobile() {
     goTab('menu');
   }, [entered, tab, screen]);
 
+  // Defensive on every level: a throw in here must never take down the whole
+  // app render — it only degrades to the OS default back-button behavior.
   React.useEffect(() => {
-    if (!(window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform())) return;
     let handle;
-    window.Capacitor.Plugins.App.addListener('backButton', handleBack).then(h => { handle = h; });
-    return () => { if (handle) handle.remove(); };
+    try {
+      const cap = window.Capacitor;
+      const AppPlugin = cap && cap.isNativePlatform && cap.isNativePlatform() && cap.Plugins && cap.Plugins.App;
+      if (!AppPlugin || typeof AppPlugin.addListener !== 'function') return;
+      AppPlugin.addListener('backButton', handleBack).then(h => { handle = h; }).catch(() => {});
+    } catch (e) { /* no-op: fall back to default OS back behavior */ }
+    return () => { try { handle && handle.remove(); } catch (e) {} };
   }, [handleBack]);
 
   if (!entered) return <AppWelcome onEnter={() => setEntered(true)} />;
