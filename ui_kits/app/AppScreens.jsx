@@ -113,7 +113,7 @@ function AppWelcome({ onEnter }) {
           </div>
         </div>
         <div style={{ padding: '0 24px 28px', display: 'grid', gap: 10 }}>
-          <Button tone="primary" size="lg" block onClick={onEnter}>Entrar con mi número</Button>
+          <Button tone="primary" size="lg" block onClick={onEnter}>Ver el menú</Button>
           <Button tone="outline" size="lg" block icon="whatsapp"
             onClick={() => window.open(mextizzaWhatsappLink('Hola, quiero hacer un pedido en Mextizza.'), '_blank', 'noopener')}>Pedir por WhatsApp</Button>
         </div>
@@ -459,6 +459,13 @@ function AppTracking({ tab, onTab, count, folio }) {
   );
 }
 
+/* 5526577352 -> 55 2657 7352. Solo presentación: lo guardado y lo que viaja
+   al backend sigue siendo la cadena de 10 dígitos. */
+function mextizzaTelFormato(tel) {
+  const d = String(tel || '').replace(/\D/g, '');
+  return d.length === 10 ? d.slice(0, 2) + ' ' + d.slice(2, 6) + ' ' + d.slice(6) : (tel || '');
+}
+
 /* ---------- Screen 7: perfil ----------
    No hay cuentas ni contraseñas: la app guarda los datos del cliente en el
    propio teléfono (localStorage). Esta pantalla es donde esos datos se ven,
@@ -498,7 +505,7 @@ function AppPerfil({ tab, onTab, count, cliente, folio, onVerPedido, onBorrarDat
           <div style={{ marginBottom: 22 }}>
             <div style={{ fontFamily: 'var(--font-label)', fontSize: 10, letterSpacing: 1, textTransform: 'uppercase', color: 'var(--rosa-mexicano-texto)', marginBottom: 4 }}>Tus datos de entrega</div>
             {c.nombre && fila('Nombre', c.nombre)}
-            {c.telefono && fila('Teléfono', c.telefono)}
+            {c.telefono && fila('Teléfono', mextizzaTelFormato(c.telefono))}
             {c.calle && fila('Dirección', c.calle)}
             {c.colonia && fila('Colonia', c.colonia)}
             <p style={{ fontFamily: 'var(--font-body)', fontSize: 12, color: 'var(--text-muted)', marginTop: 10, lineHeight: 1.5 }}>
