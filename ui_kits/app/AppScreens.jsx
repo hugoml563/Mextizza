@@ -23,7 +23,7 @@ const Lockup = DS.Lockup || function LockupFallback({ variant = 'pala', tone = '
 /* Phone frame — 390x844, the app's design viewport. */
 function Phone({ children }) {
   return (
-    <div style={{
+    <div className="app-phone-frame" style={{
       width: 390, height: 844, background: 'var(--surface-page)', borderRadius: 'var(--radius-lg)',
       border: 'var(--border-frame)', overflow: 'hidden', position: 'relative',
       boxShadow: 'var(--shadow-raised)',
@@ -35,7 +35,7 @@ function Phone({ children }) {
 function StatusBar({ dark }) {
   const c = dark ? 'var(--blanco-hueso)' : 'var(--negro-carbon)';
   return (
-    <div style={{
+    <div className="app-status-bar" style={{
       height: 34, flex: 'none', display: 'flex', alignItems: 'center', justifyContent: 'space-between',
       padding: '0 20px', fontFamily: 'var(--font-body)', fontSize: 12, fontWeight: 600, color: c
     }}>

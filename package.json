@@ -1,0 +1,30 @@
+{
+  "name": "mextizza-design",
+  "version": "1.0.0",
+  "description": "**Mextizza** is a **dark-kitchen pizzería** in Col. Lomas Lindas, Atizapán de Zaragoza, Estado de México (CP 52947). Founders: Hugo Martínez (logistics & commercial strategy) and Ricardo Rodríguez (executive chef & product). Official launch: **1 September 2026**.",
+  "main": "_ds_bundle.js",
+  "directories": {
+    "doc": "docs"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "build:mobile": "node scripts/build-mobile.js",
+    "cap:sync": "npm run build:mobile && npx cap sync android",
+    "cap:open": "npx cap open android"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/hugoml563/Mextizza.git"
+  },
+  "keywords": [],
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/hugoml563/Mextizza/issues"
+  },
+  "homepage": "https://github.com/hugoml563/Mextizza#readme",
+  "dependencies": {
+    "@capacitor/android": "^8.5.0",
+    "@capacitor/cli": "^8.5.0",
+    "@capacitor/core": "^8.5.0"
+  }
+}

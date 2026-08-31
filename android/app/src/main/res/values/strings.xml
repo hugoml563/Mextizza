@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Mextizza</string>
+    <string name="title_activity_main">Mextizza</string>
+    <string name="package_name">com.mextizza.app</string>
+    <string name="custom_url_scheme">com.mextizza.app</string>
+</resources>

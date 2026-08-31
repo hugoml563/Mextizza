@@ -1,0 +1,6 @@
+
+# Capacitor mobile build artifact (regenerate with: npm run build:mobile)
+/mobile-www/
+/node_modules/
+/android/app/build/
+/android/.gradle/
