@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="800" height="60" viewBox="0 0 800 60">
+  <!-- Mextizza signature texture: the 4-colour sealing tape. All colours are explicit
+       hex (no currentColor, no external font, no missing image refs) so this renders
+       identically in any viewer, including Canva's Components uploader. -->
+  <defs>
+    <pattern id="tapeStripe" width="56.57" height="56.57" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
+      <rect x="0"  y="0" width="14.14" height="56.57" fill="#E4007C"></rect>
+      <rect x="14.14" y="0" width="14.14" height="56.57" fill="#4A4A4A"></rect>
+      <rect x="28.28" y="0" width="14.14" height="56.57" fill="#C1502E"></rect>
+      <rect x="42.42" y="0" width="14.14" height="56.57" fill="#D9A65C"></rect>
+    </pattern>
+  </defs>
+  <rect x="0" y="0" width="800" height="60" fill="url(#tapeStripe)"></rect>
+</svg>

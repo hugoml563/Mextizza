@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="120" height="24" viewBox="0 0 120 24">
+  <!-- Mextizza social icon set (Instagram, Facebook, WhatsApp), copied verbatim from
+       components/ui/Icon.jsx PATHS. Explicit stroke colour, no currentColor, so it
+       renders correctly standalone. -->
+  <g transform="translate(0,0)" fill="none" stroke="#1A1A1A" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M17 2H7a5 5 0 00-5 5v10a5 5 0 005 5h10a5 5 0 005-5V7a5 5 0 00-5-5z"></path>
+    <path d="M16 11.37A4 4 0 1112.63 8 4 4 0 0116 11.37z"></path>
+    <path d="M17.5 6.5h.01"></path>
+  </g>
+  <g transform="translate(48,0)" fill="none" stroke="#1A1A1A" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M18 2h-3a5 5 0 00-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 011-1h3z"></path>
+  </g>
+  <g transform="translate(96,0)" fill="none" stroke="#1A1A1A" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M21 11.5a8.5 8.5 0 01-12.6 7.4L3 21l2.2-5.3A8.5 8.5 0 1121 11.5z"></path>
+  </g>
+</svg>

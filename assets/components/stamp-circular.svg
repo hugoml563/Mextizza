@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="260" height="260" viewBox="0 0 260 260">
+  <!-- Mextizza circular rubber stamp — 130px logical size drawn at 2x for crispness.
+       Explicit fill/stroke throughout, Bungee referenced with a bold-condensed
+       fallback stack so it still reads correctly wherever Bungee isn't installed. -->
+  <g transform="translate(130,130) rotate(-6) translate(-130,-130)">
+    <circle cx="130" cy="130" r="125" fill="none" stroke="#1A1A1A" stroke-width="4"></circle>
+    <text x="130" y="112" text-anchor="middle" font-family="Bungee, 'Arial Black', Impact, sans-serif"
+          font-size="20" letter-spacing="2" fill="#1A1A1A">HECHO A MANO</text>
+    <text x="130" y="140" text-anchor="middle" font-family="Bungee, 'Arial Black', Impact, sans-serif"
+          font-size="20" letter-spacing="2" fill="#1A1A1A">EN 48H</text>
+    <text x="130" y="168" text-anchor="middle" font-family="Bungee, 'Arial Black', Impact, sans-serif"
+          font-size="20" letter-spacing="2" fill="#E4007C">MEXTIZZA</text>
+  </g>
+</svg>
