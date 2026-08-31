@@ -41,14 +41,15 @@ function AppMobile() {
   const [lines, setLines] = React.useState(saved && Array.isArray(saved.lines) ? saved.lines : []);
   const [added, setAdded] = React.useState(null);
   const [folio, setFolio] = React.useState((saved && saved.folio) || null);
+  const [cliente, setCliente] = React.useState((saved && saved.cliente) || null);
   const [toast, setToast] = React.useState(null);
   const toastTimer = React.useRef(null);
 
   React.useEffect(() => {
     try {
-      window.localStorage.setItem(MEXTIZZA_LS_KEY, JSON.stringify({ entered, lines, folio }));
+      window.localStorage.setItem(MEXTIZZA_LS_KEY, JSON.stringify({ entered, lines, folio, cliente }));
     } catch (e) { /* storage unavailable — degrade to in-memory only */ }
-  }, [entered, lines, folio]);
+  }, [entered, lines, folio, cliente]);
 
   /* --- history-backed navigation --- */
   const go = (patch) => {
@@ -148,8 +149,12 @@ function AppMobile() {
     }
   } else if (tab === 'pedido') {
     content = <AppCart lines={lines} onQty={qty} tab={tab} onTab={goTab} count={count}
-      onConfirm={(nuevoFolio) => {
+      inicialCliente={cliente}
+      onConfirm={(nuevoFolio, entrega) => {
         setFolio(nuevoFolio);
+        // Solo los campos reutilizables del próximo pedido: nada de método de
+        // pago ni notas, que son decisiones de cada pedido, no del cliente.
+        if (entrega) setCliente({ nombre: entrega.nombre, telefono: entrega.telefono, calle: entrega.calle, colonia: entrega.colonia });
         setLines([]);
         showToast(nuevoFolio ? `Pedido #${nuevoFolio} enviado` : 'Pedido enviado');
         go({ tab: 'seguir', screen: 'list' });
@@ -157,18 +162,14 @@ function AppMobile() {
   } else if (tab === 'seguir') {
     content = <AppTracking tab={tab} onTab={goTab} count={count} folio={folio} />;
   } else {
-    // 'perfil' — not yet designed in the system; minimal on-brand placeholder rather than a crash.
-    content = (
-      <Phone>
-        <StatusBar />
-        <TapeStripe position="top" height={4} />
-        <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: 12, padding: 24, textAlign: 'center' }}>
-          <div style={{ fontFamily: 'var(--font-label)', fontSize: 12, letterSpacing: 2, textTransform: 'uppercase', color: 'var(--gris-texto)' }}>Perfil</div>
-          <div style={{ fontFamily: 'var(--font-body)', fontSize: 15, color: 'var(--negro-carbon)' }}>Próximamente</div>
-        </div>
-        <TabBar tab={tab} onTab={goTab} count={count} />
-      </Phone>
-    );
+    content = <AppPerfil tab={tab} onTab={goTab} count={count}
+      cliente={cliente} folio={folio}
+      onVerPedido={() => goTab('seguir')}
+      onBorrarDatos={() => {
+        try { window.localStorage.removeItem(MEXTIZZA_LS_KEY); } catch (e) {}
+        setCliente(null); setFolio(null); setLines([]);
+        showToast('Datos borrados de este teléfono');
+      }} />;
   }
 
   return (

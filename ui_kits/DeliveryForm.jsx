@@ -6,11 +6,15 @@ const PAGOS = ['Efectivo', 'Transferencia', 'Tarjeta'];
    Two hard gates before an order can be placed:
    1. the address has to fall inside the 3 km radius (ui_kits/delivery-zone.js)
    2. a payment method has to be chosen — nothing is preselected */
-function DeliveryForm({ compact = false, attempted = false, onValidChange, onDataChange }) {
-  const [nombre, setNombre] = React.useState('');
-  const [tel, setTel] = React.useState('');
-  const [calle, setCalle] = React.useState('');
-  const [colonia, setColonia] = React.useState('');
+/* inicial: datos guardados del cliente (nombre/telefono/calle/colonia) para
+   prellenar el formulario en pedidos siguientes. Solo siembra el estado
+   inicial, asi que el cliente puede sobrescribir cualquier campo. */
+function DeliveryForm({ compact = false, attempted = false, onValidChange, onDataChange, inicial }) {
+  const ini = inicial || {};
+  const [nombre, setNombre] = React.useState(ini.nombre || '');
+  const [tel, setTel] = React.useState(ini.telefono || '');
+  const [calle, setCalle] = React.useState(ini.calle || '');
+  const [colonia, setColonia] = React.useState(ini.colonia || '');
   const [horario, setHorario] = React.useState('Lo antes posible (≤30 min)');
   const [pago, setPago] = React.useState(null);
   const [notas, setNotas] = React.useState('');

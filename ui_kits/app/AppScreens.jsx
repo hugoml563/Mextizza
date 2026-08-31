@@ -305,7 +305,7 @@ function AppAddons({ item, onBack, onAdd }) {
 }
 
 /* ---------- Screen 5: cart / checkout ---------- */
-function AppCart({ lines, onQty, onConfirm, tab, onTab, count }) {
+function AppCart({ lines, onQty, onConfirm, tab, onTab, count, inicialCliente }) {
   const subtotal = lines.reduce((s, l) => s + (l.price + (l.addonTotal || 0)) * l.qty, 0);
   const [ready, setReady] = React.useState(false);
   const [attempted, setAttempted] = React.useState(false);
@@ -319,7 +319,9 @@ function AppCart({ lines, onQty, onConfirm, tab, onTab, count }) {
     setEnviando(true);
     try {
       const { folio } = await mextizzaCrearOrden({ canal: 'App', lines, entrega });
-      onConfirm(folio);
+      // entrega viaja de vuelta para que la app guarde los datos del cliente
+      // y prellene el formulario en el siguiente pedido.
+      onConfirm(folio, entrega);
     } catch (err) {
       setError('No se pudo enviar el pedido. Intenta de nuevo, o escríbenos por WhatsApp.');
     } finally {
@@ -346,7 +348,7 @@ function AppCart({ lines, onQty, onConfirm, tab, onTab, count }) {
         {lines.length > 0 && (
           <div style={{ marginTop: 24, paddingTop: 20, borderTop: 'var(--border-paper)' }}>
             <div style={{ fontFamily: 'var(--font-label)', fontSize: 10, letterSpacing: 1, textTransform: 'uppercase', color: 'var(--rosa-mexicano-texto)', marginBottom: 12 }}>Entrega y pago</div>
-            <DeliveryForm compact attempted={attempted} onValidChange={setReady} onDataChange={setEntrega} />
+            <DeliveryForm compact attempted={attempted} inicial={inicialCliente} onValidChange={setReady} onDataChange={setEntrega} />
             {error && <StatusNote tone="block" title="Ups" style={{ marginTop: 12 }}>{error}</StatusNote>}
           </div>
         )}
@@ -457,4 +459,83 @@ function AppTracking({ tab, onTab, count, folio }) {
   );
 }
 
-Object.assign(window, { Phone, StatusBar, TabBar, AppWelcome, AppMenu, AppDetail, AppAddons, AppCart, AppTracking });
+/* ---------- Screen 7: perfil ----------
+   No hay cuentas ni contraseñas: la app guarda los datos del cliente en el
+   propio teléfono (localStorage). Esta pantalla es donde esos datos se ven,
+   se usan y — importante para privacidad — se pueden borrar. */
+function AppPerfil({ tab, onTab, count, cliente, folio, onVerPedido, onBorrarDatos }) {
+  const c = cliente || {};
+  const tieneDatos = !!(c.nombre || c.telefono || c.calle);
+  const fila = (etiqueta, valor) => (
+    <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, padding: '10px 0', borderBottom: 'var(--border-dashed)' }}>
+      <span style={{ fontFamily: 'var(--font-label)', fontSize: 10, letterSpacing: 1, textTransform: 'uppercase', color: 'var(--text-muted)', flex: 'none' }}>{etiqueta}</span>
+      <span style={{ fontFamily: 'var(--font-body)', fontWeight: 700, fontSize: 13.5, color: 'var(--text-body)', textAlign: 'right', minWidth: 0, wordBreak: 'break-word' }}>{valor}</span>
+    </div>
+  );
+  return (
+    <Phone>
+      <div style={{ flex: 'none', background: 'var(--surface-page)', position: 'relative', borderBottom: 'var(--border-paper)' }}>
+        <StatusBar />
+        <div style={{ padding: '4px 20px 18px' }}>
+          <h1 style={{ fontFamily: 'var(--font-display)', fontSize: 27 }}>Perfil</h1>
+          <p style={{ fontFamily: 'var(--font-body)', fontSize: 12.5, color: 'var(--text-muted)', marginTop: 4 }}>
+            {tieneDatos ? 'Guardado en este teléfono, no en la nube.' : 'Aún no has hecho tu primer pedido.'}
+          </p>
+        </div>
+        <TapeStripe position="bottom" height={3} />
+      </div>
+
+      <div style={{ flex: 1, overflowY: 'auto', padding: '18px 20px 24px', background: 'var(--surface-card)' }}>
+        {folio && (
+          <FramedPanel variant="paper" style={{ marginBottom: 20 }}>
+            <div style={{ fontFamily: 'var(--font-label)', fontSize: 10, letterSpacing: 1, textTransform: 'uppercase', color: 'var(--rosa-mexicano-texto)' }}>Tu último pedido</div>
+            <div style={{ fontFamily: 'var(--font-body)', fontWeight: 800, fontSize: 19, marginTop: 6 }}>Pedido #{folio}</div>
+            <Button tone="outline" size="sm" iconAfter="chevronRight" style={{ marginTop: 12 }} onClick={onVerPedido}>Ver seguimiento</Button>
+          </FramedPanel>
+        )}
+
+        {tieneDatos && (
+          <div style={{ marginBottom: 22 }}>
+            <div style={{ fontFamily: 'var(--font-label)', fontSize: 10, letterSpacing: 1, textTransform: 'uppercase', color: 'var(--rosa-mexicano-texto)', marginBottom: 4 }}>Tus datos de entrega</div>
+            {c.nombre && fila('Nombre', c.nombre)}
+            {c.telefono && fila('Teléfono', c.telefono)}
+            {c.calle && fila('Dirección', c.calle)}
+            {c.colonia && fila('Colonia', c.colonia)}
+            <p style={{ fontFamily: 'var(--font-body)', fontSize: 12, color: 'var(--text-muted)', marginTop: 10, lineHeight: 1.5 }}>
+              Se llenan solos en tu próximo pedido. Puedes cambiarlos ahí mismo.
+            </p>
+          </div>
+        )}
+
+        <div style={{ marginBottom: 22 }}>
+          <div style={{ fontFamily: 'var(--font-label)', fontSize: 10, letterSpacing: 1, textTransform: 'uppercase', color: 'var(--rosa-mexicano-texto)', marginBottom: 10 }}>Contacto</div>
+          <div style={{ display: 'grid', gap: 8 }}>
+            <Button tone="outline" size="md" block icon="whatsapp"
+              onClick={() => window.open(mextizzaWhatsappLink('Hola, tengo una pregunta sobre mi pedido.'), '_blank', 'noopener')}>Escríbenos por WhatsApp</Button>
+            <div style={{ display: 'flex', gap: 8 }}>
+              <Button tone="outline" size="md" block icon="instagram"
+                onClick={() => window.open(MEXTIZZA_SOCIAL.instagram, '_blank', 'noopener')}>Instagram</Button>
+              <Button tone="outline" size="md" block icon="facebook"
+                onClick={() => window.open(MEXTIZZA_SOCIAL.facebook, '_blank', 'noopener')}>Facebook</Button>
+            </div>
+          </div>
+        </div>
+
+        <FramedPanel variant="paper" style={{ marginBottom: 20 }}>
+          <div style={{ fontFamily: 'var(--font-label)', fontSize: 10, letterSpacing: 1, textTransform: 'uppercase', marginBottom: 8 }}>De la casa</div>
+          <p style={{ fontFamily: 'var(--font-body)', fontSize: 13, lineHeight: 1.6, color: 'var(--text-muted)' }}>
+            {MEXTIZZA_FACTS.fermento}. Repartimos {MEXTIZZA_FACTS.radio}, desde {MEXTIZZA_FACTS.zona}. Envío incluido en el precio.
+          </p>
+        </FramedPanel>
+
+        {(tieneDatos || folio) && (
+          <Button tone="outline" size="md" block onClick={onBorrarDatos}>Borrar mis datos de este teléfono</Button>
+        )}
+      </div>
+
+      <TabBar tab={tab} onTab={onTab} count={count} />
+    </Phone>
+  );
+}
+
+Object.assign(window, { Phone, StatusBar, TabBar, AppWelcome, AppMenu, AppDetail, AppAddons, AppCart, AppTracking, AppPerfil });
