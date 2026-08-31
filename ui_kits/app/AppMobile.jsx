@@ -25,6 +25,29 @@ function AppMobile() {
   const count = lines.reduce((s, l) => s + l.qty, 0);
   const goTab = (t) => { setTab(t); setScreen('list'); };
 
+  // Wire Android's hardware/gesture back button to in-app navigation instead of
+  // the Capacitor default (exit the app immediately, since this SPA never pushes
+  // browser history entries). Only runs inside the native shell — a no-op in the
+  // plain browser preview, where window.Capacitor doesn't exist.
+  const handleBack = React.useCallback(() => {
+    const exit = () => window.Capacitor && window.Capacitor.Plugins.App.exitApp();
+    if (!entered) { exit(); return; }
+    if (tab === 'menu') {
+      if (screen === 'addons') { setScreen('detail'); return; }
+      if (screen === 'detail') { setScreen('list'); return; }
+      exit();
+      return;
+    }
+    goTab('menu');
+  }, [entered, tab, screen]);
+
+  React.useEffect(() => {
+    if (!(window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform())) return;
+    let handle;
+    window.Capacitor.Plugins.App.addListener('backButton', handleBack).then(h => { handle = h; });
+    return () => { if (handle) handle.remove(); };
+  }, [handleBack]);
+
   if (!entered) return <AppWelcome onEnter={() => setEntered(true)} />;
 
   if (tab === 'menu') {
