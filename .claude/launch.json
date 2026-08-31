@@ -4,7 +4,13 @@
     {
       "name": "static",
       "runtimeExecutable": "npx",
-      "runtimeArgs": ["--yes", "http-server", "-p", "5510", "-c-1"],
+      "runtimeArgs": [
+        "--yes",
+        "http-server",
+        "-p",
+        "5510",
+        "-c-1"
+      ],
       "port": 5510
     }
   ]
