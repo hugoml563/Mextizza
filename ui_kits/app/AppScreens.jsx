@@ -367,14 +367,16 @@ function AppCart({ lines, onQty, onConfirm, tab, onTab, count }) {
 }
 
 /* ---------- Screen 6: order tracking ---------- */
-function AppTracking({ tab, onTab, count }) {
+function AppTracking({ tab, onTab, count, folio }) {
   const steps = [['Confirmado', 'Recibimos tu pedido', true], ['En el horno', 'Gozney XL · ≤10 min', true], ['En camino', 'Mandadito asignado', false], ['Entregado', '', false]];
   return (
     <Phone>
       <div style={{ flex: 'none', background: 'var(--surface-page)', position: 'relative', paddingBottom: 22, borderBottom: 'var(--border-paper)' }}>
         <StatusBar />
         <div style={{ padding: '4px 20px 0' }}>
-          <Badge tone="dorado">Pedido #1042</Badge>
+          {/* folio comes from the real backend after a confirmed order; the
+              bare '1042' is the design-gallery placeholder in index.html. */}
+          <Badge tone="dorado">Pedido #{folio || '1042'}</Badge>
           <h1 style={{ fontFamily: 'var(--font-display)', fontSize: 32, marginTop: 12 }}>Llega 20:10</h1>
           <p style={{ fontFamily: 'var(--font-body)', fontSize: 13, color: 'var(--text-muted)', marginTop: 6 }}>Estimado 28 min · radio de 3 km</p>
         </div>

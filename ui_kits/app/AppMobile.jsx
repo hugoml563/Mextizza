@@ -12,6 +12,7 @@ function AppMobile() {
   const [custom, setCustom] = React.useState(MEXTIZZA_MENU[0].items.find(x => x.id === 'roni'));
   const [lines, setLines] = React.useState([]);
   const [added, setAdded] = React.useState(null);
+  const [folio, setFolio] = React.useState(null);
   const [toast, setToast] = React.useState(null);
   const toastTimer = React.useRef(null);
 
@@ -47,7 +48,16 @@ function AppMobile() {
   // browser history entries). Only runs inside the native shell — a no-op in the
   // plain browser preview, where window.Capacitor doesn't exist.
   const handleBack = React.useCallback(() => {
-    const exit = () => { try { window.Capacitor.Plugins.App.exitApp(); } catch (e) {} };
+    // Plugins.App only exists when the @capacitor/app JS module has been
+    // imported through a bundler — this app loads plain scripts, so it is
+    // undefined here. nativeCallback is the low-level bridge, always present.
+    const exit = () => {
+      try {
+        const cap = window.Capacitor;
+        if (cap.Plugins && cap.Plugins.App) cap.Plugins.App.exitApp();
+        else cap.nativeCallback('App', 'exitApp', {});
+      } catch (e) {}
+    };
     if (!entered) { exit(); return; }
     if (tab === 'menu') {
       if (screen === 'addons') { setScreen('detail'); return; }
@@ -58,12 +68,15 @@ function AppMobile() {
     goTab('menu');
   }, [entered, tab, screen]);
 
-  // Defensive on every level: a throw in here must never take down the whole
-  // app render — it only degrades to the OS default back-button behavior.
-  // Retries for a few seconds: window.Capacitor / Plugins.App can still be
-  // settling in when this effect first fires, and a single failed check with
-  // no retry meant the listener silently never attached (back button kept
-  // exiting the app even though nothing crashed).
+  // Register through the LOW-LEVEL bridge (window.Capacitor.addListener), not
+  // window.Capacitor.Plugins.App.addListener. Plugins.App is created by the
+  // @capacitor/app JS package's registerPlugin() at import time, which only
+  // happens under a bundler — this page loads plain <script> tags, so
+  // Plugins.App is permanently undefined and every previous attempt to attach
+  // through it silently no-op'd. With no JS listener attached, AppPlugin.java
+  // takes its default branch (hasListeners("backButton") == false) and calls
+  // finish() — which is exactly the "back button closes the app" report.
+  // Capacitor.addListener('App', ...) reaches the same native plugin directly.
   React.useEffect(() => {
     let handle, cancelled = false, attempts = 0;
     const tryRegister = () => {
@@ -71,9 +84,12 @@ function AppMobile() {
       try {
         const cap = window.Capacitor;
         if (!(cap && cap.isNativePlatform && cap.isNativePlatform())) return; // browser preview — nothing to wire
-        const AppPlugin = cap.Plugins && cap.Plugins.App;
-        if (AppPlugin && typeof AppPlugin.addListener === 'function') {
-          AppPlugin.addListener('backButton', handleBack).then(h => { if (!cancelled) handle = h; }).catch(() => {});
+        if (cap.Plugins && cap.Plugins.App && typeof cap.Plugins.App.addListener === 'function') {
+          cap.Plugins.App.addListener('backButton', handleBack).then(h => { if (!cancelled) handle = h; }).catch(() => {});
+          return;
+        }
+        if (typeof cap.addListener === 'function') {
+          handle = cap.addListener('App', 'backButton', handleBack);
           return;
         }
       } catch (e) { /* fall through to retry */ }
@@ -97,9 +113,18 @@ function AppMobile() {
         tab={tab} onTab={goTab} count={count} />;
     }
   } else if (tab === 'pedido') {
-    content = <AppCart lines={lines} onQty={qty} onConfirm={() => goTab('seguir')} tab={tab} onTab={goTab} count={count} />;
+    // AppCart calls onConfirm(folio) with the real backend folio — capture it
+    // so the tracking screen can show the actual order number instead of the
+    // hardcoded design placeholder, and confirm the send with a toast.
+    content = <AppCart lines={lines} onQty={qty} tab={tab} onTab={goTab} count={count}
+      onConfirm={(nuevoFolio) => {
+        setFolio(nuevoFolio);
+        setLines([]);
+        showToast(nuevoFolio ? `Pedido #${nuevoFolio} enviado` : 'Pedido enviado');
+        goTab('seguir');
+      }} />;
   } else if (tab === 'seguir') {
-    content = <AppTracking tab={tab} onTab={goTab} count={count} />;
+    content = <AppTracking tab={tab} onTab={goTab} count={count} folio={folio} />;
   } else {
     // 'perfil' — not yet designed in the system; minimal on-brand placeholder rather than a crash.
     content = (
