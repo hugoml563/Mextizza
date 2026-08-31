@@ -4,3 +4,8 @@
 /node_modules/
 /android/app/build/
 /android/.gradle/
+
+# Firma de release — NUNCA subir: quien tenga la llave puede publicar
+# actualizaciones falsas que Android acepte como legitimas.
+/android/mextizza-release.keystore
+/android/keystore.properties

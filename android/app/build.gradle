@@ -1,5 +1,15 @@
 apply plugin: 'com.android.application'
 
+// Credenciales de firma fuera del repo (android/keystore.properties, en .gitignore).
+// Si no existen, el build de release sigue funcionando sin firmar — util para CI
+// o para clonar el repo sin la llave.
+def keystorePropertiesFile = rootProject.file("keystore.properties")
+def keystoreProperties = new Properties()
+def hasKeystore = keystorePropertiesFile.exists()
+if (hasKeystore) {
+    keystoreProperties.load(new FileInputStream(keystorePropertiesFile))
+}
+
 android {
     namespace = "com.mextizza.app"
     compileSdk = rootProject.ext.compileSdkVersion
@@ -16,10 +26,25 @@ android {
             ignoreAssetsPattern = '!.svn:!.git:!.ds_store:!*.scc:.*:!CVS:!thumbs.db:!picasa.ini:!*~'
         }
     }
+    signingConfigs {
+        release {
+            if (hasKeystore) {
+                storeFile rootProject.file(keystoreProperties['storeFile'])
+                storePassword keystoreProperties['storePassword']
+                keyAlias keystoreProperties['keyAlias']
+                keyPassword keystoreProperties['keyPassword']
+            }
+        }
+    }
     buildTypes {
         release {
+            // debuggable queda en false automaticamente en release: es lo que cierra
+            // el hallazgo "Debug Enabled For App" del escaneo.
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+            if (hasKeystore) {
+                signingConfig signingConfigs.release
+            }
         }
     }
 }

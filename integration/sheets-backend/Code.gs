@@ -9,9 +9,13 @@
  * 3. Corre la función `configurarHojas` una vez (menú Ejecutar → configurarHojas).
  *    Te va a pedir autorización — es tu propio Sheet, es seguro aceptar.
  *    Esto crea las 6 pestañas con sus encabezados.
- * 4. Corre `configurarToken` una vez para generar el token secreto (revisa
- *    el log de ejecución para verlo, o ve a Configuración del proyecto →
- *    Propiedades del script).
+ * 4. Corre `configurarToken` UNA vez (token público, va en la web y la app) y
+ *    `configurarTokenAdmin` UNA vez (token de administrador, solo para el
+ *    Centro de Ventas). Revisa el log de ejecución para verlos, o ve a
+ *    Configuración del proyecto → Propiedades del script.
+ *    El token público solo puede crear pedidos, pedir catering y consultar el
+ *    estado de un folio. Listar pedidos, avanzar estado y cancelar exigen el
+ *    token de administrador.
  * 5. Despliega: Implementar → Nueva implementación → tipo "Aplicación web".
  *    - Ejecutar como: Yo (tu cuenta)
  *    - Quién tiene acceso: Cualquier usuario
@@ -73,21 +77,68 @@ function configurarHojas() {
   if (def && def.getLastRow() === 0 && ss.getSheets().length > 6) ss.deleteSheet(def);
 }
 
-/** Corre esto UNA vez para generar el token secreto que protege el endpoint. */
+/** Corre esto UNA vez para generar el token PÚBLICO (el que va en la web y la app). */
 function configurarToken() {
   const props = PropertiesService.getScriptProperties();
   if (props.getProperty('TOKEN')) {
-    Logger.log('Ya existe un token: ' + props.getProperty('TOKEN'));
+    Logger.log('Ya existe un token público: ' + props.getProperty('TOKEN'));
     return;
   }
   const token = Utilities.getUuid();
   props.setProperty('TOKEN', token);
-  Logger.log('Token generado — guárdalo, lo vas a necesitar en el código de la web/app: ' + token);
+  Logger.log('Token público generado — va en ui_kits/sheets-config.js: ' + token);
 }
 
+/** Corre esto UNA vez para generar el token de ADMINISTRADOR (solo Centro de Ventas).
+ *  Este NO debe escribirse en ningún archivo del repo: se pega a mano en el
+ *  Centro de Ventas la primera vez y se queda guardado en ese navegador. */
+function configurarTokenAdmin() {
+  const props = PropertiesService.getScriptProperties();
+  if (props.getProperty('TOKEN_ADMIN')) {
+    Logger.log('Ya existe un token admin: ' + props.getProperty('TOKEN_ADMIN'));
+    return;
+  }
+  const token = Utilities.getUuid();
+  props.setProperty('TOKEN_ADMIN', token);
+  Logger.log('Token ADMIN generado — pégalo solo en el Centro de Ventas: ' + token);
+}
+
+/** Genera un token público nuevo e invalida el anterior. Úsalo cuando el token
+ *  viejo se haya filtrado (siempre está expuesto en el JS, así que rótalo si
+ *  alguna vez tuvo permisos de más). Después hay que actualizarlo en
+ *  ui_kits/sheets-config.js y volver a desplegar la web y la app. */
+function rotarTokenPublico() {
+  const props = PropertiesService.getScriptProperties();
+  const nuevo = Utilities.getUuid();
+  props.setProperty('TOKEN', nuevo);
+  Logger.log('Token público NUEVO (actualízalo en sheets-config.js): ' + nuevo);
+}
+
+/* Dos tokens con permisos distintos.
+ *
+ *   TOKEN        (público)  — viaja dentro de la web y del APK, así que cualquiera
+ *                            puede leerlo. Solo sirve para acciones de cliente:
+ *                            crear un pedido, pedir catering y consultar el estado
+ *                            de UN folio.
+ *   TOKEN_ADMIN  (privado)  — solo vive en el Centro de Ventas. Habilita listar
+ *                            pedidos (que incluyen nombre y dirección de clientes),
+ *                            avanzar estado y cancelar.
+ *
+ * Antes había un solo token para todo: como se publica junto al código del
+ * cliente, cualquiera podía descargarlo y listar los datos personales de todos
+ * los pedidos del día, o cancelarlos. */
 function checkToken_(token) {
-  const real = PropertiesService.getScriptProperties().getProperty('TOKEN');
-  if (!real || token !== real) throw new Error('Token inválido');
+  const publico = PropertiesService.getScriptProperties().getProperty('TOKEN');
+  const admin = PropertiesService.getScriptProperties().getProperty('TOKEN_ADMIN');
+  if (!token) throw new Error('Token inválido');
+  if (token === publico) return 'publico';
+  if (admin && token === admin) return 'admin';
+  throw new Error('Token inválido');
+}
+
+/** Acciones que exponen datos personales o modifican pedidos ajenos. */
+function requiereAdmin_(nivel) {
+  if (nivel !== 'admin') throw new Error('No autorizado para esta acción');
 }
 
 function sheet_(nombre) {
@@ -116,7 +167,7 @@ function doPost(e) {
   lock.waitLock(20000);
   try {
     const body = JSON.parse(e.postData.contents);
-    checkToken_(body.token);
+    const nivel = checkToken_(body.token);
 
     let result;
     switch (body.action) {
@@ -124,9 +175,11 @@ function doPost(e) {
         result = crearOrden_(body);
         break;
       case 'avanzar_estado':
+        requiereAdmin_(nivel);
         result = avanzarEstado_(body);
         break;
       case 'cancelar':
+        requiereAdmin_(nivel);
         result = cancelarOrden_(body);
         break;
       case 'solicitar_catering':
@@ -147,11 +200,13 @@ function doPost(e) {
 function doGet(e) {
   try {
     const token = e.parameter.token;
-    checkToken_(token);
+    const nivel = checkToken_(token);
     if (e.parameter.action === 'listar_abiertas') {
+      requiereAdmin_(nivel);
       return jsonOut_({ ok: true, ordenes: listarAbiertas_() });
     }
     if (e.parameter.action === 'listar_hoy') {
+      requiereAdmin_(nivel);
       return jsonOut_({ ok: true, ordenes: listarHoy_() });
     }
     if (e.parameter.action === 'estado') {

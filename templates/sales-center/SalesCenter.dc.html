@@ -41,7 +41,7 @@
 </div>
 
 <sc-if value="{{ hayError }}" hint-placeholder-val="{{ false }}">
-<div style="flex:none;padding:10px 22px;background:#E4007C;color:#FFFFFF;font-size:12.5px;font-weight:700">{{ error }}</div>
+<div style="flex:none;padding:10px 22px;background:#E4007C;color:#FFFFFF;font-size:12.5px;font-weight:700;display:flex;align-items:center;justify-content:space-between;gap:12px"><span>{{ error }}</span><button onclick="{{ onConectar }}" style="flex:none;background:#FFFFFF;color:#E4007C;border:none;border-radius:6px;padding:6px 14px;font-family:inherit;font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;cursor:pointer">Conectar</button></div>
 </sc-if>
 
 <div style="flex:1;display:flex;min-height:0">
@@ -179,16 +179,46 @@ class Component extends DCLogic {
 
   total(o) { return o.lineas.reduce((s,l) => s + l.importe, 0); }
 
+  /* El token de administrador no vive en el repo: listar/avanzar/cancelar exponen
+     datos de clientes y modifican pedidos, así que se captura una vez aquí y se
+     guarda solo en el localStorage de este navegador. */
+  pedirTokenAdmin(motivo) {
+    const base = 'Pega el token de administrador de Mextizza (lo genera configurarTokenAdmin en Apps Script).';
+    // Algunos navegadores embebidos bloquean prompt() y lanzan: sin este try la
+    // excepcion rompia componentDidMount y el tablero quedaba mudo.
+    let t = null;
+    try { t = window.prompt(motivo ? motivo + ' ' + base : base); } catch (e) { t = null; }
+    if (t && t.trim()) {
+      mextizzaGuardarTokenAdmin(t);
+      this.cargar();
+      return true;
+    }
+    return false;
+  }
+
   async cargar() {
+    if (!mextizzaTokenAdmin()) {
+      // Diferido: en el primer montaje este setState correria antes del render
+      // inicial y el banner nunca aparecia si el operador cancelaba el prompt.
+      setTimeout(() => this.setState({ error: 'Falta el token de administrador. Haz clic en "Conectar" para capturarlo.' }), 0);
+      return;
+    }
     try {
       const { ordenes } = await mextizzaListarHoy();
       this.setState({ ordenes: ordenes.map(o => ({ ...o, tipo: 'Reparto' })), error: null });
     } catch (err) {
-      this.setState({ error: 'No se pudo conectar con el Sheet: ' + err.message });
+      const noAutorizado = /No autorizado|Token inválido/i.test(err.message);
+      this.setState({
+        error: noAutorizado
+          ? 'El token de administrador no es válido. Haz clic en "Conectar" para capturarlo de nuevo.'
+          : 'No se pudo conectar con el Sheet: ' + err.message
+      });
+      if (noAutorizado) mextizzaOlvidarTokenAdmin();
     }
   }
 
   componentDidMount() {
+    if (!mextizzaTokenAdmin()) this.pedirTokenAdmin('El Centro de Ventas necesita autorizarse.');
     this.cargar();
     this._poll = setInterval(() => this.cargar(), 15000);
     const tickReloj = () => this.setState({ reloj: new Date().toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit', hour12: false }), fechaViva: fechaLarga(new Date()) });
@@ -288,6 +318,7 @@ class Component extends DCLogic {
       vacio: visibles.length === 0,
       hayError: !!this.state.error,
       error: this.state.error || '',
+      onConectar: () => this.pedirTokenAdmin(),
       verCorte: this.props.verCorte ?? true,
       corte: {
         ordenes: cerradas.length,
