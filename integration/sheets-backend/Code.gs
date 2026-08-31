@@ -154,6 +154,9 @@ function doGet(e) {
     if (e.parameter.action === 'listar_hoy') {
       return jsonOut_({ ok: true, ordenes: listarHoy_() });
     }
+    if (e.parameter.action === 'estado') {
+      return jsonOut_({ ok: true, orden: estadoOrden_(e.parameter.folio) });
+    }
     if (e.parameter.action === 'catalogo') {
       return jsonOut_({ ok: true, productos: rowsAsObjects_(sheet_(SHEETS.productos)), complementos: rowsAsObjects_(sheet_(SHEETS.complementos)) });
     }
@@ -261,6 +264,28 @@ function findOrdenRow_(sh, folio) {
 }
 
 /** Arma las órdenes abiertas (no entregadas ni canceladas) con sus líneas, para el Centro de Ventas. */
+/** Estado de UNA orden, para la pantalla de seguimiento del cliente en la app.
+ *  Devuelve sólo el avance del pedido — nunca nombre, teléfono ni dirección:
+ *  el token vive en el cliente, así que este endpoint no debe poder usarse para
+ *  extraer datos personales de las órdenes de nadie. */
+function estadoOrden_(folio) {
+  if (!folio) throw new Error('Falta folio');
+  const o = rowsAsObjects_(sheet_(SHEETS.ordenes)).find(x => String(x.folio) === String(folio));
+  if (!o) return null;
+  return {
+    folio: o.folio,
+    estado: o.estado,
+    total: o.total,
+    t_recibida: o.t_recibida,
+    t_confirmada: o.t_confirmada,
+    t_horno: o.t_horno,
+    t_lista: o.t_lista,
+    t_camino: o.t_camino,
+    t_entregada: o.t_entregada,
+    motivo_cancelacion: o.motivo_cancelacion || ''
+  };
+}
+
 function listarAbiertas_() {
   const ordenes = rowsAsObjects_(sheet_(SHEETS.ordenes)).filter(o => o.estado && o.estado !== 'entregada' && o.estado !== 'cancelada');
   return armarOrdenes_(ordenes);

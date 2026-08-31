@@ -109,7 +109,8 @@ function AppMobile() {
     } else if (screen === 'addons') {
       content = <AppAddons item={custom} onBack={() => setScreen('detail')} onAdd={addAndReturn} />;
     } else {
-      content = <AppMenu onAdd={add} added={added} onOpen={(it) => { setDetail(it); setScreen('detail'); }}
+      content = <AppMenu added={added} onOpen={(it) => { setDetail(it); setScreen('detail'); }}
+        onAdd={(it) => { add(it); showToast(`${it.name} agregado al pedido`); }}
         tab={tab} onTab={goTab} count={count} />;
     }
   } else if (tab === 'pedido') {

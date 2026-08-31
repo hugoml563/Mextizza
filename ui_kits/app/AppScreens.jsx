@@ -145,7 +145,12 @@ function AppMenu({ onAdd, onOpen, tab, onTab, count, added }) {
               <MenuItem key={it.id} name={it.name} description={it.desc} price={it.price} photo={it.photo} photoSize={58}
                 divider={j < g.items.length - 1} onClick={() => onOpen(it)}
                 badge={it.flag ? <Badge tone={it.flag === 'Del mes' ? 'dorado' : 'rosa'}>{it.flag}</Badge> : null}
-                action={<Button size="sm" tone={added === it.id ? 'dark' : 'outline'} onClick={() => onAdd(it)}>
+                action={<Button size="sm" tone={added === it.id ? 'dark' : 'outline'}
+                  /* stopPropagation: MenuItem puts the row's onClick on the same
+                     wrapper that holds this button, so without it one tap on "+"
+                     both added the item AND opened the detail screen — where the
+                     customer added it a second time. */
+                  onClick={e => { e.stopPropagation(); onAdd(it); }}>
                   {added === it.id ? '✓' : '+'}
                 </Button>} />
             ))}
@@ -367,8 +372,37 @@ function AppCart({ lines, onQty, onConfirm, tab, onTab, count }) {
 }
 
 /* ---------- Screen 6: order tracking ---------- */
+/* Backend order states, in flow order (Code.gs FLUJO), mapped onto the four
+   steps the customer sees. 'lista' has no separate step — it still reads as
+   "en el horno" until the delivery actually leaves. */
+const ESTADO_A_PASO = { recibida: 0, confirmada: 0, horno: 1, lista: 1, camino: 2, entregada: 3 };
+
 function AppTracking({ tab, onTab, count, folio }) {
-  const steps = [['Confirmado', 'Recibimos tu pedido', true], ['En el horno', 'Gozney XL · ≤10 min', true], ['En camino', 'Mandadito asignado', false], ['Entregado', '', false]];
+  const [orden, setOrden] = React.useState(null);
+  const [errorEstado, setErrorEstado] = React.useState(false);
+
+  // Poll the real order state while this screen is open. Without a folio (the
+  // design gallery in index.html) it stays on the static placeholder below.
+  React.useEffect(() => {
+    if (!folio || typeof mextizzaEstadoOrden !== 'function') return;
+    let vivo = true;
+    const leer = async () => {
+      try {
+        const { orden } = await mextizzaEstadoOrden(folio);
+        if (vivo) { setOrden(orden); setErrorEstado(false); }
+      } catch (e) {
+        if (vivo) setErrorEstado(true);
+      }
+    };
+    leer();
+    const id = setInterval(leer, 30000);
+    return () => { vivo = false; clearInterval(id); };
+  }, [folio]);
+
+  const cancelada = orden && orden.estado === 'cancelada';
+  const pasoActual = orden ? (ESTADO_A_PASO[orden.estado] != null ? ESTADO_A_PASO[orden.estado] : 0) : 1;
+  const baseSteps = [['Confirmado', 'Recibimos tu pedido'], ['En el horno', 'Gozney XL · ≤10 min'], ['En camino', 'Mandadito asignado'], ['Entregado', '']];
+  const steps = baseSteps.map(([t, d], i) => [t, d, orden ? (!cancelada && i <= pasoActual) : i <= 1]);
   return (
     <Phone>
       <div style={{ flex: 'none', background: 'var(--surface-page)', position: 'relative', paddingBottom: 22, borderBottom: 'var(--border-paper)' }}>
@@ -376,9 +410,21 @@ function AppTracking({ tab, onTab, count, folio }) {
         <div style={{ padding: '4px 20px 0' }}>
           {/* folio comes from the real backend after a confirmed order; the
               bare '1042' is the design-gallery placeholder in index.html. */}
-          <Badge tone="dorado">Pedido #{folio || '1042'}</Badge>
-          <h1 style={{ fontFamily: 'var(--font-display)', fontSize: 32, marginTop: 12 }}>Llega 20:10</h1>
-          <p style={{ fontFamily: 'var(--font-body)', fontSize: 13, color: 'var(--text-muted)', marginTop: 6 }}>Estimado 28 min · radio de 3 km</p>
+          <Badge tone={cancelada ? 'rosa' : 'dorado'}>Pedido #{folio || '1042'}</Badge>
+          <h1 style={{ fontFamily: 'var(--font-display)', fontSize: 32, marginTop: 12 }}>
+            {orden ? ({
+              recibida: 'Pedido recibido', confirmada: 'Confirmado', horno: 'En el horno',
+              lista: 'Lista para salir', camino: 'En camino', entregada: 'Entregado',
+              cancelada: 'Cancelado'
+            }[orden.estado] || 'En proceso') : (folio ? 'Consultando…' : 'Llega 20:10')}
+          </h1>
+          <p style={{ fontFamily: 'var(--font-body)', fontSize: 13, color: 'var(--text-muted)', marginTop: 6 }}>
+            {cancelada
+              ? (orden.motivo_cancelacion || 'El pedido fue cancelado.')
+              : errorEstado
+                ? 'Sin conexión para actualizar el estado.'
+                : (folio ? 'Se actualiza solo · radio de 3 km' : 'Estimado 28 min · radio de 3 km')}
+          </p>
         </div>
         <TapeStripe position="bottom" height={3} />
       </div>

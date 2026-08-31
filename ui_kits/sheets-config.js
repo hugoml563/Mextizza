@@ -64,11 +64,13 @@ if (!window.__mextizzaSheetsConfigLoaded) {
 
   const mextizzaAvanzarEstado = folio => mextizzaApiPost('avanzar_estado', { folio });
   const mextizzaCancelarOrden = (folio, motivo) => mextizzaApiPost('cancelar', { folio, motivo });
+  /** Estado de un solo pedido, para la pantalla de seguimiento de la app. */
+  const mextizzaEstadoOrden = folio => mextizzaApiGet('estado', { folio });
   const mextizzaListarAbiertas = () => mextizzaApiGet('listar_abiertas');
   const mextizzaListarHoy = () => mextizzaApiGet('listar_hoy');
 
   const mextizzaSolicitarCatering = ({ nombre, telefono, personas, fecha_evento, notas }) =>
     mextizzaApiPost('solicitar_catering', { nombre, telefono, personas, fecha_evento, notas });
 
-  Object.assign(window, { mextizzaCrearOrden, mextizzaAvanzarEstado, mextizzaCancelarOrden, mextizzaListarAbiertas, mextizzaListarHoy, mextizzaSolicitarCatering });
+  Object.assign(window, { mextizzaCrearOrden, mextizzaAvanzarEstado, mextizzaCancelarOrden, mextizzaEstadoOrden, mextizzaListarAbiertas, mextizzaListarHoy, mextizzaSolicitarCatering });
 }
