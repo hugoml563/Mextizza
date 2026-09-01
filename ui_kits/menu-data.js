@@ -55,13 +55,46 @@ const MEXTIZZA_ADDONS = [
 ];
 const MEXTIZZA_FACTS = {
   envioIncluido: true,
-  radio: '3 km · hasta 30 min puerta a puerta',
+  /* Tiempo prometido puerta a puerta. Es el numero OFICIAL: la pantalla de
+     comandas colorea contra el, y aparece en el menu impreso, el sitio y la app.
+     Cambiarlo aqui no basta para el bundle compilado (_ds_bundle.js) — hay que
+     sincronizarlo a mano. */
+  promesaMin: 40,
+  radio: '3 km · hasta 40 min puerta a puerta',
+  /* Horario de operacion. getDay(): 0=domingo ... 6=sabado.
+     Miercoles a domingo, de 16:00 a 23:00. El checkout se cierra fuera de esto:
+     un pedido que no se puede cocinar es peor que ningun pedido. */
+  horario: {
+    dias: [3, 4, 5, 6, 0],
+    desde: 16,
+    hasta: 23,
+    texto: 'Miércoles a domingo, 4:00 pm a 11:00 pm'
+  },
+  /* Minutos tras crear el pedido en los que el cliente aun puede cancelarlo solo.
+     Despues de esto ya hay masa e ingredientes comprometidos. */
+  cancelacionMin: 15,
   fermento: 'Fermentación fría de 48 horas',
   estilo: 'Horno de piedra, masa fermentada en frío 48 horas',
   catering: { precio: 235, min: 20, max: 30, anticipo: '30%', aviso: '4 días' },
   zona: 'Col. Lomas Lindas, Atizapán de Zaragoza',
   whatsapp: '525526577352' // WhatsApp Business, formato internacional (52 + 10 dígitos)
 };
+/* ¿Estamos abiertos en este momento? Devuelve { abierto, texto }. */
+function mextizzaEstaAbierto(ahora) {
+  const d = ahora || new Date();
+  const h = MEXTIZZA_FACTS.horario;
+  const abierto = h.dias.indexOf(d.getDay()) !== -1 && d.getHours() >= h.desde && d.getHours() < h.hasta;
+  return { abierto, texto: h.texto };
+}
+
+/* Minutos que faltan para que se cierre la ventana de cancelacion del cliente.
+   <= 0 significa que ya no puede cancelar solo. */
+function mextizzaMinutosParaCancelar(tRecibida) {
+  if (!tRecibida) return 0;
+  const transcurridos = (Date.now() - new Date(tRecibida).getTime()) / 60000;
+  return Math.max(0, Math.ceil(MEXTIZZA_FACTS.cancelacionMin - transcurridos));
+}
+
 function mextizzaWhatsappLink(mensaje) {
   return 'https://wa.me/' + MEXTIZZA_FACTS.whatsapp + '?text=' + encodeURIComponent(mensaje);
 }
@@ -69,4 +102,4 @@ const MEXTIZZA_SOCIAL = {
   instagram: 'https://www.instagram.com/mextizzamx/',
   facebook: 'https://www.facebook.com/profile.php?id=61592120047383'
 };
-Object.assign(window, { MEXTIZZA_MENU, MEXTIZZA_ADDONS, MEXTIZZA_FACTS, mextizzaWhatsappLink, MEXTIZZA_SOCIAL });
+Object.assign(window, { MEXTIZZA_MENU, MEXTIZZA_ADDONS, MEXTIZZA_FACTS, mextizzaWhatsappLink, mextizzaEstaAbierto, mextizzaMinutosParaCancelar, MEXTIZZA_SOCIAL });

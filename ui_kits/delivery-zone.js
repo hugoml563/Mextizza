@@ -42,7 +42,7 @@ function zonaEvaluar(nombreColonia) {
   if (km <= MEXTIZZA_ZONE.radioKm) return {
     colonia: c.name, km, estado: 'dentro',
     titulo: 'Dentro del radio de reparto',
-    detalle: `A ${km} km de la cocina. Llega en 30 minutos o menos, con el envío ya incluido en el precio.`
+    detalle: `A ${km} km de la cocina. Llega en 40 minutos o menos, con el envío ya incluido en el precio.`
   };
   if (km <= MEXTIZZA_ZONE.radioMaximoKm) return {
     colonia: c.name, km, estado: 'limite',

@@ -15,7 +15,7 @@ function DeliveryForm({ compact = false, attempted = false, onValidChange, onDat
   const [tel, setTel] = React.useState(ini.telefono || '');
   const [calle, setCalle] = React.useState(ini.calle || '');
   const [colonia, setColonia] = React.useState(ini.colonia || '');
-  const [horario, setHorario] = React.useState('Lo antes posible (≤30 min)');
+  const [horario, setHorario] = React.useState('Lo antes posible (≤40 min)');
   const [pago, setPago] = React.useState(null);
   const [notas, setNotas] = React.useState('');
 
@@ -23,7 +23,19 @@ function DeliveryForm({ compact = false, attempted = false, onValidChange, onDat
   const telOk = digits.length === 10;
   const zona = colonia ? zonaEvaluar(colonia) : null;
   const zonaOk = !!zona && zona.estado === 'dentro';
-  const valid = !!nombre.trim() && telOk && !!calle.trim() && zonaOk && !!pago;
+  /* Fuera del horario de operacion el checkout se cierra: un pedido que no se
+     puede cocinar es peor que ningun pedido. Se reevalua cada minuto para que
+     la pantalla no se quede abierta si dan las 11 mientras el cliente escribe. */
+  const [ahora, setAhora] = React.useState(() => new Date());
+  React.useEffect(() => {
+    const id = setInterval(() => setAhora(new Date()), 60000);
+    return () => clearInterval(id);
+  }, []);
+  const apertura = typeof mextizzaEstaAbierto === "function"
+    ? mextizzaEstaAbierto(ahora)
+    : { abierto: true, texto: "" };
+
+  const valid = !!nombre.trim() && telOk && !!calle.trim() && zonaOk && !!pago && apertura.abierto;
 
   React.useEffect(() => { onValidChange && onValidChange(valid); }, [valid]);
   React.useEffect(() => {
@@ -35,6 +47,11 @@ function DeliveryForm({ compact = false, attempted = false, onValidChange, onDat
 
   return (
     <div>
+      {!apertura.abierto && (
+        <StatusNote tone="block" title="Cocina cerrada" style={{ marginBottom: 14 }}>
+          Tomamos pedidos {apertura.texto}. Dejanos tu pedido por WhatsApp y lo preparamos en cuanto abramos.
+        </StatusNote>
+      )}
       <Field label="Nombre" required placeholder="Tu nombre" value={nombre}
         onChange={e => setNombre(e.target.value)}
         invalid={attempted && !nombre.trim()} />
@@ -71,7 +88,7 @@ function DeliveryForm({ compact = false, attempted = false, onValidChange, onDat
       )}
 
       <Field label="Horario" as="select" value={horario} onChange={e => setHorario(e.target.value)}
-        options={['Lo antes posible (≤30 min)', 'Programar para hoy', 'Programar para mañana']}
+        options={['Lo antes posible (≤40 min)', 'Programar para hoy', 'Programar para mañana']}
         style={{ marginTop: gap }} />
 
       <RadioGroup label="Forma de pago" required options={PAGOS} value={pago} onChange={setPago}

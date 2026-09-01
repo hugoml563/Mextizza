@@ -36,6 +36,12 @@ const SHEETS = {
   catering: 'catering'
 };
 
+/* Minutos tras crear el pedido en los que el cliente puede cancelarlo el mismo.
+   Despues de eso ya hay masa e ingredientes comprometidos y la cancelacion pasa
+   por el Centro de Ventas. Tiene que coincidir con MEXTIZZA_FACTS.cancelacionMin
+   en ui_kits/menu-data.js, que es lo que decide si se ve el boton. */
+const CANCELACION_CLIENTE_MIN = 15;
+
 const ESTADOS_ACTIVOS = ['recibida', 'confirmada', 'horno', 'lista', 'camino'];
 const TS_POR_ESTADO = {
   confirmada: 't_confirmada',
@@ -215,6 +221,9 @@ function doPost(e) {
         requiereAdmin_(nivel);
         result = cancelarOrden_(body);
         break;
+      case 'cancelar_cliente':
+        result = cancelarPorCliente_(body);
+        break;
       case 'solicitar_catering':
         result = crearSolicitudCatering_(body);
         break;
@@ -343,6 +352,30 @@ function crearSolicitudCatering_(body) {
   const folio = 'CAT-' + String(sh.getLastRow()).padStart(4, '0');
   sh.appendRow([folio, textoSeguro_(body.nombre), textoSeguro_(body.telefono), textoSeguro_(body.personas), textoSeguro_(body.fecha_evento), textoSeguro_(body.notas), 'nueva', new Date()]);
   return { folio };
+}
+
+/* Cancelacion hecha por el propio cliente desde la web o la app. A diferencia de
+   cancelarOrden_ (admin), esta corre con el token publico, asi que solo puede
+   tocar un pedido cuyo folio ya conoce quien llama, y solo dentro de la ventana.
+   Un pedido ya entregado o cancelado nunca se toca. */
+function cancelarPorCliente_(body) {
+  var sh = sheet_(SHEETS.ordenes);
+  var encontrado = findOrdenRow_(sh, body.folio);
+  var row = encontrado.row;
+  var index = encontrado.index;
+  var estado = row[ORDENES_HEADERS.indexOf("estado")];
+  if (estado === "cancelada") return { folio: body.folio, estado: "cancelada" };
+  if (estado === "entregada") throw new Error("El pedido ya fue entregado");
+
+  var tRecibida = row[ORDENES_HEADERS.indexOf("t_recibida")];
+  var minutos = tRecibida ? (Date.now() - new Date(tRecibida).getTime()) / 60000 : 999;
+  if (minutos > CANCELACION_CLIENTE_MIN) {
+    throw new Error("Ya pasaron los " + CANCELACION_CLIENTE_MIN + " minutos para cancelar. Escribenos por WhatsApp.");
+  }
+
+  sh.getRange(index, ORDENES_HEADERS.indexOf("estado") + 1).setValue("cancelada");
+  sh.getRange(index, ORDENES_HEADERS.indexOf("motivo_cancelacion") + 1).setValue("Cancelado por el cliente");
+  return { folio: body.folio, estado: "cancelada" };
 }
 
 function findOrdenRow_(sh, folio) {

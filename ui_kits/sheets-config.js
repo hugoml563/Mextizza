@@ -99,11 +99,13 @@ if (!window.__mextizzaSheetsConfigLoaded) {
   const mextizzaEstadoOrden = folio => mextizzaApiGet('estado', { folio });
   /** Ultimo pedido de un telefono: recupera el seguimiento en otro dispositivo. */
   const mextizzaEstadoPorTelefono = telefono => mextizzaApiGet('estado_por_telefono', { telefono });
+  /** El cliente cancela su propio pedido, solo dentro de la ventana permitida. */
+  const mextizzaCancelarPorCliente = folio => mextizzaApiPost('cancelar_cliente', { folio });
   const mextizzaListarAbiertas = () => mextizzaApiGet('listar_abiertas', {}, true);
   const mextizzaListarHoy = () => mextizzaApiGet('listar_hoy', {}, true);
 
   const mextizzaSolicitarCatering = ({ nombre, telefono, personas, fecha_evento, notas }) =>
     mextizzaApiPost('solicitar_catering', { nombre, telefono, personas, fecha_evento, notas });
 
-  Object.assign(window, { mextizzaCrearOrden, mextizzaAvanzarEstado, mextizzaCancelarOrden, mextizzaEstadoOrden, mextizzaEstadoPorTelefono, mextizzaListarAbiertas, mextizzaListarHoy, mextizzaSolicitarCatering, mextizzaTokenAdmin, mextizzaGuardarTokenAdmin, mextizzaOlvidarTokenAdmin });
+  Object.assign(window, { mextizzaCrearOrden, mextizzaAvanzarEstado, mextizzaCancelarOrden, mextizzaEstadoOrden, mextizzaEstadoPorTelefono, mextizzaCancelarPorCliente, mextizzaListarAbiertas, mextizzaListarHoy, mextizzaSolicitarCatering, mextizzaTokenAdmin, mextizzaGuardarTokenAdmin, mextizzaOlvidarTokenAdmin });
 }

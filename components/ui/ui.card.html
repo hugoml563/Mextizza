@@ -30,7 +30,7 @@ return <div>
 <div className="lbl">RadioGroup — obligatorio, nada preseleccionado</div>
 <RadioGroup label="Forma de pago" required options={['Efectivo','Transferencia','Tarjeta']} value={pago} onChange={setPago} invalid={!pago} hint={pago?'Se cobra al entregar.':'Elige una forma de pago para continuar.'} />
 <div className="lbl">StatusNote</div>
-<StatusNote tone="ok" title="Dentro del radio de reparto">A 0.6 km de la cocina. Llega en 30 minutos o menos.</StatusNote>
+<StatusNote tone="ok" title="Dentro del radio de reparto">A 0.6 km de la cocina. Llega en 40 minutos o menos.</StatusNote>
 <StatusNote tone="warn" title="Zona de excepción" style={{marginTop:8}}>A 4.3 km. Lo confirmamos a mano por WhatsApp.</StatusNote>
 <StatusNote tone="block" title="Fuera de la zona de reparto" style={{marginTop:8}}>A 7.6 km. Todavía no llegamos hasta allá.</StatusNote>
 <div className="row" style={{marginTop:12}}><QtyStepper value={1} /><QtyStepper value={q} onChange={setQ} size={44} /></div>

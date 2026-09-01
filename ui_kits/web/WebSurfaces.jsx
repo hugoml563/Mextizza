@@ -176,7 +176,7 @@ function WebProcess() {
   const steps = [
     ['48h', 'Fermentación fría', 'La masa descansa dos días completos en refrigeración con temperatura controlada. Rompe azúcares y gluten.'],
     ['≤10 min', 'Al horno, al pedido', 'Nada se hornea antes de que entre tu pedido. El Gozney XL cocina cada pizza en menos de diez minutos.'],
-    ['≤30 min', 'A tu puerta', 'Radio de reparto de 3 km. Caja kraft con ventilación para que la orilla llegue crujiente.']
+    ['≤40 min', 'A tu puerta', 'Radio de reparto de 3 km. Caja kraft con ventilación para que la orilla llegue crujiente.']
   ];
   return (
     <section id="proceso" style={{ background: 'var(--surface-page)', padding: '76px 0' }}>
@@ -310,7 +310,7 @@ function WebSocial() {
           <SocialTile treatment="flat" background="var(--negro-carbon)" headlineColor="var(--blanco-hueso)" headline={<>48 horas<br />de fermento</>} kicker="Horno de piedra" kickerColor="var(--dorado-masa)" />
           <SocialTile treatment="flat" background="var(--rosa-mexicano)" headlineColor="var(--blanco)" headline={<>Hecha por<br />mexicanos</>} kicker="Con técnica italiana" kickerColor="var(--blanco)" />
           <SocialTile treatment="flat" background="var(--terracota-horno)" headlineColor="var(--blanco-hueso)" headline={<>Pizza<br />Cochinita</>} kicker="Especial del mes" kickerColor="var(--dorado-tinte)" />
-          <SocialTile treatment="flat" background="var(--dorado-masa)" headlineColor="var(--negro-carbon)" headline={<>Radio<br />3 km</>} kicker="30 min o menos" kickerColor="var(--negro-carbon)" />
+          <SocialTile treatment="flat" background="var(--dorado-masa)" headlineColor="var(--negro-carbon)" headline={<>Radio<br />3 km</>} kicker="40 min o menos" kickerColor="var(--negro-carbon)" />
         </div>
       </div>
     </section>

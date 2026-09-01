@@ -1970,7 +1970,7 @@ function DeliveryForm({
   const [tel, setTel] = React.useState('');
   const [calle, setCalle] = React.useState('');
   const [colonia, setColonia] = React.useState('');
-  const [horario, setHorario] = React.useState('Lo antes posible (â‰¤30 min)');
+  const [horario, setHorario] = React.useState('Lo antes posible (â‰¤40 min)');
   const [pago, setPago] = React.useState(null);
   const digits = tel.replace(/\D/g, '');
   const telOk = digits.length === 10;
@@ -2046,7 +2046,7 @@ function DeliveryForm({
     as: "select",
     value: horario,
     onChange: e => setHorario(e.target.value),
-    options: ['Lo antes posible (â‰¤30 min)', 'Programar para hoy', 'Programar para maÃ±ana'],
+    options: ['Lo antes posible (â‰¤40 min)', 'Programar para hoy', 'Programar para maÃ±ana'],
     style: {
       marginTop: gap
     }
@@ -2396,7 +2396,7 @@ function AppMenu({
       fontFamily: 'var(--font-body)',
       fontSize: 12
     }
-  }, "Lomas Lindas \xB7 llega en ~30 min"))), /*#__PURE__*/React.createElement(TapeStripe, {
+  }, "Lomas Lindas \xB7 llega en ~40 min"))), /*#__PURE__*/React.createElement(TapeStripe, {
     position: "bottom",
     height: 3
   })), /*#__PURE__*/React.createElement("div", {
@@ -3215,7 +3215,7 @@ function zonaEvaluar(nombreColonia) {
     km,
     estado: 'dentro',
     titulo: 'Dentro del radio de reparto',
-    detalle: `A ${km} km de la cocina. Llega en 30 minutos o menos, con el envÃ­o ya incluido en el precio.`
+    detalle: `A ${km} km de la cocina. Llega en 40 minutos o menos, con el envÃ­o ya incluido en el precio.`
   };
   if (km <= MEXTIZZA_ZONE.radioMaximoKm) return {
     colonia: c.name,
@@ -3421,7 +3421,15 @@ const MEXTIZZA_ADDONS = [{
 }];
 const MEXTIZZA_FACTS = {
   envioIncluido: true,
-  radio: '3 km Â· hasta 30 min puerta a puerta',
+  promesaMin: 40,
+  horario: {
+    dias: [3, 4, 5, 6, 0],
+    desde: 16,
+    hasta: 23,
+    texto: 'Miercoles a domingo, 4:00 pm a 11:00 pm'
+  },
+  cancelacionMin: 15,
+  radio: '3 km Â· hasta 40 min puerta a puerta',
   fermento: 'FermentaciÃ³n frÃ­a de 48 horas',
   estilo: 'Horno de piedra, masa fermentada en frÃ­o 48 horas',
   catering: {
@@ -3816,7 +3824,7 @@ function CartDrawer({
       lineHeight: 1.6,
       color: 'var(--text-muted)'
     }
-  }, "Entra al horno en cuanto lo confirmemos por WhatsApp. Llega en 30 minutos o menos."), /*#__PURE__*/React.createElement(Badge, {
+  }, "Entra al horno en cuanto lo confirmemos por WhatsApp. Llega en 40 minutos o menos."), /*#__PURE__*/React.createElement(Badge, {
     tone: "dark"
   }, "Pedido #1042")))), step !== 'done' && lines.length > 0 && /*#__PURE__*/React.createElement("div", {
     style: {
@@ -4227,7 +4235,7 @@ function WebMenu({
   })))))));
 }
 function WebProcess() {
-  const steps = [['48h', 'FermentaciÃ³n frÃ­a', 'La masa descansa dos dÃ­as completos en refrigeraciÃ³n con temperatura controlada. Rompe azÃºcares y gluten.'], ['â‰¤10 min', 'Al horno, al pedido', 'Nada se hornea antes de que entre tu pedido. El Gozney XL cocina cada pizza en menos de diez minutos.'], ['â‰¤30 min', 'A tu puerta', 'Radio de reparto de 3 km. Caja kraft con ventilaciÃ³n para que la orilla llegue crujiente.']];
+  const steps = [['48h', 'FermentaciÃ³n frÃ­a', 'La masa descansa dos dÃ­as completos en refrigeraciÃ³n con temperatura controlada. Rompe azÃºcares y gluten.'], ['â‰¤10 min', 'Al horno, al pedido', 'Nada se hornea antes de que entre tu pedido. El Gozney XL cocina cada pizza en menos de diez minutos.'], ['â‰¤40 min', 'A tu puerta', 'Radio de reparto de 3 km. Caja kraft con ventilaciÃ³n para que la orilla llegue crujiente.']];
   return /*#__PURE__*/React.createElement("section", {
     id: "proceso",
     style: {
@@ -4413,7 +4421,7 @@ function WebSocial() {
     background: "var(--dorado-masa)",
     headlineColor: "var(--negro-carbon)",
     headline: /*#__PURE__*/React.createElement(React.Fragment, null, "Radio", /*#__PURE__*/React.createElement("br", null), "3 km"),
-    kicker: "30 min o menos",
+    kicker: "40 min o menos",
     kickerColor: "var(--negro-carbon)"
   }))));
 }

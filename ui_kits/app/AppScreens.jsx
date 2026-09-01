@@ -132,7 +132,7 @@ function AppMenu({ onAdd, onOpen, tab, onTab, count, added }) {
           <Lockup variant="pala" size={26} align="left" base="../../" />
           <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 12, color: 'var(--text-muted)' }}>
             <Icon name="pin" size={14} />
-            <span style={{ fontFamily: 'var(--font-body)', fontSize: 12 }}>Lomas Lindas · llega en ~30 min</span>
+            <span style={{ fontFamily: 'var(--font-body)', fontSize: 12 }}>Lomas Lindas · llega en ~40 min</span>
           </div>
         </div>
         <TapeStripe position="bottom" height={3} />
@@ -401,7 +401,23 @@ function AppTracking({ tab, onTab, count, folio }) {
     return () => { vivo = false; clearInterval(id); };
   }, [folio]);
 
+  const [cancelando, setCancelando] = React.useState(false);
+  const [errorCancelar, setErrorCancelar] = React.useState(null);
   const cancelada = orden && orden.estado === 'cancelada';
+  /* Ventana de autocancelacion: pasada, el boton desaparece y el backend
+     tambien lo rechaza. */
+  const minsRestantes = orden && !cancelada && orden.estado !== 'entregada' && typeof mextizzaMinutosParaCancelar === 'function'
+    ? mextizzaMinutosParaCancelar(orden.t_recibida) : 0;
+
+  const cancelar = async () => {
+    setErrorCancelar(null); setCancelando(true);
+    try {
+      await mextizzaCancelarPorCliente(orden.folio);
+      setOrden({ ...orden, estado: 'cancelada', motivo_cancelacion: 'Cancelado por el cliente' });
+    } catch (e) {
+      setErrorCancelar(e.message || 'No se pudo cancelar.');
+    } finally { setCancelando(false); }
+  };
   const pasoActual = orden ? (ESTADO_A_PASO[orden.estado] != null ? ESTADO_A_PASO[orden.estado] : 0) : 1;
   const baseSteps = [['Confirmado', 'Recibimos tu pedido'], ['En el horno', 'Gozney XL · ≤10 min'], ['En camino', 'Mandadito asignado'], ['Entregado', '']];
   const steps = baseSteps.map(([t, d], i) => [t, d, orden ? (!cancelada && i <= pasoActual) : i <= 1]);
@@ -425,7 +441,7 @@ function AppTracking({ tab, onTab, count, folio }) {
               ? (orden.motivo_cancelacion || 'El pedido fue cancelado.')
               : errorEstado
                 ? 'Sin conexión para actualizar el estado.'
-                : (folio ? 'Se actualiza solo · radio de 3 km' : 'Estimado 28 min · radio de 3 km')}
+                : (folio ? 'Se actualiza solo · radio de 3 km' : 'Estimado ≤40 min · radio de 3 km')}
           </p>
         </div>
         <TapeStripe position="bottom" height={3} />
@@ -447,6 +463,17 @@ function AppTracking({ tab, onTab, count, folio }) {
             </div>
           </div>
         ))}
+        {minsRestantes > 0 && (
+          <div style={{ marginTop: 22 }}>
+            {errorCancelar && <StatusNote tone="block" title="Ups" style={{ marginBottom: 10 }}>{errorCancelar}</StatusNote>}
+            <Button tone="outline" size="md" block disabled={cancelando} onClick={cancelar}>
+              {cancelando ? 'Cancelando…' : 'Cancelar pedido'}
+            </Button>
+            <p style={{ fontFamily: 'var(--font-body)', fontSize: 11.5, color: 'var(--text-muted)', textAlign: 'center', marginTop: 7 }}>
+              Puedes cancelar durante {minsRestantes} min más.
+            </p>
+          </div>
+        )}
         <FramedPanel variant="paper" style={{ marginTop: 26 }}>
           <div style={{ fontFamily: 'var(--font-label)', fontSize: 10, letterSpacing: 1, textTransform: 'uppercase', marginBottom: 8 }}>Al recibir</div>
           <p style={{ fontFamily: 'var(--font-body)', fontSize: 13, lineHeight: 1.6, color: 'var(--text-muted)' }}>
