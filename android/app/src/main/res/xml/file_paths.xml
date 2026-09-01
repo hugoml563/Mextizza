@@ -1,5 +1,19 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!--
+  Rutas que el FileProvider puede compartir con otras apps mediante permisos
+  temporales de URI.
+
+  La plantilla de Capacitor trae `path="."`, que abarca TODA la raiz del
+  almacenamiento externo y TODA la cache. Este proyecto no usa el FileProvider
+  (el unico plugin instalado es @capacitor/app: ni camara, ni archivos, ni
+  compartir), asi que ese alcance es superficie regalada: si mañana se agrega un
+  plugin que si otorgue URIs, podria entregar cualquier archivo externo del
+  telefono en lugar de solo los suyos.
+
+  Se acota a una subcarpeta propia. Si algun plugin futuro necesita mas, hay que
+  ampliar aqui de forma explicita y acotada, nunca volver a `path="."`.
+-->
 <paths xmlns:android="http://schemas.android.com/apk/res/android">
-    <external-path name="my_images" path="." />
-    <cache-path name="my_cache_images" path="." />
+    <external-files-path name="mextizza_shared" path="compartidos/" />
+    <cache-path name="mextizza_cache" path="compartidos/" />
 </paths>
