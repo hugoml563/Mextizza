@@ -11,8 +11,13 @@ body{background:var(--surface-page)}
   .web-footer-grid{grid-template-columns:1fr !important;gap:32px !important}
 }
 @media (max-width: 640px) {
-  .web-header-inner{height:auto !important;flex-wrap:wrap;row-gap:12px;padding-top:14px;padding-bottom:14px}
-  .web-header-nav{gap:16px !important;flex-wrap:wrap}
+  /* El header se partia en tres filas y ocupaba 173px, el 21% de la pantalla,
+     antes de que empezara el contenido. Los tres enlaces de ancla se ocultan en
+     celular: el hero ya lleva 'Ver el menu' y la pagina es corta de recorrer.
+     Quedan logo, Seguir y Pedido en una sola fila de 64px. */
+  .web-header-inner{height:64px !important;flex-wrap:nowrap;padding-top:0;padding-bottom:0}
+  .web-header-nav{gap:10px !important;flex-wrap:nowrap}
+  .web-header-nav > a{display:none}
   .web-addons-grid{grid-template-columns:1fr !important}
 }
 @media (max-width: 420px) {

@@ -103,7 +103,7 @@ function WebHero({ onNav }) {
             fontFamily: 'var(--font-label)', fontSize: 11, letterSpacing: 2, textTransform: 'uppercase',
             color: 'var(--rosa-mexicano-texto)', marginBottom: 20
           }}>Técnica italiana · Alma mexicana</div>
-          <h1 style={{ fontFamily: 'var(--font-display)', fontSize: 'clamp(44px, 6vw, 84px)', lineHeight: 1.01, color: 'var(--negro-carbon)', letterSpacing: -1 }}>
+          <h1 style={{ fontFamily: 'var(--font-display)', fontSize: 'clamp(44px, 4.9vw, 64px)', lineHeight: 1.01, color: 'var(--negro-carbon)', letterSpacing: -1 }}>
             Masa de 48 horas,<br />horneada <span style={{ color: 'var(--rosa-mexicano)' }}>al pedido</span>
           </h1>
           <p style={{
@@ -120,7 +120,7 @@ function WebHero({ onNav }) {
             </Button>
           </div>
           <div style={{ display: 'flex', gap: 26, marginTop: 40, flexWrap: 'wrap' }}>
-            {[['clock', MEXTIZZA_FACTS.radio], ['flame', 'Horno Gozney XL'], ['pin', 'Radio de 3 km']].map(([ic, t]) => (
+            {[['clock', MEXTIZZA_FACTS.radio], ['flame', 'Horno Gozney XL'], ['pin', 'Envío incluido']].map(([ic, t]) => (
               <span key={t} style={{ display: 'flex', alignItems: 'center', gap: 8, color: 'var(--text-muted)', fontFamily: 'var(--font-body)', fontSize: 12.5 }}>
                 <Icon name={ic} size={16} />{t}
               </span>
@@ -148,7 +148,7 @@ function WebMenu({ onAdd, onCustomize, added }) {
   return (
     <section id="menu" className="reveal" style={{ background: 'var(--surface-sunken)', paddingTop: 76, paddingBottom: 76 }}>
       <div style={webShell.page}>
-        <SectionLabel>Menú · horno de piedra, masa de 48 h · envío incluido</SectionLabel>
+        <SectionLabel>Menú</SectionLabel>
         <div className="web-menu-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 28, alignItems: 'start' }}>
           {MEXTIZZA_MENU.map((g, i) => (
             <MenuCard key={g.cat} kicker={g.cat} title={g.title}
