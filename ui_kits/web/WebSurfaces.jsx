@@ -284,6 +284,37 @@ function WebCatering() {
   );
 }
 
+/* Tarjeta con el marco de un post de redes: avatar, arroba, imagen cuadrada y
+   pie. Sirve para cualquier imagen, asi que las piezas que se diseñen en Canva
+   entran aqui igual que las fotos de producto.
+   Sin likes ni comentarios: inventar esos numeros seria enseñarle al visitante
+   una prueba social que no existe. */
+function SocialPost({ imagen, alt, pie }) {
+  return (
+    <a className="social-foto" href={MEXTIZZA_SOCIAL.instagram} target="_blank" rel="noopener"
+      aria-label={'Ver ' + alt + ' en el Instagram de Mextizza'}
+      style={{ display: 'flex', flexDirection: 'column', background: 'var(--surface-card)',
+        border: 'var(--border-frame)', borderRadius: 'var(--radius-md)', overflow: 'hidden',
+        borderBottom: 'var(--border-frame)', color: 'var(--negro-carbon)' }}>
+
+      <div style={{ flex: 'none', display: 'flex', alignItems: 'center', gap: 8, padding: '9px 11px' }}>
+        <img src="../../assets/social/mextizza-perfil-ig-fb-320.png" alt="" aria-hidden="true"
+          style={{ width: 24, height: 24, borderRadius: '50%', objectFit: 'cover', border: 'var(--border-paper)' }} />
+        <span style={{ fontFamily: 'var(--font-body)', fontWeight: 700, fontSize: 12.5 }}>mextizzamx</span>
+        <Icon name="instagram" size={14} style={{ marginLeft: 'auto', opacity: 0.45 }} />
+      </div>
+
+      <div style={{ position: 'relative', aspectRatio: '1 / 1', overflow: 'hidden', background: 'var(--surface-sunken)' }}>
+        <img src={imagen} alt={alt} loading="lazy"
+          style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }} />
+      </div>
+
+      <div style={{ flex: 1, padding: '10px 11px 12px', fontFamily: 'var(--font-body)', fontSize: 12.5, lineHeight: 1.45 }}>
+        <b style={{ fontWeight: 700 }}>mextizzamx</b> <span style={{ color: 'var(--text-muted)' }}>{pie}</span>
+      </div>
+    </a>
+  );
+}
 function WebSocial() {
   /* Rejilla de fotos reales que enlaza al perfil, en vez de un feed en vivo.
      Un feed de Instagram exigiria la Graph API (la Basic Display murio en dic
@@ -319,16 +350,8 @@ function WebSocial() {
 
         <div className="web-social-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 16 }}>
           {fotos.map(it => (
-            <a key={it.id} className="social-foto" href={MEXTIZZA_SOCIAL.instagram} target="_blank" rel="noopener"
-              aria-label={'Ver ' + it.name + ' en Instagram'}
-              style={{ position: 'relative', display: 'block', aspectRatio: '1 / 1', overflow: 'hidden',
-                borderRadius: 'var(--radius-md)', border: 'var(--border-frame)', borderBottom: 'var(--border-frame)' }}>
-              <img src={it.photo} alt={it.name} loading="lazy"
-                style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }} />
-              <span style={{ position: 'absolute', inset: 'auto 0 0 0', padding: '26px 12px 11px',
-                background: 'linear-gradient(transparent, rgba(26,26,26,.82))', color: 'var(--blanco-hueso)',
-                fontFamily: 'var(--font-body)', fontWeight: 700, fontSize: 13 }}>{it.name}</span>
-            </a>
+            <SocialPost key={it.id} imagen={it.photo} alt={it.name}
+              pie={it.name + '. ' + it.desc} />
           ))}
         </div>
       </div>
