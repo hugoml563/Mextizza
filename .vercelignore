@@ -1,0 +1,19 @@
+# Nada de esto lo necesita el sitio en tiempo de ejecucion, y todo revelaba
+# informacion privada: el resumen ejecutivo y el plan de negocios traen costeo,
+# margenes, punto de equilibrio y flujo de caja; Code.gs expone la logica y los
+# endpoints del backend.
+sources/
+integration/
+docs/
+graphify-out/
+android/
+scripts/
+components/
+readme.md
+package.json
+package-lock.json
+capacitor.config.json
+.claude/
+.github/
+mobile-www/
+node_modules/

