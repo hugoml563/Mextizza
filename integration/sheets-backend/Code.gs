@@ -408,7 +408,7 @@ function armarOrdenes_(ordenes) {
       folio: o.folio, canal: o.canal, estado: o.estado,
       cliente: o.cliente_nombre, destino: o.direccion + (o.colonia ? ' · ' + o.colonia : ''),
       pago: o.pago_metodo, pagado: o.pago_estado === 'pagado',
-      total: o.total, min: minTranscurridos, lineas
+      total: o.total, min: minTranscurridos, notas: o.notas || '', lineas
     };
   });
 }

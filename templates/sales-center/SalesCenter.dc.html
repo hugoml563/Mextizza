@@ -87,6 +87,7 @@
 <sc-if value="{{ o.tarde }}" hint-placeholder-val="{{ false }}"><span style="font-size:12px;font-weight:700;color:#E4007C;animation:mxpulse 1.4s ease-in-out infinite">{{ o.espera }}</span></sc-if>
 </div>
 <div style="font-size:14.5px;font-weight:700;margin-top:7px">{{ o.cliente }} · <span style="color:#6b6b6b;font-weight:400">{{ o.destino }}</span></div>
+<sc-if value="{{ o.tieneNotas }}" hint-placeholder-val="{{ true }}"><div style="margin-top:7px;padding:7px 10px;background:#F7EBD8;border-left:3px solid #C1502E;font-size:12.5px;line-height:1.45"><b style="font-size:10px;letter-spacing:1px;text-transform:uppercase;color:#C1502E">Notas</b><br>{{ o.notas }}</div></sc-if>
 <div style="margin-top:8px;display:flex;flex-direction:column;gap:3px">
 <sc-for list="{{ o.lineas }}" as="l" hint-placeholder-count="2">
 <div style="display:flex;justify-content:space-between;gap:12px;font-size:13px;border-bottom:1px dashed rgba(0,0,0,.12);padding-bottom:3px">
@@ -277,6 +278,7 @@ class Component extends DCLogic {
         const tarde = o.min >= umbral && activos.includes(o.estado);
         return {
           folio: o.folio, cliente: o.cliente, canal: o.canal, tipo: o.tipo, destino: o.destino,
+          notas: o.notas || '', tieneNotas: !!(o.notas && String(o.notas).trim()),
           esRecibida: o.estado === 'recibida', esConfirmada: o.estado === 'confirmada', esHorno: o.estado === 'horno',
           esLista: o.estado === 'lista', esCamino: o.estado === 'camino', esEntregada: o.estado === 'entregada', esCancelada: o.estado === 'cancelada',
           esWeb: o.canal === 'Web', esApp: o.canal === 'App', esWhats: o.canal === 'WhatsApp', esMostradorCanal: o.canal === 'Mostrador',
