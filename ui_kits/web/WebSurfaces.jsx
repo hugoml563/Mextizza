@@ -112,7 +112,7 @@ function WebHero({ onNav }) {
           }}>
             {MEXTIZZA_FACTS.estilo}. Dark kitchen en {MEXTIZZA_FACTS.zona}. Sólo entrega, sin salón.
           </p>
-          <div style={{ display: 'flex', gap: 12, marginTop: 34 }}>
+          <div className="web-hero-cta" style={{ display: 'flex', gap: 12, marginTop: 34 }}>
             <Button tone="primary" size="lg" icon="cart" onClick={() => onNav('menu')}>Ver el menú</Button>
             <Button tone="outline" size="lg" icon="whatsapp"
               onClick={() => window.open(mextizzaWhatsappLink('Hola, quiero hacer un pedido en Mextizza.'), '_blank', 'noopener')}>

@@ -18,6 +18,10 @@ body{background:var(--surface-page)}
   .web-header-inner{height:72px !important;flex-wrap:nowrap;padding-top:0;padding-bottom:0}
   .web-header-nav{gap:10px !important;flex-wrap:nowrap}
   .web-header-nav > a{display:none}
+  /* Lado a lado en una columna de 327px, ambos botones partian su etiqueta en
+     dos lineas. Apilados ocupan el ancho completo y dan mejor area de toque. */
+  .web-hero-cta{flex-direction:column;align-items:stretch}
+  .web-hero-cta > *{width:100%;justify-content:center}
   .web-addons-grid{grid-template-columns:1fr !important}
 }
 @media (max-width: 420px) {
