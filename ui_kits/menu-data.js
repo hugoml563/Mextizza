@@ -28,29 +28,31 @@ const MEXTIZZA_MENU = [
 ];
 // Complementos por pizza. Los precios son INFERIDOS del BOM (costo de insumo x margen
 // del plan) y están pendientes de confirmar con los fundadores.
+/* Los 15 complementos confirmados con Ricardo. La categoria BOM va como
+   comentario porque es dato interno de costeo; el cliente ve los grupos. */
 const MEXTIZZA_ADDONS = [
   { id: 'queso', title: 'Más queso', note: 'Se agrega antes del horno.', items: [
-    { id: 'mozzarella', name: 'Doble mozzarella', price: 35 },
-    { id: 'provolone', name: 'Doble provolone', price: 45 },
-    { id: 'gorgonzola', name: 'Gorgonzola', price: 50 },
-    { id: 'parmesano', name: 'Parmesano en hojuelas', price: 40 }
+    { id: 'provolone', name: 'Extra provolone', price: 55 },
+    { id: 'monterrey', name: 'Extra queso monterrey', price: 30 },
+    { id: 'gorgonzola', name: 'Extra gorgonzola', price: 30 },
+    { id: 'parmesano', name: 'Extra parmesano', price: 20 }
   ]},
   { id: 'carne', title: 'Más carne', items: [
-    { id: 'peperoni', name: 'Peperoni extra', price: 45 },
-    { id: 'jamon', name: 'Jamón', price: 35 },
-    { id: 'serrano', name: 'Jamón serrano', price: 65 },
-    { id: 'cochinita-add', name: 'Cochinita pibil', price: 60 }
+    { id: 'peperoni', name: 'Extra peperoni', price: 45 },
+    { id: 'serrano', name: 'Extra jamón serrano', price: 45 },
+    { id: 'jamon', name: 'Extra jamón', price: 20 }
   ]},
-  { id: 'verdura', title: 'Verduras', items: [
-    { id: 'champinones', name: 'Champiñones', price: 30 },
-    { id: 'pimiento', name: 'Pimiento', price: 25 },
-    { id: 'morada', name: 'Cebolla morada', price: 20 },
-    { id: 'arugula', name: 'Arúgula fresca', price: 30 }
+  { id: 'verdura', title: 'Verduras y fruta', items: [
+    { id: 'pina', name: 'Extra piña', price: 20 },
+    { id: 'arugula', name: 'Extra arúgula', price: 15 },
+    { id: 'morada', name: 'Extra cebolla morada encurtida', price: 15 },
+    { id: 'champinones', name: 'Extra champiñones', price: 15 }
   ]},
   { id: 'toque', title: 'El último toque', note: 'Va encima al salir del horno.', items: [
-    { id: 'miel', name: 'Miel picante', price: 20 },
-    { id: 'vodka', name: 'Salsa a la vodka', price: 35 },
-    { id: 'orilla', name: 'Orilla rellena de queso', price: 55 }
+    { id: 'miel', name: 'Drizzle de miel', price: 15 },
+    { id: 'habanero', name: 'Toque de salsa habanero', price: 15 },
+    { id: 'macha', name: 'Toque de salsa macha', price: 15 },
+    { id: 'aoev', name: 'Terminado con aceite de oliva extra virgen', price: 15 }
   ]}
 ];
 const MEXTIZZA_FACTS = {
@@ -70,30 +72,39 @@ const MEXTIZZA_FACTS = {
     hasta: 23,
     texto: 'Miércoles a domingo, 4:00 pm a 11:00 pm'
   },
-  /* Minutos tras crear el pedido en los que el cliente aun puede cancelarlo solo.
-     Despues de esto ya hay masa e ingredientes comprometidos. */
-  cancelacionMin: 15,
   fermento: 'Fermentación fría de 48 horas',
   estilo: 'Horno de piedra, masa fermentada en frío 48 horas',
   catering: { precio: 235, min: 20, max: 30, anticipo: '30%', aviso: '4 días' },
   zona: 'Col. Lomas Lindas, Atizapán de Zaragoza',
   whatsapp: '525526577352' // WhatsApp Business, formato internacional (52 + 10 dígitos)
 };
-/* ¿Estamos abiertos en este momento? Devuelve { abierto, texto }. */
-function mextizzaEstaAbierto(ahora) {
+/* ¿Estamos abiertos? Se evalua SIEMPRE en hora de Ciudad de Mexico, no en la
+   del dispositivo: un cliente de viaje, con el reloj mal, o un navegador en otra
+   zona no debe poder pedir fuera de horario ni quedarse sin poder pedir estando
+   abierto. Se usa Intl con America/Mexico_City en vez de restar 6 horas a mano
+   para que siga siendo correcto si Mexico vuelve a cambiar sus reglas de horario. */
+function mextizzaAhoraCDMX(ahora) {
   const d = ahora || new Date();
+  try {
+    const f = new Intl.DateTimeFormat('en-US', {
+      timeZone: 'America/Mexico_City', weekday: 'short', hour: 'numeric', hour12: false
+    }).formatToParts(d);
+    const parte = t => (f.find(x => x.type === t) || {}).value;
+    const dias = { Sun: 0, Mon: 1, Tue: 2, Wed: 3, Thu: 4, Fri: 5, Sat: 6 };
+    const h = parseInt(parte("hour"), 10);
+    return { dia: dias[parte("weekday")], hora: h === 24 ? 0 : h };
+  } catch (e) {
+    return { dia: d.getDay(), hora: d.getHours() }; // sin Intl: mejor la local que nada
+  }
+}
+
+function mextizzaEstaAbierto(ahora) {
   const h = MEXTIZZA_FACTS.horario;
-  const abierto = h.dias.indexOf(d.getDay()) !== -1 && d.getHours() >= h.desde && d.getHours() < h.hasta;
+  const cdmx = mextizzaAhoraCDMX(ahora);
+  const abierto = h.dias.indexOf(cdmx.dia) !== -1 && cdmx.hora >= h.desde && cdmx.hora < h.hasta;
   return { abierto, texto: h.texto };
 }
 
-/* Minutos que faltan para que se cierre la ventana de cancelacion del cliente.
-   <= 0 significa que ya no puede cancelar solo. */
-function mextizzaMinutosParaCancelar(tRecibida) {
-  if (!tRecibida) return 0;
-  const transcurridos = (Date.now() - new Date(tRecibida).getTime()) / 60000;
-  return Math.max(0, Math.ceil(MEXTIZZA_FACTS.cancelacionMin - transcurridos));
-}
 
 function mextizzaWhatsappLink(mensaje) {
   return 'https://wa.me/' + MEXTIZZA_FACTS.whatsapp + '?text=' + encodeURIComponent(mensaje);
@@ -102,4 +113,4 @@ const MEXTIZZA_SOCIAL = {
   instagram: 'https://www.instagram.com/mextizzamx/',
   facebook: 'https://www.facebook.com/profile.php?id=61592120047383'
 };
-Object.assign(window, { MEXTIZZA_MENU, MEXTIZZA_ADDONS, MEXTIZZA_FACTS, mextizzaWhatsappLink, mextizzaEstaAbierto, mextizzaMinutosParaCancelar, MEXTIZZA_SOCIAL });
+Object.assign(window, { MEXTIZZA_MENU, MEXTIZZA_ADDONS, MEXTIZZA_FACTS, mextizzaWhatsappLink, mextizzaEstaAbierto, MEXTIZZA_SOCIAL });

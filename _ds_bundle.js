@@ -3338,87 +3338,31 @@ const MEXTIZZA_MENU = [{
     photo: '../../assets/photos/agua-mineral.jpg'
   }]
 }];
-// Complementos por pizza. Los precios son INFERIDOS del BOM (costo de insumo x margen
-// del plan) y estÃ¡n pendientes de confirmar con los fundadores.
-const MEXTIZZA_ADDONS = [{
-  id: 'queso',
-  title: 'MÃ¡s queso',
-  note: 'Se agrega antes del horno.',
-  items: [{
-    id: 'mozzarella',
-    name: 'Doble mozzarella',
-    price: 35
-  }, {
-    id: 'provolone',
-    name: 'Doble provolone',
-    price: 45
-  }, {
-    id: 'gorgonzola',
-    name: 'Gorgonzola',
-    price: 50
-  }, {
-    id: 'parmesano',
-    name: 'Parmesano en hojuelas',
-    price: 40
-  }]
-}, {
-  id: 'carne',
-  title: 'MÃ¡s carne',
-  items: [{
-    id: 'peperoni',
-    name: 'Peperoni extra',
-    price: 45
-  }, {
-    id: 'jamon',
-    name: 'JamÃ³n',
-    price: 35
-  }, {
-    id: 'serrano',
-    name: 'JamÃ³n serrano',
-    price: 65
-  }, {
-    id: 'cochinita-add',
-    name: 'Cochinita pibil',
-    price: 60
-  }]
-}, {
-  id: 'verdura',
-  title: 'Verduras',
-  items: [{
-    id: 'champinones',
-    name: 'ChampiÃ±ones',
-    price: 30
-  }, {
-    id: 'pimiento',
-    name: 'Pimiento',
-    price: 25
-  }, {
-    id: 'morada',
-    name: 'Cebolla morada',
-    price: 20
-  }, {
-    id: 'arugula',
-    name: 'ArÃºgula fresca',
-    price: 30
-  }]
-}, {
-  id: 'toque',
-  title: 'El Ãºltimo toque',
-  note: 'Va encima al salir del horno.',
-  items: [{
-    id: 'miel',
-    name: 'Miel picante',
-    price: 20
-  }, {
-    id: 'vodka',
-    name: 'Salsa a la vodka',
-    price: 35
-  }, {
-    id: 'orilla',
-    name: 'Orilla rellena de queso',
-    price: 55
-  }]
-}];
+const MEXTIZZA_ADDONS = [
+  { id: 'queso', title: 'Más queso', note: 'Se agrega antes del horno.', items: [
+    { id: 'provolone', name: 'Extra provolone', price: 55 },
+    { id: 'monterrey', name: 'Extra queso monterrey', price: 30 },
+    { id: 'gorgonzola', name: 'Extra gorgonzola', price: 30 },
+    { id: 'parmesano', name: 'Extra parmesano', price: 20 }
+  ]},
+  { id: 'carne', title: 'Más carne', items: [
+    { id: 'peperoni', name: 'Extra peperoni', price: 45 },
+    { id: 'serrano', name: 'Extra jamón serrano', price: 45 },
+    { id: 'jamon', name: 'Extra jamón', price: 20 }
+  ]},
+  { id: 'verdura', title: 'Verduras y fruta', items: [
+    { id: 'pina', name: 'Extra piña', price: 20 },
+    { id: 'arugula', name: 'Extra arúgula', price: 15 },
+    { id: 'morada', name: 'Extra cebolla morada encurtida', price: 15 },
+    { id: 'champinones', name: 'Extra champiñones', price: 15 }
+  ]},
+  { id: 'toque', title: 'El último toque', note: 'Va encima al salir del horno.', items: [
+    { id: 'miel', name: 'Drizzle de miel', price: 15 },
+    { id: 'habanero', name: 'Toque de salsa habanero', price: 15 },
+    { id: 'macha', name: 'Toque de salsa macha', price: 15 },
+    { id: 'aoev', name: 'Terminado con aceite de oliva extra virgen', price: 15 }
+  ]}
+];
 const MEXTIZZA_FACTS = {
   envioIncluido: true,
   promesaMin: 40,
@@ -3428,7 +3372,6 @@ const MEXTIZZA_FACTS = {
     hasta: 23,
     texto: 'Miercoles a domingo, 4:00 pm a 11:00 pm'
   },
-  cancelacionMin: 15,
   radio: '3 km Â· hasta 40 min puerta a puerta',
   fermento: 'FermentaciÃ³n frÃ­a de 48 horas',
   estilo: 'Horno de piedra, masa fermentada en frÃ­o 48 horas',

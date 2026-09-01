@@ -25,23 +25,7 @@ function SeguimientoPedido({ folio }) {
     return () => { vivo = false; clearInterval(id); };
   }, [folio]);
 
-  const [cancelando, setCancelando] = React.useState(false);
-  const [errorCancelar, setErrorCancelar] = React.useState(null);
   const cancelada = orden && orden.estado === "cancelada";
-  /* Solo se ofrece cancelar mientras la ventana sigue abierta; despues el boton
-     desaparece y el backend igual lo rechazaria. */
-  const minsRestantes = orden && !cancelada && orden.estado !== "entregada" && typeof mextizzaMinutosParaCancelar === "function"
-    ? mextizzaMinutosParaCancelar(orden.t_recibida) : 0;
-
-  const cancelar = async () => {
-    setErrorCancelar(null); setCancelando(true);
-    try {
-      await mextizzaCancelarPorCliente(orden.folio);
-      setOrden({ ...orden, estado: "cancelada", motivo_cancelacion: "Cancelado por el cliente" });
-    } catch (e) {
-      setErrorCancelar(e.message || "No se pudo cancelar.");
-    } finally { setCancelando(false); }
-  };
   const paso = orden ? (WEB_ESTADO_A_PASO[orden.estado] != null ? WEB_ESTADO_A_PASO[orden.estado] : 0) : -1;
   const pasos = [
     ["Confirmado", "Recibimos tu pedido"],
@@ -88,14 +72,17 @@ function SeguimientoPedido({ folio }) {
           );
         })}
       </div>
-      {minsRestantes > 0 && (
+      {orden && !cancelada && (
         <div style={{ marginTop: 16, paddingTop: 14, borderTop: "var(--border-paper)" }}>
-          {errorCancelar && <StatusNote tone="block" title="Ups" style={{ marginBottom: 10 }}>{errorCancelar}</StatusNote>}
-          <Button tone="outline" size="md" block disabled={cancelando} onClick={cancelar}>
-            {cancelando ? "Cancelando..." : "Cancelar pedido"}
-          </Button>
+          {/* Sin autocancelacion: en un dark kitchen sin volumen una cancelacion a
+              destiempo cuesta masa e ingredientes ya comprometidos. El cliente nos
+              escribe y lo resolvemos nosotros, con el folio ya en el mensaje. */}
+          <Button tone="outline" size="md" block icon="whatsapp"
+            onClick={() => window.open(mextizzaWhatsappLink(
+              "Hola, necesito ayuda con mi pedido " + folio + "."
+            ), "_blank", "noopener")}>Escríbenos por WhatsApp</Button>
           <p style={{ fontFamily: "var(--font-body)", fontSize: 11.5, color: "var(--text-muted)", textAlign: "center", marginTop: 7 }}>
-            Puedes cancelar durante {minsRestantes} min mas.
+            ¿Algún cambio o problema? Mándanos mensaje con tu folio.
           </p>
         </div>
       )}
