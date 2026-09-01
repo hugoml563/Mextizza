@@ -23,7 +23,7 @@ if (!window.__mextizzaSheetsConfigLoaded) {
   window.__mextizzaSheetsConfigLoaded = true;
 
   const MEXTIZZA_SHEETS_URL = 'https://script.google.com/macros/s/AKfycby2xuAxBn7Dp5CvMmkmITIExxP7g5yJukkjv29fQhTwIt6QhPLBvJgN6Brgzjf316tDLA/exec';
-  const MEXTIZZA_SHEETS_TOKEN = '05b208bb-d1ce-4ac1-a639-e62e15b788d6';
+  const MEXTIZZA_SHEETS_TOKEN = 'c05186ae-0674-4f3b-bc44-243f146f5f14';
 
   // El token admin vive solo en el navegador del Centro de Ventas, nunca en el repo.
   const MEXTIZZA_ADMIN_LS_KEY = 'mextizza.admin.token';
