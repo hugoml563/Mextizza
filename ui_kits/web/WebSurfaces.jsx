@@ -103,7 +103,7 @@ function WebHero({ onNav }) {
             fontFamily: 'var(--font-label)', fontSize: 11, letterSpacing: 2, textTransform: 'uppercase',
             color: 'var(--rosa-mexicano-texto)', marginBottom: 20
           }}>Técnica italiana · Alma mexicana</div>
-          <h1 style={{ fontFamily: 'var(--font-display)', fontSize: 'clamp(44px, 4.9vw, 64px)', lineHeight: 1.01, color: 'var(--negro-carbon)', letterSpacing: -1 }}>
+          <h1 style={{ fontFamily: 'var(--font-display)', fontSize: 'clamp(40px, 4.9vw, 64px)', lineHeight: 1.01, color: 'var(--negro-carbon)', letterSpacing: -1 }}>
             Masa de 48 horas,<br />horneada <span style={{ color: 'var(--rosa-mexicano)' }}>al pedido</span>
           </h1>
           <p style={{
