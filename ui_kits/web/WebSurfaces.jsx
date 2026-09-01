@@ -321,6 +321,73 @@ function SocialPost({ imagen, alt, pie }) {
     </a>
   );
 }
+/* Carrusel horizontal con scroll-snap nativo: el swipe tactil, la rueda con
+   shift y las flechas del teclado ya funcionan sin codigo. Solo hacen falta los
+   botones, porque en escritorio con raton no hay forma obvia de descubrir que
+   esto se desplaza. Los extremos se detectan con IntersectionObserver sobre la
+   primera y la ultima tarjeta, no escuchando cada cuadro del scroll. */
+function CarruselRedes({ fotos }) {
+  const pista = React.useRef(null);
+  const [enInicio, setEnInicio] = React.useState(true);
+  const [enFin, setEnFin] = React.useState(false);
+
+  React.useEffect(() => {
+    const el = pista.current;
+    if (!el || !el.children.length) return;
+    const tarjetas = Array.from(el.children);
+    const primera = tarjetas[0], ultima = tarjetas[tarjetas.length - 1];
+    const io = new IntersectionObserver(entradas => {
+      entradas.forEach(e => {
+        if (e.target === primera) setEnInicio(e.isIntersecting);
+        if (e.target === ultima) setEnFin(e.isIntersecting);
+      });
+    }, { root: el, threshold: 0.9 });
+    io.observe(primera); io.observe(ultima);
+    return () => io.disconnect();
+  }, [fotos.length]);
+
+  const mover = (dir) => {
+    const el = pista.current;
+    if (!el) return;
+    const t = el.firstElementChild;
+    const paso = t ? t.getBoundingClientRect().width + 16 : el.clientWidth * 0.8;
+    // El scroll-behavior del CSS no anula un behavior explicito en JS, asi que
+    // la preferencia de movimiento reducido se consulta aqui tambien.
+    const suave = !window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    el.scrollBy({ left: dir * paso, behavior: suave ? "smooth" : "auto" });
+  };
+
+  const flecha = (dir, desactivada, etiqueta) => (
+    <button type="button" onClick={() => mover(dir)} disabled={desactivada} aria-label={etiqueta}
+      className="social-flecha" style={{
+        display: "flex", alignItems: "center", justifyContent: "center",
+        width: 38, height: 38, borderRadius: "50%", cursor: desactivada ? "default" : "pointer",
+        border: "var(--border-frame)", background: "var(--surface-card)",
+        color: "var(--negro-carbon)", opacity: desactivada ? 0.3 : 1,
+        transition: "opacity var(--dur-fast) var(--ease-standard)"
+      }}>
+      <Icon name={dir < 0 ? "chevronLeft" : "chevronRight"} size={18} />
+    </button>
+  );
+
+  return (
+    <div style={{ position: "relative" }}>
+      <div ref={pista} className="social-pista" tabIndex={0} role="region"
+        aria-label="Fotos de nuestras pizzas, desplazable horizontalmente">
+        {fotos.map(it => (
+          <div key={it.id} className="social-diapo">
+            <SocialPost imagen={it.photo} alt={it.name} pie={it.name + ". " + it.desc} />
+          </div>
+        ))}
+      </div>
+      <div className="social-flechas" style={{ display: "flex", justifyContent: "flex-end", gap: 10, marginTop: 16 }}>
+        {flecha(-1, enInicio, "Ver fotos anteriores")}
+        {flecha(1, enFin, "Ver mas fotos")}
+      </div>
+    </div>
+  );
+}
+
 function WebSocial() {
   /* Rejilla de fotos reales que enlaza al perfil, en vez de un feed en vivo.
      Un feed de Instagram exigiria la Graph API (la Basic Display murio en dic
@@ -329,8 +396,7 @@ function WebSocial() {
      propias controlamos que se ve y no hay nada que mantener. */
   const fotos = MEXTIZZA_MENU
     .flatMap(g => g.items)
-    .filter(it => it.photo && it.photo.includes('pizza-'))
-    .slice(0, 4);
+    .filter(it => it.photo && it.photo.includes('pizza-'));
 
   return (
     <section className="reveal" style={{ background: 'var(--surface-page)', paddingBottom: 76 }}>
@@ -354,12 +420,7 @@ function WebSocial() {
           </div>
         </div>
 
-        <div className="web-social-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 16 }}>
-          {fotos.map(it => (
-            <SocialPost key={it.id} imagen={it.photo} alt={it.name}
-              pie={it.name + '. ' + it.desc} />
-          ))}
-        </div>
+        <CarruselRedes fotos={fotos} />
       </div>
     </section>
   );

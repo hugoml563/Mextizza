@@ -7,7 +7,6 @@ body{background:var(--surface-page)}
   .web-menu-grid > div:first-child{grid-row:auto !important}
   .web-catering-grid{grid-template-columns:1fr !important}
   .web-process-grid{grid-template-columns:1fr !important}
-  .web-social-grid{grid-template-columns:1fr 1fr !important}
   .web-footer-grid{grid-template-columns:1fr !important;gap:32px !important}
 }
 @media (max-width: 640px) {
@@ -25,7 +24,6 @@ body{background:var(--surface-page)}
   .web-addons-grid{grid-template-columns:1fr !important}
 }
 @media (max-width: 420px) {
-  .web-social-grid{grid-template-columns:1fr !important}
 }
 .footer-icon-link{transition:opacity var(--dur-fast) var(--ease-standard);cursor:pointer}
 .footer-icon-link:hover{opacity:1 !important}
@@ -36,6 +34,17 @@ body{background:var(--surface-page)}
   .social-foto img{transition:transform var(--dur-base) var(--ease-standard)}
   .social-foto:hover img{transform:scale(1.06)}
 }
+/* Carrusel de redes. El scroll-snap y el swipe son nativos; la barra se oculta
+   porque las flechas y la tarjeta cortada del borde ya avisan que hay mas. */
+.social-pista{display:flex;gap:16px;overflow-x:auto;scroll-snap-type:x mandatory;
+  scroll-padding-left:2px;padding-bottom:4px;-ms-overflow-style:none;scrollbar-width:none}
+.social-pista::-webkit-scrollbar{display:none}
+.social-pista:focus-visible{outline:2px solid var(--rosa-mexicano-texto);outline-offset:4px;border-radius:var(--radius-md)}
+.social-diapo{flex:0 0 clamp(232px,24vw,288px);scroll-snap-align:start;display:flex}
+.social-diapo > *{width:100%}
+/* En tactil el swipe es el gesto natural: las flechas solo estorban. */
+@media (max-width: 860px){ .social-flechas{display:none !important} }
+@media (max-width: 520px){ .social-diapo{flex:0 0 84%} }
 .reveal{opacity:0;transform:translateY(16px);transition:opacity .4s ease-out,transform .4s ease-out}
 .reveal.is-visible{opacity:1;transform:none}
 
@@ -56,6 +65,7 @@ body{background:var(--surface-page)}
 
 @media (prefers-reduced-motion: reduce) {
   .reveal{opacity:1 !important;transform:none !important;transition:none !important}
+  .social-pista{scroll-behavior:auto !important}
   .hero-photo-img{clip-path:inset(0 0 0 0) !important;transition:none !important}
   .hero-stamp{opacity:1 !important;transform:scale(1) !important;transition:none !important}
 }
