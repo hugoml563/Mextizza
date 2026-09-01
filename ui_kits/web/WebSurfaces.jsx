@@ -359,6 +359,13 @@ function WebSocial() {
   );
 }
 
+// Que renglones del footer son enlaces. Los que no aparecen aqui quedan como texto.
+const footerEnlaces = {
+  'WhatsApp Business': mextizzaWhatsappLink('Hola, quiero hacer un pedido en Mextizza.'),
+  'Sitio web': '/',
+  'App Mextizza': '/app',
+};
+
 function WebFooter() {
   return (
     <footer style={{ background: 'var(--negro-carbon)', paddingTop: 56, paddingBottom: 44, position: 'relative' }}>
@@ -384,8 +391,8 @@ function WebFooter() {
         {[['Pedidos', ['WhatsApp Business', 'Sitio web', 'App Mextizza']], ['Operación', [MEXTIZZA_FACTS.zona, 'Radio de 3 km', 'Sólo entrega, sin salón']]].map(([t, items]) => (
           <div key={t}>
             <div style={{ fontFamily: 'var(--font-label)', fontSize: 10, letterSpacing: 1, textTransform: 'uppercase', color: 'var(--dorado-masa)', marginBottom: 14 }}>{t}</div>
-            {items.map(i => i === 'WhatsApp Business' ? (
-              <a key={i} href={mextizzaWhatsappLink('Hola, quiero hacer un pedido en Mextizza.')} target="_blank" rel="noopener"
+            {items.map(i => footerEnlaces[i] ? (
+              <a key={i} href={footerEnlaces[i]} {...(footerEnlaces[i].startsWith('http') ? { target: '_blank', rel: 'noopener' } : {})}
                 className="footer-icon-link"
                 style={{ display: 'block', fontFamily: 'var(--font-body)', fontSize: 13, lineHeight: 1.9, color: 'var(--blanco-hueso)', opacity: 0.7, borderBottom: 'none' }}>{i}</a>
             ) : (

@@ -1,0 +1,60 @@
+<!doctype html><html lang="es"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>App Mextizza</title>
+<link rel="icon" type="image/png" href="./assets/social/mextizza-app-icon-512.png">
+<link rel="apple-touch-icon" href="./assets/social/mextizza-app-icon-180.png">
+<link rel="manifest" href="./manifest.webmanifest">
+<meta name="theme-color" content="#1A1A1A">
+<link rel="stylesheet" href="./styles.css">
+<style>
+body{background:var(--surface-page);margin:0}
+.wrap{max-width:640px;margin:0 auto;padding:48px 24px 72px}
+h1{font-family:var(--font-display);font-size:38px;line-height:1.1;color:var(--negro-carbon);margin:0 0 10px}
+.sub{font-family:var(--font-body);font-size:15px;line-height:1.6;color:var(--negro-carbon);opacity:.72;margin:0 0 40px}
+.card{background:#fff;border-radius:14px;padding:26px 24px;margin-bottom:20px;box-shadow:0 1px 3px rgba(0,0,0,.07)}
+.card.dark{background:var(--negro-carbon)}
+.eyebrow{font-family:var(--font-label);font-size:10px;letter-spacing:1.4px;text-transform:uppercase;color:var(--dorado-masa);margin-bottom:12px}
+h2{font-family:var(--font-display);font-size:21px;color:var(--negro-carbon);margin:0 0 8px}
+.dark h2{color:var(--blanco-hueso)}
+p,li{font-family:var(--font-body);font-size:14px;line-height:1.75;color:var(--negro-carbon)}
+.dark p,.dark li{color:var(--blanco-hueso);opacity:.82}
+ol{padding-left:20px;margin:14px 0 0}
+li{margin-bottom:7px}
+.btn{display:inline-block;margin-top:20px;background:var(--dorado-masa);color:var(--negro-carbon);
+  font-family:var(--font-label);font-size:13px;letter-spacing:.6px;text-transform:uppercase;
+  padding:14px 26px;border-radius:8px;text-decoration:none;font-weight:700}
+.nota{font-size:12.5px;opacity:.6;margin-top:16px}
+.volver{display:inline-block;margin-top:34px;font-family:var(--font-body);font-size:14px;color:var(--negro-carbon);opacity:.6}
+</style></head><body>
+<div class="wrap">
+
+  <h1>App Mextizza</h1>
+  <p class="sub">Pide y sigue tu pedido desde la pantalla de inicio de tu telefono.</p>
+
+  <div class="card">
+    <div class="eyebrow">Recomendado &middot; iPhone y Android</div>
+    <h2>Agregar a inicio</h2>
+    <p>No hace falta descargar nada. El sitio se instala como app desde el navegador, con el icono de Mextizza en tu pantalla y sin barra de direcciones.</p>
+    <ol>
+      <li><strong>iPhone:</strong> abre mextizza.com en Safari, toca el boton de compartir y elige &laquo;Agregar a inicio&raquo;.</li>
+      <li><strong>Android:</strong> abre mextizza.com en Chrome, toca el menu de tres puntos y elige &laquo;Instalar aplicacion&raquo; o &laquo;Agregar a pantalla principal&raquo;.</li>
+    </ol>
+    <a class="btn" href="/">Abrir Mextizza</a>
+  </div>
+
+  <div class="card dark">
+    <div class="eyebrow">Solo Android</div>
+    <h2>Descargar el APK</h2>
+    <p>La app nativa para Android. Todavia no esta en Play Store, asi que el telefono va a mostrarte advertencias durante la instalacion. Son normales y aparecen con cualquier app instalada fuera de la tienda.</p>
+    <ol>
+      <li>Descarga el archivo.</li>
+      <li>Android te dira que proviene de una fuente desconocida. Toca &laquo;Ajustes&raquo; y permite instalar desde tu navegador.</li>
+      <li>Abre el archivo descargado y toca &laquo;Instalar&raquo;.</li>
+    </ol>
+    <a class="btn" href="/assets/app/mextizza.apk" download>Descargar APK &middot; 13 MB</a>
+    <p class="nota">Version 1.0 &middot; Android 10 o superior</p>
+  </div>
+
+  <a class="volver" href="/">&larr; Volver al sitio</a>
+</div>
+</body></html>
