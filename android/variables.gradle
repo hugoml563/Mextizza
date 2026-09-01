@@ -1,5 +1,9 @@
 ext {
-    minSdkVersion = 24
+    // API 29 (Android 10) es el minimo que recomienda el escaneo de seguridad:
+    // por debajo, los telefonos ya no reciben parches de Google. Los clientes con
+    // equipos mas viejos no se pierden — siguen pidiendo por la web o WhatsApp,
+    // que funcionan en cualquier navegador.
+    minSdkVersion = 29
     compileSdkVersion = 36
     targetSdkVersion = 36
     androidxActivityVersion = '1.11.0'
