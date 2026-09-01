@@ -22,6 +22,11 @@ body{background:var(--surface-page)}
 .footer-icon-link:hover{opacity:1 !important}
 .web-menu-grid > div{transition:transform var(--dur-base) var(--ease-standard),box-shadow var(--dur-base) var(--ease-standard)}
 .web-menu-grid > div:hover{transform:translateY(-4px);box-shadow:var(--shadow-raised)}
+/* Solo con mouse: en tactil el hover se queda pegado tras el toque. */
+@media (hover: hover) and (pointer: fine) {
+  .social-foto img{transition:transform var(--dur-base) var(--ease-standard)}
+  .social-foto:hover img{transform:scale(1.06)}
+}
 .reveal{opacity:0;transform:translateY(16px);transition:opacity .4s ease-out,transform .4s ease-out}
 .reveal.is-visible{opacity:1;transform:none}
 

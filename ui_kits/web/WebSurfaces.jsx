@@ -285,6 +285,16 @@ function WebCatering() {
 }
 
 function WebSocial() {
+  /* Rejilla de fotos reales que enlaza al perfil, en vez de un feed en vivo.
+     Un feed de Instagram exigiria la Graph API (la Basic Display murio en dic
+     2024), un token que caduca cada 60 dias y que NO puede vivir en este archivo
+     porque se sirve abierto, mas abrir la CSP a dominios de Meta. Con fotos
+     propias controlamos que se ve y no hay nada que mantener. */
+  const fotos = MEXTIZZA_MENU
+    .flatMap(g => g.items)
+    .filter(it => it.photo && it.photo.includes('pizza-'))
+    .slice(0, 4);
+
   return (
     <section className="reveal" style={{ background: 'var(--surface-page)', paddingBottom: 76 }}>
       <div style={webShell.page}>
@@ -306,11 +316,20 @@ function WebSocial() {
             </a>
           </div>
         </div>
+
         <div className="web-social-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 16 }}>
-          <SocialTile treatment="flat" background="var(--negro-carbon)" headlineColor="var(--blanco-hueso)" headline={<>48 horas<br />de fermento</>} kicker="Horno de piedra" kickerColor="var(--dorado-masa)" />
-          <SocialTile treatment="flat" background="var(--rosa-mexicano)" headlineColor="var(--blanco)" headline={<>Hecha por<br />mexicanos</>} kicker="Con técnica italiana" kickerColor="var(--blanco)" />
-          <SocialTile treatment="flat" background="var(--terracota-horno)" headlineColor="var(--blanco-hueso)" headline={<>Pizza<br />Cochinita</>} kicker="Especial del mes" kickerColor="var(--dorado-tinte)" />
-          <SocialTile treatment="flat" background="var(--dorado-masa)" headlineColor="var(--negro-carbon)" headline={<>Radio<br />3 km</>} kicker="40 min o menos" kickerColor="var(--negro-carbon)" />
+          {fotos.map(it => (
+            <a key={it.id} className="social-foto" href={MEXTIZZA_SOCIAL.instagram} target="_blank" rel="noopener"
+              aria-label={'Ver ' + it.name + ' en Instagram'}
+              style={{ position: 'relative', display: 'block', aspectRatio: '1 / 1', overflow: 'hidden',
+                borderRadius: 'var(--radius-md)', border: 'var(--border-frame)', borderBottom: 'var(--border-frame)' }}>
+              <img src={it.photo} alt={it.name} loading="lazy"
+                style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }} />
+              <span style={{ position: 'absolute', inset: 'auto 0 0 0', padding: '26px 12px 11px',
+                background: 'linear-gradient(transparent, rgba(26,26,26,.82))', color: 'var(--blanco-hueso)',
+                fontFamily: 'var(--font-body)', fontWeight: 700, fontSize: 13 }}>{it.name}</span>
+            </a>
+          ))}
         </div>
       </div>
     </section>
