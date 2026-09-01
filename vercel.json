@@ -37,6 +37,11 @@
       "source": "/cocina",
       "destination": "/templates/sales-center/SalesCenter.dc.html",
       "permanent": false
+    },
+    {
+      "source": "/whatsapp",
+      "destination": "https://wa.me/525526577352?text=Hola%2C%20quiero%20hacer%20un%20pedido%20en%20Mextizza.",
+      "permanent": false
     }
   ]
 }
