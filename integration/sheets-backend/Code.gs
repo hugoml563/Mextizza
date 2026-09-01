@@ -173,10 +173,25 @@ function rowsAsObjects_(sh) {
   });
 }
 
+/* Sufijo aleatorio para el folio. Sin I, O, 0 ni 1 para que nadie los
+ * confunda al dictarlos por telefono. 32^5 = ~33 millones de combinaciones. */
+function sufijoAleatorio_() {
+  var abc = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+  var out = "";
+  for (var i = 0; i < 5; i++) {
+    out += abc.charAt(Math.floor(Math.random() * abc.length));
+  }
+  return out;
+}
+
 function nextFolio_() {
-  const sh = sheet_(SHEETS.ordenes);
-  const n = sh.getLastRow(); // incluye encabezado, así que ya arranca en MX-0001 con la primera orden
-  return 'MX-' + String(n).padStart(4, '0');
+  var sh = sheet_(SHEETS.ordenes);
+  var n = sh.getLastRow(); // incluye encabezado, arranca en MX-0001 con la primera orden
+  /* El numero sigue siendo secuencial para que sea util en la operacion, pero
+   * lleva un sufijo aleatorio: el endpoint `estado` es publico por diseño, y sin
+   * el sufijo cualquiera podia recorrer MX-0001, MX-0002... y leer el estado y el
+   * total de todos los pedidos. */
+  return "MX-" + String(n).padStart(4, "0") + "-" + sufijoAleatorio_();
 }
 
 /** Punto de entrada para escrituras: crear orden, avanzar estado, cancelar. */
