@@ -242,6 +242,9 @@ function doGet(e) {
       requiereAdmin_(nivel);
       return jsonOut_({ ok: true, ordenes: listarHoy_() });
     }
+    if (e.parameter.action === 'estado_por_telefono') {
+      return jsonOut_({ ok: true, orden: estadoPorTelefono_(e.parameter.telefono) });
+    }
     if (e.parameter.action === 'estado') {
       return jsonOut_({ ok: true, orden: estadoOrden_(e.parameter.folio) });
     }
@@ -358,22 +361,43 @@ function findOrdenRow_(sh, folio) {
  *  extraer datos personales de las órdenes de nadie. */
 function estadoOrden_(folio) {
   if (!folio) throw new Error('Falta folio');
-  const o = rowsAsObjects_(sheet_(SHEETS.ordenes)).find(x => String(x.folio) === String(folio));
+  var o = rowsAsObjects_(sheet_(SHEETS.ordenes)).find(function (x) { return String(x.folio) === String(folio); });
   if (!o) return null;
+  return formaEstado_(o);
+}
+
+/* Forma publica del estado de un pedido. Deliberadamente minima: ni nombre, ni
+ * telefono, ni direccion, ni total, ni lo que se pidio. Solo el avance, que es
+ * lo unico que la pantalla de seguimiento necesita mostrar. */
+function formaEstado_(o) {
   return {
     folio: o.folio,
     estado: o.estado,
-    total: o.total,
     t_recibida: o.t_recibida,
     t_confirmada: o.t_confirmada,
     t_horno: o.t_horno,
     t_lista: o.t_lista,
     t_camino: o.t_camino,
     t_entregada: o.t_entregada,
-    motivo_cancelacion: o.motivo_cancelacion || ''
+    motivo_cancelacion: o.motivo_cancelacion || ""
   };
 }
 
+/* Ultimo pedido de un telefono, para que el cliente recupere su seguimiento
+ * desde otro dispositivo, o si pidio por WhatsApp y nunca tuvo el folio.
+ * Devuelve la misma forma minima: quien teclee numeros al azar solo puede
+ * enterarse de si ese telefono tiene un pedido en curso, nunca de quien es,
+ * donde vive, ni cuanto gasto. */
+function estadoPorTelefono_(telefono) {
+  var tel = String(telefono || "").replace(/[^0-9]/g, "");
+  if (tel.length !== 10) throw new Error("Telefono invalido");
+  var ordenes = rowsAsObjects_(sheet_(SHEETS.ordenes)).filter(function (o) {
+    return o.folio && String(o.cliente_telefono || "").replace(/[^0-9]/g, "") === tel;
+  });
+  if (!ordenes.length) return null;
+  ordenes.sort(function (a, b) { return new Date(b.t_recibida) - new Date(a.t_recibida); });
+  return formaEstado_(ordenes[0]);
+}
 function listarAbiertas_() {
   const ordenes = rowsAsObjects_(sheet_(SHEETS.ordenes)).filter(o => o.estado && o.estado !== 'entregada' && o.estado !== 'cancelada');
   return armarOrdenes_(ordenes);

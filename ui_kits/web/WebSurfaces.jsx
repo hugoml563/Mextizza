@@ -42,7 +42,7 @@ function WebHeader({ count, onCart, onNav, view, folio, onSeguir }) {
               borderBottom: view === k ? '2px solid var(--rosa-mexicano-texto)' : '2px solid transparent', paddingBottom: 2
             }}>{l}</a>
           ))}
-          {folio && (
+          {(
             <button onClick={onSeguir} aria-label="Seguir mi pedido" style={{
               display: 'flex', alignItems: 'center', gap: 7, background: 'transparent',
               border: '2px solid var(--terracota-horno)', borderRadius: 'var(--radius-sm)', padding: '9px 13px',

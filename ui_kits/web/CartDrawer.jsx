@@ -75,7 +75,7 @@ function SeguimientoPedido({ folio }) {
     </div>
   );
 }
-function CartDrawer({ open, lines, onClose, onQty, step, setStep, canal = 'Web', folioActivo, onOrdenCreada }) {
+function CartDrawer({ open, lines, onClose, onQty, step, setStep, canal = 'Web', folioActivo, onOrdenCreada, onFolioEncontrado }) {
   const [ready, setReady] = React.useState(false);
   const [attempted, setAttempted] = React.useState(false);
   const [entrega, setEntrega] = React.useState(null);
@@ -83,6 +83,24 @@ function CartDrawer({ open, lines, onClose, onQty, step, setStep, canal = 'Web',
   const [error, setError] = React.useState(null);
   // El folio vive en el padre para que sobreviva a cerrar el carrito y a recargar.
   const folio = folioActivo;
+  const [telBusca, setTelBusca] = React.useState("");
+  const [buscando, setBuscando] = React.useState(false);
+  const [errorBusca, setErrorBusca] = React.useState(null);
+
+  const buscarPorTelefono = async () => {
+    const digits = telBusca.replace(/[^0-9]/g, "");
+    if (digits.length !== 10) return setErrorBusca("Escribe los 10 digitos de tu telefono.");
+    setErrorBusca(null); setBuscando(true);
+    try {
+      const r = await mextizzaEstadoPorTelefono(digits);
+      if (!r.orden) { setErrorBusca("No encontramos pedidos con ese numero."); return; }
+      onFolioEncontrado && onFolioEncontrado(r.orden.folio);
+      setStep("done");
+    } catch (e) {
+      setErrorBusca("No se pudo consultar. Revisa tu conexion.");
+    } finally { setBuscando(false); }
+  };
+
   const subtotal = lines.reduce((s, l) => s + (l.price + (l.addonTotal || 0)) * l.qty, 0);
 
   const confirmar = async () => {
@@ -128,7 +146,7 @@ function CartDrawer({ open, lines, onClose, onQty, step, setStep, canal = 'Web',
           <TapeStripe position="bottom" height={4} />
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
             <span style={{ fontFamily: 'var(--font-display)', fontSize: 23, color: 'var(--negro-carbon)' }}>
-              {step === 'cart' ? 'Tu pedido' : step === 'checkout' ? 'Entrega' : 'Confirmado'}
+              {step === 'cart' ? 'Tu pedido' : step === 'checkout' ? 'Entrega' : step === 'buscar' ? 'Seguir mi pedido' : 'Confirmado'}
             </span>
             <button onClick={onClose} aria-label="Cerrar" style={{ background: 'transparent', border: 'none', color: 'var(--negro-carbon)', cursor: 'pointer' }}>
               <Icon name="close" size={20} />
@@ -156,6 +174,19 @@ function CartDrawer({ open, lines, onClose, onQty, step, setStep, canal = 'Web',
             </>
           )}
 
+          {step === 'buscar' && (
+            <div style={{ marginTop: 8 }}>
+              <p style={{ fontFamily: "var(--font-body)", fontSize: 13, lineHeight: 1.6, color: "var(--text-muted)" }}>
+                Escribe el telefono con el que hiciste el pedido y te mostramos como va.
+              </p>
+              <Field label="Telefono" required type="tel" placeholder="55 1234 5678" value={telBusca}
+                onChange={e => setTelBusca(e.target.value)} style={{ marginTop: 14 }} />
+              {errorBusca && <StatusNote tone="block" title="Ups" style={{ marginTop: 12 }}>{errorBusca}</StatusNote>}
+              <Button tone="primary" size="lg" block disabled={buscando} style={{ marginTop: 16 }}
+                onClick={buscarPorTelefono}>{buscando ? "Buscando..." : "Buscar mi pedido"}</Button>
+            </div>
+          )}
+
           {step === 'done' && (
             <FramedPanel variant="object" style={{ marginTop: 8 }}>
               <SeguimientoPedido folio={folio} />
@@ -163,7 +194,7 @@ function CartDrawer({ open, lines, onClose, onQty, step, setStep, canal = 'Web',
           )}
         </div>
 
-        {step !== 'done' && lines.length > 0 && (
+        {step !== 'done' && step !== 'buscar' && lines.length > 0 && (
           <div style={{ borderTop: 'var(--border-frame)', padding: '18px 24px', background: 'var(--surface-page)' }}>
             {[['Subtotal', subtotal]].map(([k, v]) => (
               <div key={k} style={{ display: 'flex', justifyContent: 'space-between', fontFamily: 'var(--font-body)', fontSize: 13, color: 'var(--text-muted)', marginBottom: 6 }}>
