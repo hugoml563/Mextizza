@@ -50,6 +50,11 @@ function Site(){
   const modoCaptura=new URLSearchParams(location.search).get('canal')==='whatsapp';
   const canal=modoCaptura?'WhatsApp':'Web';
   const [lines,setLines]=React.useState([]);
+  // El folio del ultimo pedido se guarda en este navegador para que el cliente
+  // pueda seguir su pizza aunque cierre la pestaña.
+  const FOLIO_KEY='mextizza.web.folio';
+  const [folio,setFolio]=React.useState(()=>{ try{return localStorage.getItem(FOLIO_KEY)||null;}catch(e){return null;} });
+  React.useEffect(()=>{ try{ folio?localStorage.setItem(FOLIO_KEY,folio):localStorage.removeItem(FOLIO_KEY); }catch(e){} },[folio]);
   const [open,setOpen]=React.useState(false);
   const [step,setStep]=React.useState('cart');
   const [added,setAdded]=React.useState(null);
@@ -74,7 +79,8 @@ function Site(){
   },[]);
   return <>
     {modoCaptura && <div style={{background:'#1A1A1A',color:'#F5F0E8',textAlign:'center',padding:'8px 12px',fontFamily:'var(--font-label)',fontSize:11,letterSpacing:1,textTransform:'uppercase'}}>Modo captura · WhatsApp — este pedido se registra como canal WhatsApp</div>}
-    <WebHeader count={count} view={view} onNav={nav} onCart={()=>{setOpen(true);setStep('cart');}} />
+    <WebHeader count={count} view={view} onNav={nav} onCart={()=>{setOpen(true);setStep('cart');}}
+      folio={folio} onSeguir={()=>{setOpen(true);setStep('done');}} />
     <WebHero onNav={nav} />
     <WebMenu onAdd={add} onCustomize={setCustom} added={added} />
     <WebProcess />
@@ -82,7 +88,8 @@ function Site(){
     <WebSocial />
     <WebFooter />
     <AddonsDialog item={custom} onClose={()=>setCustom(null)} onAdd={add} />
-    <CartDrawer open={open} lines={lines} step={step} setStep={setStep} onQty={qty} onClose={()=>setOpen(false)} canal={canal} />
+    <CartDrawer open={open} lines={lines} step={step} setStep={setStep} onQty={qty} onClose={()=>setOpen(false)} canal={canal}
+      folioActivo={folio} onOrdenCreada={(f)=>{setFolio(f);setLines([]);}} />
   </>;
 }
 ReactDOM.createRoot(document.getElementById('root')).render(<Site/>);

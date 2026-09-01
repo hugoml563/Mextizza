@@ -1,12 +1,88 @@
 const { Wordmark, TapeStripe, FramedPanel, Button, Badge, Field, QtyStepper, MenuItem, Icon, StatusNote } = window.MextizzaDesignSystem_8a35ee;
 
-function CartDrawer({ open, lines, onClose, onQty, step, setStep, canal = 'Web' }) {
+/* Mismos estados que la app (Code.gs FLUJO) mapeados a los 4 pasos que ve el
+   cliente. "lista" no tiene paso propio: sigue leyendose como en el horno
+   hasta que el reparto sale. */
+const WEB_ESTADO_A_PASO = { recibida: 0, confirmada: 0, horno: 1, lista: 1, camino: 2, entregada: 3 };
+
+function SeguimientoPedido({ folio }) {
+  const [orden, setOrden] = React.useState(null);
+  const [sinRed, setSinRed] = React.useState(false);
+
+  React.useEffect(() => {
+    if (!folio || typeof mextizzaEstadoOrden !== "function") return;
+    let vivo = true;
+    const leer = async () => {
+      try {
+        const r = await mextizzaEstadoOrden(folio);
+        if (vivo) { setOrden(r.orden); setSinRed(false); }
+      } catch (e) {
+        if (vivo) setSinRed(true);
+      }
+    };
+    leer();
+    const id = setInterval(leer, 30000);
+    return () => { vivo = false; clearInterval(id); };
+  }, [folio]);
+
+  const cancelada = orden && orden.estado === "cancelada";
+  const paso = orden ? (WEB_ESTADO_A_PASO[orden.estado] != null ? WEB_ESTADO_A_PASO[orden.estado] : 0) : -1;
+  const pasos = [
+    ["Confirmado", "Recibimos tu pedido"],
+    ["En el horno", "Horno de piedra"],
+    ["En camino", "Va para alla"],
+    ["Entregado", ""]
+  ];
+  const titulo = orden ? ({
+    recibida: "Pedido recibido", confirmada: "Confirmado", horno: "En el horno",
+    lista: "Lista para salir", camino: "En camino", entregada: "Entregado",
+    cancelada: "Cancelado"
+  }[orden.estado] || "En proceso") : "Consultando...";
+
+  return (
+    <div>
+      <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 12, flexWrap: "wrap" }}>
+        <div style={{ fontFamily: "var(--font-display)", fontSize: 22 }}>{titulo}</div>
+        <Badge tone={cancelada ? "rosa" : "dark"}>Pedido {folio}</Badge>
+      </div>
+      <p style={{ fontFamily: "var(--font-body)", fontSize: 12.5, color: "var(--text-muted)", marginTop: 6 }}>
+        {cancelada
+          ? (orden.motivo_cancelacion || "El pedido fue cancelado.")
+          : sinRed ? "Sin conexion para actualizar el estado."
+          : "Se actualiza solo. Te confirmamos por WhatsApp."}
+      </p>
+      <div style={{ marginTop: 18 }}>
+        {pasos.map(([t, d], i) => {
+          const hecho = !cancelada && paso >= i;
+          return (
+            <div key={t} style={{ display: "flex", gap: 12, paddingBottom: i < pasos.length - 1 ? 16 : 0 }}>
+              <div style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
+                <span style={{
+                  width: 20, height: 20, flex: "none", borderRadius: "50%", display: "grid", placeItems: "center",
+                  background: hecho ? "var(--rosa-mexicano)" : "transparent",
+                  border: hecho ? "none" : "2px solid var(--negro-12)"
+                }}>{hecho && <Icon name="check" size={12} color="var(--blanco)" />}</span>
+                {i < pasos.length - 1 && <span style={{ width: 2, flex: 1, minHeight: 18, background: hecho ? "var(--rosa-mexicano)" : "var(--negro-12)", marginTop: 3 }} />}
+              </div>
+              <div>
+                <div style={{ fontFamily: "var(--font-body)", fontWeight: 700, fontSize: 13.5, color: hecho ? "var(--text-body)" : "var(--text-muted)" }}>{t}</div>
+                {d && <div style={{ fontFamily: "var(--font-body)", fontSize: 12, color: "var(--text-muted)", marginTop: 1 }}>{d}</div>}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+function CartDrawer({ open, lines, onClose, onQty, step, setStep, canal = 'Web', folioActivo, onOrdenCreada }) {
   const [ready, setReady] = React.useState(false);
   const [attempted, setAttempted] = React.useState(false);
   const [entrega, setEntrega] = React.useState(null);
   const [enviando, setEnviando] = React.useState(false);
   const [error, setError] = React.useState(null);
-  const [folio, setFolio] = React.useState(null);
+  // El folio vive en el padre para que sobreviva a cerrar el carrito y a recargar.
+  const folio = folioActivo;
   const subtotal = lines.reduce((s, l) => s + (l.price + (l.addonTotal || 0)) * l.qty, 0);
 
   const confirmar = async () => {
@@ -15,8 +91,10 @@ function CartDrawer({ open, lines, onClose, onQty, step, setStep, canal = 'Web' 
     setError(null);
     setEnviando(true);
     try {
-      const { folio } = await mextizzaCrearOrden({ canal, lines, entrega });
-      setFolio(folio);
+      const r = await mextizzaCrearOrden({ canal, lines, entrega });
+      // El padre guarda el folio y vacia el carrito: antes las lineas se quedaban
+      // ahi despues de enviar y el siguiente pedido arrancaba con el anterior dentro.
+      onOrdenCreada && onOrdenCreada(r.folio);
       setStep('done');
     } catch (err) {
       setError('No se pudo enviar el pedido. Intenta de nuevo, o escríbenos por WhatsApp.');
@@ -79,15 +157,8 @@ function CartDrawer({ open, lines, onClose, onQty, step, setStep, canal = 'Web' 
           )}
 
           {step === 'done' && (
-            <FramedPanel variant="object" style={{ marginTop: 8, textAlign: 'center' }}>
-              <div style={{ display: 'grid', placeItems: 'center', gap: 14 }}>
-                <Icon name="check" size={32} color="var(--rosa-mexicano)" />
-                <div style={{ fontFamily: 'var(--font-display)', fontSize: 24 }}>Pedido confirmado</div>
-                <p style={{ fontFamily: 'var(--font-body)', fontSize: 13, lineHeight: 1.6, color: 'var(--text-muted)' }}>
-                  Entra al horno en cuanto lo confirmemos por WhatsApp. Llega en 30 minutos o menos.
-                </p>
-                <Badge tone="dark">Pedido {folio}</Badge>
-              </div>
+            <FramedPanel variant="object" style={{ marginTop: 8 }}>
+              <SeguimientoPedido folio={folio} />
             </FramedPanel>
           )}
         </div>

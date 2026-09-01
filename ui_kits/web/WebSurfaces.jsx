@@ -24,7 +24,7 @@ const webShell = {
   page: { maxWidth: 1080, margin: '0 auto', padding: '0 24px' }
 };
 
-function WebHeader({ count, onCart, onNav, view }) {
+function WebHeader({ count, onCart, onNav, view, folio, onSeguir }) {
   return (
     <header style={{
       background: 'rgba(245,240,232,0.82)', backdropFilter: 'blur(10px) saturate(140%)', WebkitBackdropFilter: 'blur(10px) saturate(140%)',
@@ -42,6 +42,17 @@ function WebHeader({ count, onCart, onNav, view }) {
               borderBottom: view === k ? '2px solid var(--rosa-mexicano-texto)' : '2px solid transparent', paddingBottom: 2
             }}>{l}</a>
           ))}
+          {folio && (
+            <button onClick={onSeguir} aria-label="Seguir mi pedido" style={{
+              display: 'flex', alignItems: 'center', gap: 7, background: 'transparent',
+              border: '2px solid var(--terracota-horno)', borderRadius: 'var(--radius-sm)', padding: '9px 13px',
+              color: 'var(--terracota-horno)', cursor: 'pointer',
+              fontFamily: 'var(--font-body)', fontWeight: 600, fontSize: 12, letterSpacing: 1, textTransform: 'uppercase'
+            }}>
+              <Icon name="clock" size={16} />
+              <span>Seguir</span>
+            </button>
+          )}
           <button onClick={onCart} aria-label="Ver pedido" style={{
             display: 'flex', alignItems: 'center', gap: 8, background: count ? 'var(--rosa-mexicano)' : 'transparent',
             border: count ? 'none' : 'var(--border-frame)', borderRadius: 'var(--radius-sm)', padding: '9px 14px',
