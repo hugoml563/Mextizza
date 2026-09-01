@@ -149,10 +149,14 @@ function requiereAdmin_(nivel) {
  * Anteponer un apostrofo obliga a Sheets a tratarlo como texto; el apostrofo no
  * se ve al leer la celda. */
 function textoSeguro_(v) {
-  if (v === null || v === undefined) return '';
-  const s = String(v);
-  return /^[=+\-@	
-  return /^[=+\-@\t\r]/.test(s) ? "'" + s : s;
+  if (v === null || v === undefined) return "";
+  var s = String(v);
+  var c = s.charCodeAt(0);
+  // 61 =   43 +   45 -   64 @   9 tabulador   13 retorno de carro
+  if (c === 61 || c === 43 || c === 45 || c === 64 || c === 9 || c === 13) {
+    return String.fromCharCode(39) + s;
+  }
+  return s;
 }
 
 function sheet_(nombre) {
