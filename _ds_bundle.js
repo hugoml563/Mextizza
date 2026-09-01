@@ -869,6 +869,15 @@ Object.assign(__ds_scope, { MenuCard });
 
 // components/ui/MenuItem.jsx
 try { (() => {
+/* Cada foto vive en tres tamanos con el mismo nombre base: -thumb.webp (220px),
+   -md.webp (600px) y .webp (1100px). Sin esto el menu bajaba imagenes de 1100px
+   para pintarlas en miniaturas de 64px. */
+function variantesFoto(src) {
+  if (!src || src.slice(-5) !== ".webp") return undefined;
+  var base = src.slice(0, -5);
+  return base + "-thumb.webp 220w, " + base + "-md.webp 600w, " + src + " 1100w";
+}
+
 function MenuItem({
   name,
   description,
@@ -901,7 +910,11 @@ function MenuItem({
   }, photo && /*#__PURE__*/React.createElement("img", {
     src: photo,
     alt: name,
-    style: {
+    loading: "lazy",
+      decoding: "async",
+      srcSet: variantesFoto(photo),
+      sizes: photoSize + "px",
+      style: {
       width: photoSize,
       height: photoSize,
       flex: 'none',
@@ -3257,7 +3270,7 @@ const MEXTIZZA_MENU = [{
     name: 'Pizza Serranita',
     desc: 'JamÃ³n Serrano, arÃºgula fresca, queso parmesano y salsa de tomate artesanal.',
     price: 229,
-    photo: '../../assets/photos/pizza-serranita.jpeg'
+    photo: '../../assets/photos/pizza-serranita.webp'
   }, {
     id: 'aloha',
     name: 'Pizza Aloha',
@@ -3268,25 +3281,25 @@ const MEXTIZZA_MENU = [{
     name: 'Pizza Newyork',
     desc: 'Salsa de tomate artesanal a la vodka con crema. Una capa de sabor que no vas a adivinar a la primera mordida.',
     price: 199,
-    photo: '../../assets/photos/pizza-newyork.jpeg'
+    photo: '../../assets/photos/pizza-newyork.webp'
   }, {
     id: 'provola',
     name: 'Pizza Provola',
     desc: 'Doble queso, doble provolone. Simple y por eso funciona.',
     price: 229,
-    photo: '../../assets/photos/pizza-provola.jpeg'
+    photo: '../../assets/photos/pizza-provola.webp'
   }, {
     id: 'chisi',
     name: 'Pizza Chisi',
     desc: 'Queso monterrey, provolone, parmesano y un toque de gorgonzolaâ€¦ Para los que no negocian con el queso.',
     price: 219,
-    photo: '../../assets/photos/pizza-chisi.jpeg'
+    photo: '../../assets/photos/pizza-chisi.webp'
   }, {
     id: 'combinada',
     name: 'Pizza Combinada',
     desc: 'JamÃ³n, champiÃ±ones, pimiento y cebolla. Para los que quieren un poco de todo.',
     price: 229,
-    photo: '../../assets/photos/pizza-combinada.jpeg'
+    photo: '../../assets/photos/pizza-combinada.webp'
   }, {
     id: 'roni',
     name: 'Pizza Roni',
@@ -3317,25 +3330,25 @@ const MEXTIZZA_MENU = [{
     name: 'Brownie',
     desc: '',
     price: 40,
-    photo: '../../assets/photos/brownie.jpg'
+    photo: '../../assets/photos/brownie.webp'
   }, {
     id: 'refresco-coca',
     name: 'Refresco Coca-Cola',
     desc: '600 ml',
     price: 35,
-    photo: '../../assets/photos/cocacola.jpg'
+    photo: '../../assets/photos/cocacola.webp'
   }, {
     id: 'refresco-sprite',
     name: 'Refresco Sprite',
     desc: '600 ml',
     price: 35,
-    photo: '../../assets/photos/sprite.jpg'
+    photo: '../../assets/photos/sprite.webp'
   }, {
     id: 'agua',
     name: 'Agua Mineral',
     desc: '',
     price: 35,
-    photo: '../../assets/photos/agua-mineral.jpg'
+    photo: '../../assets/photos/agua-mineral.webp'
   }]
 }];
 const MEXTIZZA_ADDONS = [
@@ -4100,7 +4113,7 @@ function WebHero({
       position: 'relative'
     }
   }, /*#__PURE__*/React.createElement("img", {
-    src: "../../assets/photos/pizza-serranita.jpeg",
+    src: "../../assets/photos/pizza-serranita.webp",
     alt: "Pizza Serranita reci\xE9n salida del horno de piedra",
     style: {
       width: '100%',

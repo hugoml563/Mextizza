@@ -128,7 +128,9 @@ function WebHero({ onNav }) {
           </div>
         </div>
         <div className="hero-photo-frame" style={{ position: 'relative' }}>
-          <img ref={imgRef} src="../../assets/photos/pizza-serranita.jpeg" alt="Pizza Serranita recién salida del horno de piedra"
+          <img ref={imgRef} src="../../assets/photos/pizza-serranita.webp" alt="Pizza Serranita recién salida del horno de piedra"
+              srcSet="../../assets/photos/pizza-serranita-md.webp 600w, ../../assets/photos/pizza-serranita.webp 1100w"
+              sizes="(max-width: 860px) 100vw, 45vw" fetchPriority="high" decoding="async"
             className="hero-photo-img" data-mounted={mounted} style={{
               width: '100%', aspectRatio: '4/5', objectFit: 'cover',
               borderRadius: 'var(--radius-lg)', boxShadow: 'var(--shadow-raised)'
@@ -305,7 +307,11 @@ function SocialPost({ imagen, alt, pie }) {
       </div>
 
       <div style={{ position: 'relative', aspectRatio: '1 / 1', overflow: 'hidden', background: 'var(--surface-sunken)' }}>
-        <img src={imagen} alt={alt} loading="lazy"
+        <img src={imagen} alt={alt} loading="lazy" decoding="async"
+          srcSet={imagen && imagen.slice(-5) === ".webp"
+            ? imagen.slice(0, -5) + "-thumb.webp 220w, " + imagen.slice(0, -5) + "-md.webp 600w, " + imagen + " 1100w"
+            : undefined}
+          sizes="(max-width: 420px) 100vw, (max-width: 860px) 50vw, 25vw"
           style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }} />
       </div>
 

@@ -1,5 +1,13 @@
 import React from 'react';
 
+/* Cada foto vive en tres tamanos con el mismo nombre base: -thumb.webp (220px),
+   -md.webp (600px) y .webp (1100px). Sin esto el menu bajaba imagenes de 1100px
+   para pintarlas en miniaturas de 64px. */
+function variantesFoto(src) {
+  if (!src || src.slice(-5) !== ".webp") return undefined;
+  var base = src.slice(0, -5);
+  return base + "-thumb.webp 220w, " + base + "-md.webp 600w, " + src + " 1100w";
+}
 export function MenuItem({ name, description, price, photo, photoSize = 64, badge, divider = true, action, onClick, style }) {
   const [hover, setHover] = React.useState(false);
   const clickable = !!onClick;
@@ -14,7 +22,8 @@ export function MenuItem({ name, description, price, photo, photoSize = 64, badg
         cursor: clickable ? 'pointer' : 'default',
         transition: 'color var(--dur-fast) var(--ease-standard)', ...style
       }}>
-      {photo && <img src={photo} alt={name} style={{
+      {photo && <img src={photo} alt={name} loading="lazy" decoding="async"
+        srcSet={variantesFoto(photo)} sizes={photoSize + "px"} style={{
         width: photoSize, height: photoSize, flex: 'none', objectFit: 'cover',
         borderRadius: 'var(--radius-sm)', border: 'var(--border-paper)',
         transform: hover ? 'scale(1.06)' : 'scale(1)',
