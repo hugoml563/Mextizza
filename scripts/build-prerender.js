@@ -202,9 +202,12 @@ if (html.includes(INICIO)) {
 }
 // Se sustituye el JSON-LD escrito a mano por el generado.
 const ldNuevo = '<script type="application/ld+json">' + JSON.stringify(schema()) + '</' + 'script>';
-const antesLd = html;
-html = html.replace(/<script type="application\/ld\+json">[\s\S]*?<\/script>/, () => ldNuevo);
-if (html === antesLd) throw new Error('no encontre el bloque JSON-LD en index.html');
+// Se comprueba que el patron COINCIDA, no que el texto cambie: si el schema ya
+// estaba al dia la sustitucion produce lo mismo, y compararlo daba un falso error
+// que cortaba el resto del build.
+const RE_LD = /<script type="application\/ld\+json">[\s\S]*?<\/script>/;
+if (!RE_LD.test(html)) throw new Error('no encontre el bloque JSON-LD en index.html');
+html = html.replace(RE_LD, () => ldNuevo);
 
 fs.writeFileSync(p, html);
 
