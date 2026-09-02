@@ -119,6 +119,8 @@ ${cuerpo}
 
 const negocioBase = {
   '@type': 'Restaurant',
+  // Mismo @id que la portada, para que los buscadores lean una entidad y no dos.
+  '@id': 'https://mextizza.com/#restaurant',
   name: 'Mextizza',
   servesCuisine: ['Pizza', 'Italiana', 'Mexicana'],
   priceRange: '$$',
@@ -137,8 +139,7 @@ const p1 = documento({
   title: 'Pizza a domicilio en Atizapán de Zaragoza | Mextizza',
   description:
     'Pizza de horno de piedra con masa fermentada 48 horas, a domicilio en Lomas Lindas, ' +
-    'Villas de la Hacienda, Bulevares, Las Alamedas y colonias vecinas de Atizapán. ' +
-    'Envío incluido, entrega en 40 minutos o menos.',
+    'Villas de la Hacienda y colonias vecinas de Atizapán. Envío incluido.',
   jsonld: {
     '@context': 'https://schema.org',
     ...negocioBase,
@@ -242,7 +243,7 @@ const p3 = documento({
   slug: 'pizza-del-mes',
   title: (dm ? dm.name + ': ' : '') + 'la pizza rotativa de Mextizza',
   description: dm
-    ? dm.name + ', $' + dm.price + '. ' + dm.desc + ' Cambia cada mes con una combinación mexicana distinta.'
+    ? dm.name + ', $' + dm.price + '. ' + dm.desc + ' Cambia cada mes.'
     : 'La pizza rotativa de Mextizza cambia cada mes con una combinación mexicana distinta.',
   jsonld: {
     '@context': 'https://schema.org',

@@ -51,6 +51,7 @@ function generar() {
   const p = [];
   p.push('<div class="prerender">');
 
+  const cat = MEXTIZZA_FACTS.catering;
   p.push('<h1>Masa de 48 horas, horneada al pedido</h1>');
   p.push('<p>Pizzería artesanal en ' + esc(MEXTIZZA_FACTS.zona) + '. ' +
     'Horno de piedra y masa de fermentación fría de 48 horas. ' +
@@ -71,7 +72,6 @@ function generar() {
   p.push('<p>La masa lleva ' + esc(MEXTIZZA_FACTS.fermento) +
     '. Se hornea en piedra al momento del pedido, no antes. ' + esc(MEXTIZZA_FACTS.estilo) + '</p>');
 
-  const cat = MEXTIZZA_FACTS.catering;
   p.push('<h2>Catering</h2>');
   p.push('<p>Horno de leña en tu evento, de ' + cat.min + ' a ' + cat.max +
     ' personas, a ' + precio(cat.precio) + ' por persona. ' +
@@ -104,6 +104,24 @@ function generar() {
       ? ', o en <a href="' + esc(MEXTIZZA_SOCIAL.instagram) + '">Instagram</a>' : '') +
     '.</p>');
 
+  // Estos enlaces existian solo en el pie que renderiza React, asi que un
+  // rastreador que no ejecuta codigo llegaba a la portada sin camino a las
+  // paginas de intencion: solo las hallaba por el sitemap.
+  p.push('<h2>Más sobre Mextizza</h2>');
+  p.push('<ul>');
+  p.push('<li><a href="/pizza-a-domicilio-atizapan/">Pizza a domicilio en Atizapán de Zaragoza</a>' +
+    ' — las colonias donde entregamos y cuánto tardamos.</li>');
+  p.push('<li><a href="/catering-pizza-horno-de-lena/">Catering con horno en tu evento</a>' +
+    ' — de ' + cat.min + ' a ' + cat.max + ' personas, con el horno en sitio.</li>');
+  p.push('<li><a href="/pizza-del-mes/">La pizza del mes</a>' +
+    ' — la rotativa que cambia con una combinación mexicana distinta.</li>');
+  p.push('</ul>');
+
+  // La version rastreable no tenia ninguna imagen. Ruta absoluta a proposito:
+  // funciona igual servida en / que en /ui_kits/web/index.html.
+  p.push('<img src="/assets/photos/pizza-serranita-md.webp" width="600" height="600"' +
+    ' alt="Pizza Serranita de Mextizza recién salida del horno de piedra">');
+
   p.push('</div>');
   return p.join('\n');
 }
@@ -118,6 +136,8 @@ function schema() {
   return {
     '@context': 'https://schema.org',
     '@type': 'Restaurant',
+    // Mismo @id que la pagina de domicilio: es un negocio, no dos.
+    '@id': 'https://mextizza.com/#restaurant',
     name: 'Mextizza',
     description: 'Pizza artesanal de masa fermentada 48 horas, horneada en horno de piedra ' +
       'al momento del pedido. Cocina sin salón (dark kitchen) en Col. Lomas Lindas, ' +

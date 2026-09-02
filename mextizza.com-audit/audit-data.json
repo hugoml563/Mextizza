@@ -1,0 +1,192 @@
+{
+  "summary": {
+    "health_score": 81,
+    "business_type": "Local Service / Restaurant (dark kitchen, delivery-only)",
+    "top_findings": [
+      "La portada no enlaza a las 3 paginas de intencion en el HTML rastreable",
+      "El title de la portada mide 19 caracteres y omite 'a domicilio' y 'Atizapan'",
+      "Dos meta descriptions exceden el largo util (193 y 209 caracteres)",
+      "/pizza-del-mes/ es la pagina mas delgada, 1017 caracteres",
+      "Dos paginas declaran @type Restaurant sin un @id compartido"
+    ],
+    "quick_wins": [
+      "Reescribir el title de la portada",
+      "Recortar las dos descriptions a 155 caracteres",
+      "Incluir los enlaces a las paginas de intencion dentro del prerender",
+      "Compartir @id entre los dos schemas Restaurant"
+    ]
+  },
+  "categories": [
+    {
+      "name": "Technical SEO",
+      "score": 88,
+      "what_works": [
+        "robots.txt, sitemap.xml y llms.txt publicados y consistentes",
+        "canonical correcto en las 4 paginas",
+        "www redirige 308 al apex",
+        "6 de 6 cabeceras de seguridad en todas las paginas",
+        "URLs limpias sin parametros"
+      ],
+      "findings": [
+        {
+          "title": "Enlazado interno ausente en el HTML rastreable",
+          "severity": "High",
+          "description": "La portada no enlaza a ninguna de las 3 paginas de intencion sin ejecutar JavaScript: los enlaces viven en el pie que renderiza React. Los rastreadores que no ejecutan codigo dependen unicamente del sitemap para descubrirlas.",
+          "recommendation": "Incluir esos enlaces dentro del bloque de prerender."
+        }
+      ]
+    },
+    {
+      "name": "Content Quality",
+      "score": 78,
+      "what_works": [
+        "Contenido especifico con precios, distancias y condiciones reales",
+        "Solapamiento entre paginas bajo (19-25%), salvo portada vs domicilio (49%)",
+        "Voz de marca consistente, sin relleno"
+      ],
+      "findings": [
+        {
+          "title": "Pagina delgada",
+          "severity": "Medium",
+          "description": "/pizza-del-mes/ tiene 1017 caracteres, la mitad que la de domicilio.",
+          "recommendation": "Anadir el historial de rotativas anteriores conforme vayan pasando los meses."
+        }
+      ]
+    },
+    {
+      "name": "On-Page SEO",
+      "score": 68,
+      "what_works": [
+        "Un solo H1 por pagina",
+        "Jerarquia de encabezados coherente",
+        "Sin imagenes sin alt"
+      ],
+      "findings": [
+        {
+          "title": "Title de la portada demasiado corto",
+          "severity": "High",
+          "description": "'Mextizza - Pizzeria' mide 19 caracteres. La pagina mas importante desperdicia su senal on-page mas fuerte: no menciona 'a domicilio' ni 'Atizapan'.",
+          "recommendation": "Reescribirlo a 50-60 caracteres incluyendo la ubicacion y el servicio."
+        },
+        {
+          "title": "Meta descriptions fuera de rango",
+          "severity": "Medium",
+          "description": "Portada 193 caracteres y /pizza-a-domicilio-atizapan/ 209. Google muestra cerca de 155.",
+          "recommendation": "Recortar ambas a 150-155 caracteres."
+        }
+      ]
+    },
+    {
+      "name": "Schema",
+      "score": 90,
+      "what_works": [
+        "4 paginas con JSON-LD valido",
+        "Restaurant con menu completo y 7 colonias nombradas",
+        "Service con oferta de catering",
+        "MenuItem para la rotativa"
+      ],
+      "findings": [
+        {
+          "title": "Dos entidades Restaurant sin @id compartido",
+          "severity": "Low",
+          "description": "La portada y la pagina de domicilio declaran Restaurant por separado, sin un identificador comun que las una como la misma entidad.",
+          "recommendation": "Anadir @id: https://mextizza.com/#restaurant en ambas."
+        }
+      ]
+    },
+    {
+      "name": "Performance",
+      "score": 85,
+      "what_works": [
+        "376 KB de JavaScript (antes 4431 KB)",
+        "CLS de 0 en movil y escritorio",
+        "DOMContentLoaded en 488 ms",
+        "React servido desde el propio dominio",
+        "Imagenes en webp con srcset y carga diferida"
+      ],
+      "findings": [
+        {
+          "title": "Sin datos de campo",
+          "severity": "Info",
+          "description": "Las mediciones son de laboratorio. CrUX necesita trafico real.",
+          "recommendation": "Revisar Search Console cuando haya volumen."
+        }
+      ]
+    },
+    {
+      "name": "AI Search Readiness",
+      "score": 82,
+      "what_works": [
+        "Los 10 rastreadores de IA reciben 200 y 2144 caracteres",
+        "llms.txt con menu, precios, colonias y condiciones de catering",
+        "Colonias presentes en texto y en schema"
+      ],
+      "findings": [
+        {
+          "title": "Descubrimiento dependiente del sitemap",
+          "severity": "High",
+          "description": "Sin enlaces internos en el HTML crudo, un rastreador de IA que llegue a la portada no encuentra las paginas de intencion.",
+          "recommendation": "Mismo arreglo que el hallazgo de enlazado interno."
+        }
+      ]
+    },
+    {
+      "name": "Images",
+      "score": 88,
+      "what_works": [
+        "Todas con alt",
+        "webp con tres tamanos y srcset",
+        "Carga diferida"
+      ],
+      "findings": [
+        {
+          "title": "El prerender no incluye imagenes",
+          "severity": "Low",
+          "description": "La version rastreable de la portada no tiene ninguna imagen.",
+          "recommendation": "Anadir la foto principal con su alt dentro del prerender."
+        }
+      ]
+    }
+  ],
+  "action_plan": {
+    "phases": [
+      {
+        "name": "Fase 1: Alto impacto",
+        "timeframe": "Esta semana",
+        "items": [
+          "Enlaces a las paginas de intencion dentro del prerender",
+          "Reescribir el title de la portada a 50-60 caracteres"
+        ]
+      },
+      {
+        "name": "Fase 2: Ajustes",
+        "timeframe": "Siguientes dias",
+        "items": [
+          "Recortar las dos meta descriptions a 155 caracteres",
+          "@id compartido entre los schemas Restaurant",
+          "Imagen principal dentro del prerender"
+        ]
+      },
+      {
+        "name": "Fase 3: Contenido",
+        "timeframe": "Proximo mes",
+        "items": [
+          "Engrosar /pizza-del-mes/ con el historial de rotativas",
+          "Resenas en Google Business como fuente independiente"
+        ]
+      },
+      {
+        "name": "Fase 4: Medicion",
+        "timeframe": "Continuo",
+        "items": [
+          "Search Console: indexacion a 15 dias",
+          "Impresiones por consultas con nombre de colonia"
+        ]
+      }
+    ]
+  },
+  "artifacts": {
+    "findings_dir": "findings/",
+    "screenshots_dir": "screenshots/"
+  }
+}
