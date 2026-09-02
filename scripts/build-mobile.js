@@ -120,6 +120,7 @@ copyFile('ui_kits/app/bundle.build.js');
 // React de produccion, desde node_modules: mismos bytes que servia el CDN
 // (verificado por hash), pero ahora sin depender de una red ajena.
 fs.mkdirSync(path.join(outDir, 'vendor'), { recursive: true });
+copyDir(path.join(root, 'vendor', 'fonts'), path.join(outDir, 'vendor', 'fonts'));
 for (const [origen, nombre] of [
   ['react/umd/react.production.min.js', 'react.production.min.js'],
   ['react-dom/umd/react-dom.production.min.js', 'react-dom.production.min.js'],
@@ -132,7 +133,7 @@ for (const [origen, nombre] of [
 // Las fuentes tambien viajan dentro. Si no hay red al construir, se avisa y se
 // deja el @import remoto: la app sigue abriendo, solo cae a fuentes del sistema.
 const { construirFuentes } = require('./build-fonts.js');
-construirFuentes(outDir)
+construirFuentes()
   .then((r) => console.log('  fuentes: ' + r.archivos + ' archivos, ' + r.kb + ' KB, servidas localmente'))
   .catch((e) => console.warn('  AVISO fuentes: ' + e.message + ' (queda el @import remoto)'));
 
