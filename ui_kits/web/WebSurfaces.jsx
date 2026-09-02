@@ -428,6 +428,9 @@ function WebSocial() {
 
 // Que renglones del footer son enlaces. Los que no aparecen aqui quedan como texto.
 const footerEnlaces = {
+  'Pizza a domicilio en Atizapán': '/pizza-a-domicilio-atizapan/',
+  'Catering con horno': '/catering-pizza-horno-de-lena/',
+  'La pizza del mes': '/pizza-del-mes/',
   'WhatsApp Business': mextizzaWhatsappLink('Hola, quiero hacer un pedido en Mextizza.'),
   'Sitio web': '/',
   'App Mextizza': '/app',
@@ -437,7 +440,7 @@ function WebFooter() {
   return (
     <footer style={{ background: 'var(--negro-carbon)', paddingTop: 56, paddingBottom: 44, position: 'relative' }}>
       <TapeStripe position="top" height={4} />
-      <div className="web-footer-grid" style={{ ...webShell.page, display: 'grid', gridTemplateColumns: '1.4fr 1fr 1fr', gap: 28 }}>
+      <div className="web-footer-grid" style={{ ...webShell.page, display: 'grid', gridTemplateColumns: '1.4fr 1fr 1fr 1fr', gap: 28 }}>
         <div>
           <Lockup variant="completo" tone="hueso" size={36} align="left" base="../../" subtitle="Pizzería" tagline="Horneada como allá, gozada como acá" />
           <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginTop: 22 }}>
@@ -455,7 +458,7 @@ function WebFooter() {
             </a>
           </div>
         </div>
-        {[['Pedidos', ['WhatsApp Business', 'Sitio web', 'App Mextizza']], ['Operación', [MEXTIZZA_FACTS.zona, 'Radio de 3 km', 'Sólo entrega, sin salón']]].map(([t, items]) => (
+        {[['Pedidos', ['WhatsApp Business', 'Sitio web', 'App Mextizza']], ['Operación', [MEXTIZZA_FACTS.zona, 'Radio de 3 km', 'Sólo entrega, sin salón']], ['Más', ['Pizza a domicilio en Atizapán', 'Catering con horno', 'La pizza del mes']]].map(([t, items]) => (
           <div key={t}>
             <div style={{ fontFamily: 'var(--font-label)', fontSize: 10, letterSpacing: 1, textTransform: 'uppercase', color: 'var(--dorado-masa)', marginBottom: 14 }}>{t}</div>
             {items.map(i => footerEnlaces[i] ? (
