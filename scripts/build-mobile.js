@@ -71,7 +71,44 @@ function copyFile(rel) {
   fs.copyFileSync(s, d);
 }
 
-copyDir(path.join(root, 'assets'), path.join(outDir, 'assets'));
+// Solo viajan las imagenes que la app realmente pide. Copiar assets/ entero
+// metia 6.5 MB muertos en el APK: banners de Facebook, fotos de perfil, posts
+// de Instagram y los .jpg originales de fotos que ya existen en .webp.
+function assetsReferenciados() {
+  const usados = new Set();
+  const scan = (dir) => {
+    for (const e of fs.readdirSync(dir, { withFileTypes: true })) {
+      const f = path.join(dir, e.name);
+      if (e.isDirectory()) { scan(f); continue; }
+      if (!/\.(html|js|jsx|css|json|webmanifest)$/i.test(e.name)) continue;
+      const txt = fs.readFileSync(f, 'utf8');
+      for (const m of txt.matchAll(/assets\/[A-Za-z0-9_\-./]+\.[a-z0-9]{2,5}/gi)) {
+        const rel = m[0].replace(/^.*?assets\//, 'assets/');
+        usados.add(rel);
+        // Las variantes responsivas se arman en tiempo de ejecucion
+        // (imagen.slice(0,-5) + '-thumb.webp'), no aparecen como texto.
+        if (rel.endsWith('.webp')) {
+          usados.add(rel.slice(0, -5) + '-thumb.webp');
+          usados.add(rel.slice(0, -5) + '-md.webp');
+        }
+      }
+    }
+  };
+  scan(outDir);
+  scan(path.join(root, 'ui_kits'));
+  return usados;
+}
+
+let copiadas = 0, saltadas = 0;
+for (const rel of assetsReferenciados()) {
+  const origen = path.join(root, rel);
+  if (!fs.existsSync(origen)) { saltadas++; continue; }
+  const destino = path.join(outDir, rel);
+  fs.mkdirSync(path.dirname(destino), { recursive: true });
+  fs.copyFileSync(origen, destino);
+  copiadas++;
+}
+console.log('  imagenes: ' + copiadas + ' copiadas (solo las referenciadas)');
 copyDir(path.join(root, 'tokens'), path.join(outDir, 'tokens'));
 copyFile('styles.css');
 copyFile('_ds_bundle.js');

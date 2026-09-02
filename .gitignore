@@ -12,3 +12,6 @@
 
 # Cache del skill graphify: se regenera solo y son cientos de archivos.
 /graphify-out/
+
+# Ruta del SDK de Android: es de esta maquina, no del proyecto.
+android/local.properties
