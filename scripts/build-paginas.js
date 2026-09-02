@@ -277,6 +277,44 @@ guardamos "por si alguien la pide".</p>
 </div>`,
 });
 
+// Pagina 404 propia. Vercel la usa automaticamente si existe en la raiz, y las
+// reglas de _redirects apuntan aqui lo que .vercelignore mantiene privado.
+// Lleva noindex: es una respuesta de error, no contenido que deba indexarse.
+const p404 = `<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>Esta página no existe | Mextizza</title>
+<link rel="icon" type="image/png" href="/assets/social/mextizza-app-icon-512.png">
+<link rel="stylesheet" href="/styles.css">
+<style>
+body{background:var(--blanco-hueso,#F5F0E8);color:var(--negro-carbon,#1A1A1A);margin:0;
+  font-family:var(--font-body),system-ui,sans-serif;min-height:100dvh;
+  display:flex;align-items:center;justify-content:center;padding:24px}
+.c{max-width:440px;text-align:center}
+.c img{height:44px;width:auto;margin-bottom:28px}
+.c h1{font-family:var(--font-display),sans-serif;font-size:30px;line-height:1.1;margin:0 0 12px}
+.c p{line-height:1.6;margin:0 0 26px;color:var(--negro-carbon,#1A1A1A);opacity:.75}
+.c a{display:inline-block;padding:13px 24px;border-radius:4px;text-decoration:none;
+  background:var(--rosa-mexicano,#E4007C);color:#fff;font-family:var(--font-label),sans-serif;
+  font-size:13px;letter-spacing:.08em;text-transform:uppercase}
+</style>
+</head>
+<body>
+<div class="c">
+  <img src="/assets/lockup-pala.png" alt="Mextizza">
+  <h1>Esta página no existe</h1>
+  <p>El enlace que seguiste ya no lleva a ningún lado. El menú sí sigue en su lugar.</p>
+  <a href="/">Ver el menú</a>
+</div>
+</body>
+</html>
+`;
+fs.writeFileSync(path.join(RAIZ, '404.html'), p404);
+console.log('  /404.html' + ' '.repeat(25) + 'página de error propia, noindex');
+
 for (const [slug, html] of [
   ['pizza-a-domicilio-atizapan', p1],
   ['catering-pizza-horno-de-lena', p2],

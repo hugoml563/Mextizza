@@ -1,0 +1,29 @@
+# Generado por scripts/build-portable.js desde vercel.json y .vercelignore.
+# Formato de Cloudflare Pages y Netlify. Vercel lo ignora.
+
+# Rutas cortas
+/capturar                  /?canal=whatsapp                                 307
+/cocina                    /templates/sales-center/SalesCenter.dc.html      307
+/whatsapp                  https://wa.me/525526577352?text=Hola%2C%20quiero%20hacer%20un%20pedido%20en%20Mextizza. 307
+/app                       /descarga.html                                   307
+/ui_kits/web/index.html    /                                                308
+
+# Equivalente de .vercelignore: estos servicios publican todo el
+# directorio, asi que lo privado se bloquea con una regla explicita.
+/sources/*                 /404.html                                        404
+/integration/*             /404.html                                        404
+/docs/*                    /404.html                                        404
+/graphify-out/*            /404.html                                        404
+/android/*                 /404.html                                        404
+/scripts/*                 /404.html                                        404
+/components/*              /404.html                                        404
+/readme.md                 /404.html                                        404
+/package.json              /404.html                                        404
+/package-lock.json         /404.html                                        404
+/capacitor.config.json     /404.html                                        404
+/.claude/*                 /404.html                                        404
+/.github/*                 /404.html                                        404
+/mobile-www/*              /404.html                                        404
+/node_modules/*            /404.html                                        404
+/guidelines/*              /404.html                                        404
+/ui_kits/app/*             /404.html                                        404
