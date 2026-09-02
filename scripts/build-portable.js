@@ -27,8 +27,8 @@ const lineas = [
   '',
 ];
 for (const bloque of cfg.headers || []) {
-  // "/(.*)" de Vercel es "/*" en este formato.
-  const ruta = bloque.source === '/(.*)' ? '/*' : bloque.source;
+  // Vercel usa "(.*)" al final de la ruta; aqui el comodin es "*".
+  const ruta = bloque.source.replace(/\(\.\*\)$/, '*');
   lineas.push(ruta);
   for (const h of bloque.headers) lineas.push('  ' + h.key + ': ' + h.value);
   lineas.push('');
