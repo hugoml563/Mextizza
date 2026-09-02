@@ -30,7 +30,7 @@
   "redirects": [
     {
       "source": "/capturar",
-      "destination": "/ui_kits/web/index.html?canal=whatsapp",
+      "destination": "/?canal=whatsapp",
       "permanent": false
     },
     {
@@ -47,6 +47,11 @@
       "source": "/app",
       "destination": "/descarga.html",
       "permanent": false
+    },
+    {
+      "source": "/ui_kits/web/index.html",
+      "destination": "/",
+      "permanent": true
     }
   ]
 }

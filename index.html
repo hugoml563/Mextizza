@@ -1,1 +1,125 @@
-<!doctype html><html lang="es"><head><meta charset="utf-8"><meta http-equiv="refresh" content="0; url=./ui_kits/web/index.html"><title>Mextizza — Pizzería</title></head><body><p>Redirigiendo a <a href="./ui_kits/web/index.html">Mextizza</a>…</p></body></html>
+<!-- @dsCard group="Sitio web" viewport="1280x760" name="Sitio web Mextizza" subtitle="Home con menú, proceso, catering y carrito de pedido interactivo" -->
+<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Mextizza — Pizzería</title><meta name="description" content="Pizza artesanal de masa fermentada 48 horas, horneada en horno de piedra al momento del pedido. Entrega en Atizapan de Zaragoza, radio de 3 km, envio incluido. Miercoles a domingo de 4 a 11 pm."><link rel="canonical" href="https://mextizza.com/"><meta property="og:type" content="restaurant"><meta property="og:site_name" content="Mextizza"><meta property="og:locale" content="es_MX"><meta property="og:title" content="Mextizza - Masa de 48 horas, horneada al pedido"><meta property="og:description" content="Pizza artesanal de masa fermentada 48 horas, horneada en horno de piedra al momento del pedido. Entrega en Atizapan de Zaragoza, radio de 3 km, envio incluido. Miercoles a domingo de 4 a 11 pm."><meta property="og:url" content="https://mextizza.com/"><meta property="og:image" content="https://mextizza.com/assets/social/mextizza-og-1200x630.jpg"><meta property="og:image:width" content="1200"><meta property="og:image:height" content="630"><meta property="og:image:alt" content="Pizza Serranita recien salida del horno de piedra"><meta name="twitter:card" content="summary_large_image"><meta name="twitter:title" content="Mextizza - Masa de 48 horas, horneada al pedido"><meta name="twitter:description" content="Pizza artesanal de masa fermentada 48 horas, horneada en horno de piedra al momento del pedido. Entrega en Atizapan de Zaragoza, radio de 3 km, envio incluido. Miercoles a domingo de 4 a 11 pm."><meta name="twitter:image" content="https://mextizza.com/assets/social/mextizza-og-1200x630.jpg"><script type="application/ld+json">{"@context":"https://schema.org","@type":"Restaurant","name":"Mextizza","description":"Pizza artesanal de masa fermentada 48 horas, horneada en horno de piedra al momento del pedido. Entrega en Atizapan de Zaragoza, radio de 3 km, envio incluido. Miercoles a domingo de 4 a 11 pm.","url":"https://mextizza.com/","image":"https://mextizza.com/assets/social/mextizza-og-1200x630.jpg","logo":"https://mextizza.com/assets/social/mextizza-app-icon-512.png","servesCuisine":["Pizza","Italiana","Mexicana"],"priceRange":"$$","currenciesAccepted":"MXN","telephone":"+52 55 2657 7352","address":{"@type":"PostalAddress","addressLocality":"Atizapan de Zaragoza","addressRegion":"Estado de Mexico","addressCountry":"MX"},"areaServed":{"@type":"GeoCircle","geoMidpoint":{"@type":"GeoCoordinates","latitude":19.5561,"longitude":-99.2647},"geoRadius":"3000","description":"Col. Lomas Lindas, Atizapan de Zaragoza y colonias vecinas"},"openingHoursSpecification":[{"@type":"OpeningHoursSpecification","dayOfWeek":["Wednesday","Thursday","Friday","Saturday","Sunday"],"opens":"16:00","closes":"23:00"}],"hasDeliveryMethod":"https://schema.org/OnSitePickup","potentialAction":{"@type":"OrderAction","target":{"@type":"EntryPoint","urlTemplate":"https://mextizza.com/","inLanguage":"es-MX"},"deliveryMethod":"https://schema.org/ParcelService"},"sameAs":["https://instagram.com/mextizzamx","https://www.facebook.com/mextizzamx"]}</script><link rel="icon" type="image/png" href="/assets/social/mextizza-app-icon-512.png"><link rel="apple-touch-icon" href="/assets/social/mextizza-app-icon-180.png"><link rel="manifest" href="/manifest.webmanifest"><meta name="theme-color" content="#1A1A1A"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="Mextizza"><link rel="stylesheet" href="/styles.css"><script src="https://unpkg.com/react@18.3.1/umd/react.production.min.js" integrity="sha384-DGyLxAyjq0f9SPpVevD6IgztCFlnMF6oW/XQGmfe+IsZ8TqEiDrcHkMLKI6fiB/Z" crossorigin="anonymous"></script><script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.production.min.js" integrity="sha384-gTGxhz21lVGYNMcdJOyq01Edg0jhn/c22nsx0kyqP0TxaV5WVdsSH1fSDUf5YJj1" crossorigin="anonymous"></script><script src="/_ds_bundle.js"></script><script src="/ui_kits/menu-data.js"></script><script src="/ui_kits/delivery-zone.js"></script><script src="/ui_kits/sheets-config.js"></script><script src="/ui_kits/web/bundle.build.js" defer></script><style>
+body{background:var(--surface-page)}
+@media (max-width: 860px) {
+  .web-hero-grid{grid-template-columns:1fr !important}
+  .web-menu-grid{grid-template-columns:1fr !important}
+  .web-menu-grid > div:first-child{grid-row:auto !important}
+  .web-catering-grid{grid-template-columns:1fr !important}
+  .web-process-grid{grid-template-columns:1fr !important}
+  .web-footer-grid{grid-template-columns:1fr !important;gap:32px !important}
+}
+@media (max-width: 640px) {
+  /* El header se partia en tres filas y ocupaba 173px, el 21% de la pantalla,
+     antes de que empezara el contenido. Los tres enlaces de ancla se ocultan en
+     celular: el hero ya lleva 'Ver el menu' y la pagina es corta de recorrer.
+     Quedan logo, Seguir y Pedido en una sola fila de 64px. */
+  .web-header-inner{height:72px !important;flex-wrap:nowrap;padding-top:0;padding-bottom:0}
+  .web-header-nav{gap:10px !important;flex-wrap:nowrap}
+  .web-header-nav > a{display:none}
+  /* Lado a lado en una columna de 327px, ambos botones partian su etiqueta en
+     dos lineas. Apilados ocupan el ancho completo y dan mejor area de toque. */
+  .web-hero-cta{flex-direction:column;align-items:stretch}
+  .web-hero-cta > *{width:100%;justify-content:center}
+  .web-addons-grid{grid-template-columns:1fr !important}
+}
+@media (max-width: 420px) {
+}
+.footer-icon-link{transition:opacity var(--dur-fast) var(--ease-standard);cursor:pointer}
+.footer-icon-link:hover{opacity:1 !important}
+.web-menu-grid > div{transition:transform var(--dur-base) var(--ease-standard),box-shadow var(--dur-base) var(--ease-standard)}
+.web-menu-grid > div:hover{transform:translateY(-4px);box-shadow:var(--shadow-raised)}
+/* Solo con mouse: en tactil el hover se queda pegado tras el toque. */
+@media (hover: hover) and (pointer: fine) {
+  .social-foto img{transition:transform var(--dur-base) var(--ease-standard)}
+  .social-foto:hover img{transform:scale(1.06)}
+}
+/* Carrusel de redes. El scroll-snap y el swipe son nativos; la barra se oculta
+   porque las flechas y la tarjeta cortada del borde ya avisan que hay mas. */
+.social-pista{display:flex;gap:16px;overflow-x:auto;scroll-snap-type:x mandatory;
+  scroll-padding-left:2px;padding-bottom:4px;-ms-overflow-style:none;scrollbar-width:none}
+.social-pista::-webkit-scrollbar{display:none}
+.social-pista:focus-visible{outline:2px solid var(--rosa-mexicano-texto);outline-offset:4px;border-radius:var(--radius-md)}
+.social-diapo{flex:0 0 clamp(232px,24vw,288px);scroll-snap-align:start;display:flex}
+.social-diapo > *{width:100%}
+/* En tactil el swipe es el gesto natural: las flechas solo estorban. */
+@media (max-width: 860px){ .social-flechas{display:none !important} }
+@media (max-width: 520px){ .social-diapo{flex:0 0 84%} }
+/* Contenido que lee un rastreador sin JavaScript. React lo reemplaza al montar,
+   normalmente antes del primer pintado; con conexion lenta alcanza a verse, asi
+   que se le da forma para que luzca intencional en vez de HTML crudo. */
+.prerender{max-width:760px;margin:0 auto;padding:40px 24px 64px;font-family:var(--font-body);color:var(--negro-carbon)}
+.prerender h1{font-family:var(--font-display);font-size:34px;line-height:1.1;margin:0 0 14px}
+.prerender h2{font-family:var(--font-display);font-size:20px;margin:34px 0 10px}
+.prerender p{margin:0 0 12px;line-height:1.6;max-width:62ch}
+.prerender ul{margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:12px}
+.prerender li{line-height:1.5;padding-bottom:12px;border-bottom:1px solid var(--linea-suave,#E0D8CB)}
+.prerender b{font-weight:700}
+
+.reveal{opacity:0;transform:translateY(16px);transition:opacity .4s ease-out,transform .4s ease-out}
+.reveal.is-visible{opacity:1;transform:none}
+
+.hero-photo-frame{position:relative;perspective:900px}
+.hero-photo-img{
+  clip-path:inset(0 0 100% 0);
+  transition:clip-path 600ms cubic-bezier(0.23,1,0.32,1);
+}
+.hero-photo-img[data-mounted="true"]{clip-path:inset(0 0 0 0)}
+.hero-stamp{
+  opacity:0;transform:scale(0.85);
+  transition:opacity 300ms ease-out,transform 400ms cubic-bezier(0.34,1.56,0.64,1);
+}
+.hero-stamp[data-mounted="true"]{opacity:1;transform:scale(1);transition-delay:350ms}
+@media (hover: hover) and (pointer: fine) {
+  .hero-photo-img{transition:clip-path 600ms cubic-bezier(0.23,1,0.32,1),transform 220ms ease-out;will-change:transform}
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .reveal{opacity:1 !important;transform:none !important;transition:none !important}
+  .social-pista{scroll-behavior:auto !important}
+  .hero-photo-img{clip-path:inset(0 0 0 0) !important;transition:none !important}
+  .hero-stamp{opacity:1 !important;transform:scale(1) !important;transition:none !important}
+}
+</style></head><body><div id="root"><!--prerender:inicio-->
+<div class="prerender">
+<h1>Masa de 48 horas, horneada al pedido</h1>
+<p>Pizzería artesanal en Col. Lomas Lindas, Atizapán de Zaragoza. Horno de piedra y masa de fermentación fría de 48 horas. Sólo entrega a domicilio, sin salón.</p>
+<h2>Pizzas</h2>
+<p>Todas nuestras pizzas están hechas en horno de piedra, con una masa fermentada en frío 48 horas.</p>
+<ul>
+<li><b>Pizza Serranita</b> $229<br>Jamón Serrano, arúgula fresca, queso parmesano y salsa de tomate artesanal.</li>
+<li><b>Pizza Aloha</b> $189<br>La clásica que divide opiniones, jamón, piña y salsa de tomate artesanal. Sin pena.</li>
+<li><b>Pizza Newyork</b> $199<br>Salsa de tomate artesanal a la vodka con crema. Una capa de sabor que no vas a adivinar a la primera mordida.</li>
+<li><b>Pizza Provola</b> $229<br>Doble queso, doble provolone. Simple y por eso funciona.</li>
+<li><b>Pizza Chisi</b> $219<br>Queso monterrey, provolone, parmesano y un toque de gorgonzola… Para los que no negocian con el queso.</li>
+<li><b>Pizza Combinada</b> $229<br>Jamón, champiñones, pimiento y cebolla. Para los que quieren un poco de todo.</li>
+<li><b>Pizza Roni</b> $189<br>Peperoni clásico, sin vueltas. La que pides cuando ya sabes lo que quieres.</li>
+<li><b>Pizza Traviesa</b> $199<br>Peperoni con un toque de miel picante… dulce, picante y un poco atrevida.</li>
+</ul>
+<h2>Pizza especial del mes</h2>
+<p>Una sola pizza rota cada mes. Ésta es la de ahora.</p>
+<ul>
+<li><b>Pizza Cochinita</b> $229<br>Lo que le da nombre a la casa: cochinita pibil, frijoles refritos y cebolla morada.</li>
+</ul>
+<h2>Postres y bebidas</h2>
+<ul>
+<li><b>Brownie</b> $40</li>
+<li><b>Refresco Coca-Cola</b> $35<br>600 ml</li>
+<li><b>Refresco Sprite</b> $35<br>600 ml</li>
+<li><b>Agua Mineral</b> $35</li>
+</ul>
+<h2>Cómo la hacemos</h2>
+<p>La masa lleva Fermentación fría de 48 horas. Se hornea en piedra al momento del pedido, no antes. Horno de piedra, masa fermentada en frío 48 horas</p>
+<h2>Catering</h2>
+<p>Horno de leña en tu evento, de 20 a 30 personas, a $235 por persona. Anticipo del 30% y aviso de 4 días.</p>
+<h2>Entrega y horario</h2>
+<ul>
+<li>Horario: Miércoles a domingo, 4:00 pm a 11:00 pm</li>
+<li>Reparto: 3 km · hasta 40 min puerta a puerta</li>
+<li>Envío incluido en el precio</li>
+<li>Entrega en 40 minutos o menos</li>
+</ul>
+<h2>Pedidos</h2>
+<p>Por WhatsApp al <a href="https://wa.me/525526577352">525526577352</a>, o en <a href="https://www.instagram.com/mextizzamx/">Instagram</a>.</p>
+</div>
+<!--prerender:fin--></div></body></html>

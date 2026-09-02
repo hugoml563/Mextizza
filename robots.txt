@@ -1,0 +1,8 @@
+User-agent: *
+Allow: /
+
+Disallow: /templates/sales-center/
+Disallow: /capturar
+Disallow: /cocina
+
+Sitemap: https://mextizza.com/sitemap.xml
