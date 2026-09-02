@@ -11,7 +11,7 @@
     "build:mobile": "npm run build:js && node scripts/build-mobile.js",
     "cap:sync": "npm run build:mobile && npx cap sync android",
     "cap:open": "npx cap open android",
-    "build:js": "node scripts/build-js.js"
+    "build:js": "node scripts/build-js.js && node scripts/build-prerender.js"
   },
   "repository": {
     "type": "git",

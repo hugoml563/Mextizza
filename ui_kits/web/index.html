@@ -45,6 +45,17 @@ body{background:var(--surface-page)}
 /* En tactil el swipe es el gesto natural: las flechas solo estorban. */
 @media (max-width: 860px){ .social-flechas{display:none !important} }
 @media (max-width: 520px){ .social-diapo{flex:0 0 84%} }
+/* Contenido que lee un rastreador sin JavaScript. React lo reemplaza al montar,
+   normalmente antes del primer pintado; con conexion lenta alcanza a verse, asi
+   que se le da forma para que luzca intencional en vez de HTML crudo. */
+.prerender{max-width:760px;margin:0 auto;padding:40px 24px 64px;font-family:var(--font-body);color:var(--negro-carbon)}
+.prerender h1{font-family:var(--font-display);font-size:34px;line-height:1.1;margin:0 0 14px}
+.prerender h2{font-family:var(--font-display);font-size:20px;margin:34px 0 10px}
+.prerender p{margin:0 0 12px;line-height:1.6;max-width:62ch}
+.prerender ul{margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:12px}
+.prerender li{line-height:1.5;padding-bottom:12px;border-bottom:1px solid var(--linea-suave,#E0D8CB)}
+.prerender b{font-weight:700}
+
 .reveal{opacity:0;transform:translateY(16px);transition:opacity .4s ease-out,transform .4s ease-out}
 .reveal.is-visible{opacity:1;transform:none}
 
@@ -69,4 +80,46 @@ body{background:var(--surface-page)}
   .hero-photo-img{clip-path:inset(0 0 0 0) !important;transition:none !important}
   .hero-stamp{opacity:1 !important;transform:scale(1) !important;transition:none !important}
 }
-</style></head><body><div id="root"></div></body></html>
+</style></head><body><div id="root"><!--prerender:inicio-->
+<div class="prerender">
+<h1>Masa de 48 horas, horneada al pedido</h1>
+<p>Pizzería artesanal en Col. Lomas Lindas, Atizapán de Zaragoza. Horno de piedra y masa de fermentación fría de 48 horas. Sólo entrega a domicilio, sin salón.</p>
+<h2>Pizzas</h2>
+<p>Todas nuestras pizzas están hechas en horno de piedra, con una masa fermentada en frío 48 horas.</p>
+<ul>
+<li><b>Pizza Serranita</b> $229<br>Jamón Serrano, arúgula fresca, queso parmesano y salsa de tomate artesanal.</li>
+<li><b>Pizza Aloha</b> $189<br>La clásica que divide opiniones, jamón, piña y salsa de tomate artesanal. Sin pena.</li>
+<li><b>Pizza Newyork</b> $199<br>Salsa de tomate artesanal a la vodka con crema. Una capa de sabor que no vas a adivinar a la primera mordida.</li>
+<li><b>Pizza Provola</b> $229<br>Doble queso, doble provolone. Simple y por eso funciona.</li>
+<li><b>Pizza Chisi</b> $219<br>Queso monterrey, provolone, parmesano y un toque de gorgonzola… Para los que no negocian con el queso.</li>
+<li><b>Pizza Combinada</b> $229<br>Jamón, champiñones, pimiento y cebolla. Para los que quieren un poco de todo.</li>
+<li><b>Pizza Roni</b> $189<br>Peperoni clásico, sin vueltas. La que pides cuando ya sabes lo que quieres.</li>
+<li><b>Pizza Traviesa</b> $199<br>Peperoni con un toque de miel picante… dulce, picante y un poco atrevida.</li>
+</ul>
+<h2>Pizza especial del mes</h2>
+<p>Una sola pizza rota cada mes. Ésta es la de ahora.</p>
+<ul>
+<li><b>Pizza Cochinita</b> $229<br>Lo que le da nombre a la casa: cochinita pibil, frijoles refritos y cebolla morada.</li>
+</ul>
+<h2>Postres y bebidas</h2>
+<ul>
+<li><b>Brownie</b> $40</li>
+<li><b>Refresco Coca-Cola</b> $35<br>600 ml</li>
+<li><b>Refresco Sprite</b> $35<br>600 ml</li>
+<li><b>Agua Mineral</b> $35</li>
+</ul>
+<h2>Cómo la hacemos</h2>
+<p>La masa lleva Fermentación fría de 48 horas. Se hornea en piedra al momento del pedido, no antes. Horno de piedra, masa fermentada en frío 48 horas</p>
+<h2>Catering</h2>
+<p>Horno de leña en tu evento, de 20 a 30 personas, a $235 por persona. Anticipo del 30% y aviso de 4 días.</p>
+<h2>Entrega y horario</h2>
+<ul>
+<li>Horario: Miércoles a domingo, 4:00 pm a 11:00 pm</li>
+<li>Reparto: 3 km · hasta 40 min puerta a puerta</li>
+<li>Envío incluido en el precio</li>
+<li>Entrega en 40 minutos o menos</li>
+</ul>
+<h2>Pedidos</h2>
+<p>Por WhatsApp al <a href="https://wa.me/525526577352">525526577352</a>, o en <a href="https://www.instagram.com/mextizzamx/">Instagram</a>.</p>
+</div>
+<!--prerender:fin--></div></body></html>
