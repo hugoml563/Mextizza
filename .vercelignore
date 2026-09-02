@@ -17,3 +17,10 @@ capacitor.config.json
 .github/
 mobile-www/
 node_modules/
+
+# Artefactos internos que no tienen por que servirse al publico:
+# guidelines/ es documentacion del sistema de diseno y ui_kits/app/ es el
+# codigo fuente de la app, que ya viaja empaquetado dentro del APK. Ambos
+# cargaban React desde unpkg, lo que obligaba a mantener ese dominio en la CSP.
+guidelines/
+ui_kits/app/

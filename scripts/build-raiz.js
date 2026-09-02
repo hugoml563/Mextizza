@@ -32,6 +32,7 @@ const RUTAS = [
   ['src="../delivery-zone.js"', 'src="/ui_kits/delivery-zone.js"'],
   ['src="../sheets-config.js"', 'src="/ui_kits/sheets-config.js"'],
   ['src="bundle.build.js"', 'src="/ui_kits/web/bundle.build.js"'],
+  ['src="../../vendor/', 'src="/vendor/'],
 ];
 
 let html = fs.readFileSync(ORIGEN, 'utf8');
