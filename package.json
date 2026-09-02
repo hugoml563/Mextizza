@@ -1,16 +1,17 @@
 {
   "name": "mextizza-design",
   "version": "1.0.0",
-  "description": "**Mextizza** is a **dark-kitchen pizzería** in Col. Lomas Lindas, Atizapán de Zaragoza, Estado de México (CP 52947). Founders: Hugo Martínez (logistics & commercial strategy) and Ricardo Rodríguez (executive chef & product). Official launch: **1 September 2026**.",
+  "description": "**Mextizza** is a **dark-kitchen pizzer\u00eda** in Col. Lomas Lindas, Atizap\u00e1n de Zaragoza, Estado de M\u00e9xico (CP 52947). Founders: Hugo Mart\u00ednez (logistics & commercial strategy) and Ricardo Rodr\u00edguez (executive chef & product). Official launch: **1 September 2026**.",
   "main": "_ds_bundle.js",
   "directories": {
     "doc": "docs"
   },
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "build:mobile": "node scripts/build-mobile.js",
+    "build:mobile": "npm run build:js && node scripts/build-mobile.js",
     "cap:sync": "npm run build:mobile && npx cap sync android",
-    "cap:open": "npx cap open android"
+    "cap:open": "npx cap open android",
+    "build:js": "node scripts/build-js.js"
   },
   "repository": {
     "type": "git",
@@ -27,5 +28,9 @@
     "@capacitor/app": "^8.1.1",
     "@capacitor/cli": "^8.5.0",
     "@capacitor/core": "^8.5.0"
+  },
+  "devDependencies": {
+    "@babel/core": "^7.26.0",
+    "@babel/preset-react": "^7.26.3"
   }
 }

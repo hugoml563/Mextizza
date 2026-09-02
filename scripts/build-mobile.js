@@ -14,6 +14,11 @@ const path = require('path');
 const root = path.join(__dirname, '..');
 const srcPath = path.join(root, 'ui_kits', 'app', 'mobile.html');
 const outDir = path.join(root, 'mobile-www');
+
+// Se borra la salida antes de reconstruir. Sin esto quedaban archivos de
+// compilaciones anteriores (los .jsx sueltos, ya reemplazados por el bundle)
+// viajando dentro del APK sin que nadie los pidiera.
+fs.rmSync(outDir, { recursive: true, force: true });
 const outPath = path.join(outDir, 'index.html');
 
 let html = fs.readFileSync(srcPath, 'utf8');
@@ -26,9 +31,7 @@ html = html
   .replaceAll('src="../menu-data.js"', 'src="ui_kits/menu-data.js"')
   .replaceAll('src="../delivery-zone.js"', 'src="ui_kits/delivery-zone.js"')
   .replaceAll('src="../sheets-config.js"', 'src="ui_kits/sheets-config.js"')
-  .replaceAll('src="../DeliveryForm.jsx"', 'src="ui_kits/DeliveryForm.jsx"')
-  .replaceAll('src="AppScreens.jsx"', 'src="ui_kits/app/AppScreens.jsx"')
-  .replaceAll('src="AppMobile.jsx"', 'src="ui_kits/app/AppMobile.jsx"');
+  .replaceAll('src="bundle.build.js"', 'src="ui_kits/app/bundle.build.js"');
 
 fs.mkdirSync(outDir, { recursive: true });
 fs.writeFileSync(outPath, html);
@@ -58,8 +61,6 @@ copyFile('_ds_bundle.js');
 copyFile('ui_kits/menu-data.js');
 copyFile('ui_kits/delivery-zone.js');
 copyFile('ui_kits/sheets-config.js');
-copyFile('ui_kits/DeliveryForm.jsx');
-copyFile('ui_kits/app/AppScreens.jsx');
-copyFile('ui_kits/app/AppMobile.jsx');
+copyFile('ui_kits/app/bundle.build.js');
 
 console.log('Built mobile-www/ from ui_kits/app/mobile.html');
