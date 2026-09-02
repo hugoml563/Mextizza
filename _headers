@@ -1,7 +1,7 @@
 # Generado por scripts/build-portable.js desde vercel.json. No editar a mano.
 # Formato de Cloudflare Pages y Netlify. Vercel lo ignora.
 
-/*
+/((?!templates/sales-center).*)
   X-Frame-Options: SAMEORIGIN
   X-Content-Type-Options: nosniff
   Referrer-Policy: strict-origin-when-cross-origin
