@@ -63,6 +63,23 @@ Notice the pattern: **the process is the marketing.** A number and a technique b
 **Words the brand uses:** taller, oficio, barrio, hecho a mano, masa, horno, tatemado, fermento, la casa, de la casa, rotativa.
 **Words to avoid:** gourmet, premium, experiencia culinaria, delicioso, exquisito, auténtico (overused), "the best".
 
+**Marketing copy sounds like the menu, not like a spec sheet.** The register the
+menu sets is the register everywhere: a fact, then a line of attitude. A post with
+no wink in it is a badly written post. The number carries the argument, the wink
+carries the voice — *"48 horas de fermentación"* is the number, *"dos días sin hacer
+nada, y ese es el punto"* is Mextizza. Discipline about adjectives is not permission
+to be cold.
+
+**The Mexican-Italian crossing is material to play with, not a disclaimer.** The
+house exists because two kitchens met, which is licence to joke about the collision:
+the pineapple that divides opinion, the cochinita that should not work on a pizza and
+does. Craft and humour do not compete — earning the technique is what buys the right
+to the joke.
+
+**Warm does not mean adjectives.** The warmth comes from having an opinion and
+talking to someone — *"no le hacemos eso"*, *"y no es por falta de ganas"*, *"hay
+cosas que no se apuran"*. Every word on the avoid list above stays banned.
+
 ---
 
 ## VISUAL FOUNDATIONS
