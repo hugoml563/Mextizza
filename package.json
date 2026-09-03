@@ -10,6 +10,7 @@
     "test": "echo \"Error: no test specified\" && exit 1",
     "build:mobile": "npm run build:js && node scripts/build-mobile.js",
     "cap:sync": "npm run build:mobile && npx cap sync android",
+    "build:apk": "node scripts/build-apk.js",
     "cap:open": "npx cap open android",
     "build:js": "node scripts/build-fonts.js && node scripts/build-js.js && node scripts/build-prerender.js && node scripts/build-raiz.js && node scripts/build-paginas.js && node scripts/build-seo.js && node scripts/build-portable.js && node scripts/build-sales-center.js"
   },
