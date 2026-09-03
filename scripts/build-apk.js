@@ -56,10 +56,22 @@ paso('APK de release');
 // Ruta absoluta a proposito: cmd de Windows no busca ejecutables en el
 // directorio actual, asi que 'gradlew.bat' a secas no se encuentra aunque
 // cwd sea android/.
-corre(
-  WIN ? path.join(ANDROID, 'gradlew.bat') : 'sh',
-  WIN ? ['assembleRelease', '--no-daemon'] : ['gradlew', 'assembleRelease', '--no-daemon'],
-  { cwd: ANDROID });
+const GRADLE = WIN ? path.join(ANDROID, 'gradlew.bat') : 'sh';
+const TAREA = WIN ? ['assembleRelease', '--no-daemon']
+                  : ['gradlew', 'assembleRelease', '--no-daemon'];
+
+// En Windows, Gradle falla seguido con 'Unable to delete directory' sobre sus
+// propios intermedios: algo del sistema (indexador, antivirus) mantiene un
+// archivo abierto. La salida es borrar app/build y repetir. Se hace una vez y
+// automatico, porque a mano es la interrupcion mas comun de esta compilacion.
+try {
+  corre(GRADLE, TAREA, { cwd: ANDROID });
+} catch (e) {
+  console.log('');
+  console.log('  Gradle no pudo limpiar sus intermedios. Borro app/build y repito.');
+  fs.rmSync(path.join(ANDROID, 'app', 'build'), { recursive: true, force: true });
+  corre(GRADLE, TAREA, { cwd: ANDROID });
+}
 
 const salida = path.join(ANDROID, 'app/build/outputs/apk/release/app-release.apk');
 if (!fs.existsSync(salida)) {

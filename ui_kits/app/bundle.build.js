@@ -1583,6 +1583,13 @@ Object.assign(window, {
 
 /* ui_kits/app/AppMobile.jsx */
 (function () {
+/* Icon viene del design system. Este archivo lo usaba sin declararlo, apoyado
+   en que el ambito de AppScreens.jsx se filtrara: al compilar el JSX cada
+   archivo quedo aislado y la referencia se rompio, pero solo al abrir el
+   detalle de una pizza, que es donde se usa. Los demas archivos si lo declaran. */
+const {
+  Icon
+} = window.MextizzaDesignSystem_8a35ee;
 /* Real single-screen navigator for the installable app (Capacitor build).
    Reuses the exact same screen components as the design-gallery AppKit in
    index.html — this file only adds navigation state, it does not duplicate

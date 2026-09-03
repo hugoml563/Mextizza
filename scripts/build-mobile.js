@@ -99,10 +99,24 @@ function assetsReferenciados() {
   return usados;
 }
 
+// El escaneo solo ve rutas escritas literalmente. Lockup arma la suya sumando
+// cadenas (base + 'assets/' + archivo), asi que ningun logo se copiaba y la app
+// salio sin marca. Estos van a mano porque no hay forma de detectarlos leyendo
+// el codigo: si se agrega una variante de logo, hay que anotarla aqui.
+const RUNTIME = [
+  'assets/lockup-completo.png',
+  'assets/lockup-completo-hueso.png',
+  'assets/lockup-pala.png',
+  'assets/lockup-pala-hueso.png',
+];
+
 let copiadas = 0, saltadas = 0;
-for (const rel of assetsReferenciados()) {
+for (const rel of new Set([...assetsReferenciados(), ...RUNTIME])) {
   const origen = path.join(root, rel);
-  if (!fs.existsSync(origen)) { saltadas++; continue; }
+  if (!fs.existsSync(origen)) {
+    if (RUNTIME.includes(rel)) throw new Error('falta ' + rel + ' (logo que la app necesita)');
+    saltadas++; continue;
+  }
   const destino = path.join(outDir, rel);
   fs.mkdirSync(path.dirname(destino), { recursive: true });
   fs.copyFileSync(origen, destino);
