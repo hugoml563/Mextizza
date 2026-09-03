@@ -11,6 +11,12 @@
  * Se ejecuta al construir, no en el dispositivo. Una sola copia en vendor/fonts/
  * sirve al sitio y a la app: las rutas del CSS son absolutas y en el APK la raiz
  * del webview es la raiz del paquete, asi que resuelven igual en los dos lados.
+ *
+ * Este script REESCRIBE tokens/fonts.css entero. Colo Pro no viene de Google, asi
+ * que si no se emitiera aqui desapareceria en la primera regeneracion: fue lo que
+ * paso al vendorizar las fuentes, y todos los titulos cayeron a Oswald sin que
+ * nada fallara a la vista. Por eso su @font-face se escribe desde aqui, y si el
+ * archivo no esta el build se detiene en vez de publicar la marca sin su tipo.
  */
 const fs = require('fs');
 const path = require('path');
@@ -26,7 +32,31 @@ const CSS_REMOTO =
 const UA = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 ' +
   '(KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36';
 
+// Colo Pro es la tipografia de marca (--font-display: wordmark y titulos). No
+// esta en Google Fonts: el maestro es assets/fonts/ColoPro-Regular.otf y en
+// vendor/fonts/ vive la copia woff2 que se sirve (97 KB -> 61 KB). Para
+// regenerarla si cambia el maestro:
+//   python3 -c "from fontTools.ttLib import TTFont; f=TTFont('assets/fonts/ColoPro-Regular.otf'); f.flavor='woff2'; f.save('vendor/fonts/ColoPro-Regular.woff2')"
+const COLO = 'ColoPro-Regular.woff2';
+const CSS_COLO =
+  '/* Colo Pro — tipografia de marca, no viene de Google. Ver COLO en\n' +
+  '   scripts/build-fonts.js antes de tocar este bloque. */\n' +
+  '@font-face {\n' +
+  "  font-family: 'Colo Pro';\n" +
+  '  font-style: normal;\n' +
+  '  font-weight: 400;\n' +
+  '  font-display: swap;\n' +
+  '  src: url(/vendor/fonts/' + COLO + ") format('woff2');\n" +
+  '}\n';
+
 async function construirFuentes() {
+  // Antes de tocar la red: sin Colo Pro no hay build. Un fallo silencioso aqui
+  // se ve como "la web se ve rara", no como un error, y puede durar semanas.
+  const colo = path.join(DIR_FUENTES, COLO);
+  if (!fs.existsSync(colo)) {
+    throw new Error('falta vendor/fonts/' + COLO + ' (tipografia de marca)');
+  }
+
   const res = await fetch(CSS_REMOTO, { headers: { 'User-Agent': UA } });
   if (!res.ok) throw new Error('Google Fonts respondio ' + res.status);
   let css = await res.text();
@@ -54,9 +84,13 @@ async function construirFuentes() {
   fs.writeFileSync(CSS,
     '/* Generado por scripts/build-fonts.js. Las fuentes se sirven desde este\n' +
     '   dominio, no desde fonts.googleapis.com: menos conexiones al arrancar, la\n' +
-    '   app funciona sin internet, y la IP del visitante no viaja a un tercero. */\n\n' + css);
+    '   app funciona sin internet, y la IP del visitante no viaja a un tercero. */\n\n' +
+    CSS_COLO + '\n' + css);
 
-  return { archivos: urls.length, kb: Math.round(bytes / 1024) };
+  return {
+    archivos: urls.length + 1,
+    kb: Math.round((bytes + fs.statSync(colo).size) / 1024),
+  };
 }
 
 module.exports = { construirFuentes };

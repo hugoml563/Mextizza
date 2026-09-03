@@ -2,6 +2,16 @@
    dominio, no desde fonts.googleapis.com: menos conexiones al arrancar, la
    app funciona sin internet, y la IP del visitante no viaja a un tercero. */
 
+/* Colo Pro — tipografia de marca, no viene de Google. Ver COLO en
+   scripts/build-fonts.js antes de tocar este bloque. */
+@font-face {
+  font-family: 'Colo Pro';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url(/vendor/fonts/ColoPro-Regular.woff2) format('woff2');
+}
+
 /* vietnamese */
 @font-face {
   font-family: 'Bungee';
