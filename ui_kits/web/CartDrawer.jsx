@@ -1,18 +1,3 @@
-/* El boton de confirmar vive al fondo; los campos que marca la validacion
-   quedan arriba, fuera de vista. Sin mover la pantalla, presionarlo no cambia
-   nada donde el usuario esta mirando y parece que no responde: nos paso a los
-   dos al probarlo. Lleva la vista al primer campo que falta.
-
-   Se llama desde un efecto, no desde el manejador del clic: ahi los campos
-   marcados todavia no existen en el DOM y el selector no encontraba nada. */
-function llevarAlPrimerFaltante() {
-  const el = document.querySelector('[aria-invalid="true"], [data-invalido="true"]');
-  if (!el) return;
-  // Instantaneo a proposito. Con behavior 'smooth' el contenedor del carrito
-  // simplemente no se movia, y aqui importa mas que el aviso se vea que la
-  // suavidad del movimiento.
-  el.scrollIntoView({ block: 'center' });
-}
 const { Wordmark, TapeStripe, FramedPanel, Button, Badge, Field, QtyStepper, MenuItem, Icon, StatusNote } = window.MextizzaDesignSystem_8a35ee;
 
 /* Mismos estados que la app (Code.gs FLUJO) mapeados a los 4 pasos que ve el

@@ -31,6 +31,7 @@ html = html
   .replaceAll('src="../menu-data.js"', 'src="ui_kits/menu-data.js"')
   .replaceAll('src="../delivery-zone.js"', 'src="ui_kits/delivery-zone.js"')
   .replaceAll('src="../sheets-config.js"', 'src="ui_kits/sheets-config.js"')
+  .replaceAll('src="../scroll-a-faltante.js"', 'src="ui_kits/scroll-a-faltante.js"')
   .replaceAll('src="bundle.build.js"', 'src="ui_kits/app/bundle.build.js"')
   // React viaja DENTRO del APK. Antes se pedia a unpkg.com en cada arranque en
   // frio: 138 KB por la red, la app no abria sin internet, y si el CDN fallaba
@@ -129,6 +130,7 @@ copyFile('_ds_bundle.js');
 copyFile('ui_kits/menu-data.js');
 copyFile('ui_kits/delivery-zone.js');
 copyFile('ui_kits/sheets-config.js');
+copyFile('ui_kits/scroll-a-faltante.js');
 copyFile('ui_kits/app/bundle.build.js');
 
 // React de produccion, desde node_modules: mismos bytes que servia el CDN

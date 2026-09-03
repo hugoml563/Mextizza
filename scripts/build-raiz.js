@@ -31,6 +31,7 @@ const RUTAS = [
   ['src="../menu-data.js"', 'src="/ui_kits/menu-data.js"'],
   ['src="../delivery-zone.js"', 'src="/ui_kits/delivery-zone.js"'],
   ['src="../sheets-config.js"', 'src="/ui_kits/sheets-config.js"'],
+  ['src="../scroll-a-faltante.js"', 'src="/ui_kits/scroll-a-faltante.js"'],
   ['src="bundle.build.js"', 'src="/ui_kits/web/bundle.build.js"'],
   ['src="../../vendor/', 'src="/vendor/'],
 ];
