@@ -91,11 +91,15 @@ function DeliveryForm({ compact = false, attempted = false, onValidChange, onDat
         options={['Lo antes posible (≤40 min)', 'Programar para hoy', 'Programar para mañana']}
         style={{ marginTop: gap }} />
 
-      <RadioGroup label="Forma de pago" required options={PAGOS} value={pago} onChange={setPago}
-        columns={compact ? 1 : 3}
-        invalid={attempted && !pago}
-        hint={attempted && !pago ? 'Elige una forma de pago para continuar.' : 'Se cobra al entregar. El envío ya está incluido en el precio.'}
-        style={{ marginTop: gap + 4 }} />
+      {/* Field emite aria-invalid, RadioGroup no. Sin este marcador, un pedido al
+          que solo le falta la forma de pago no tendria a donde llevar la vista. */}
+      <div data-invalido={attempted && !pago ? 'true' : undefined}>
+        <RadioGroup label="Forma de pago" required options={PAGOS} value={pago} onChange={setPago}
+          columns={compact ? 1 : 3}
+          invalid={attempted && !pago}
+          hint={attempted && !pago ? 'Elige una forma de pago para continuar.' : 'Se cobra al entregar. El envío ya está incluido en el precio.'}
+          style={{ marginTop: gap + 4 }} />
+      </div>
 
       <Field label="Notas" as="textarea" rows={2} placeholder="Sin cebolla, timbre 2" value={notas}
         onChange={e => setNotas(e.target.value)}

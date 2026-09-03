@@ -1,3 +1,18 @@
+/* El boton de confirmar vive al fondo; los campos que marca la validacion
+   quedan arriba, fuera de vista. Sin mover la pantalla, presionarlo no cambia
+   nada donde el usuario esta mirando y parece que no responde: nos paso a los
+   dos al probarlo. Lleva la vista al primer campo que falta.
+
+   Se llama desde un efecto, no desde el manejador del clic: ahi los campos
+   marcados todavia no existen en el DOM y el selector no encontraba nada. */
+function llevarAlPrimerFaltante() {
+  const el = document.querySelector('[aria-invalid="true"], [data-invalido="true"]');
+  if (!el) return;
+  // Instantaneo a proposito. Con behavior 'smooth' el contenedor del carrito
+  // simplemente no se movia, y aqui importa mas que el aviso se vea que la
+  // suavidad del movimiento.
+  el.scrollIntoView({ block: 'center' });
+}
 const DS = window.MextizzaDesignSystem_8a35ee;
 const { Wordmark, TapeStripe, Stamp, DotRow, FramedPanel, Button, Badge, Field, QtyStepper, MenuItem, Icon, StatusNote } = DS;
 
@@ -309,12 +324,27 @@ function AppCart({ lines, onQty, onConfirm, tab, onTab, count, inicialCliente })
   const subtotal = lines.reduce((s, l) => s + (l.price + (l.addonTotal || 0)) * l.qty, 0);
   const [ready, setReady] = React.useState(false);
   const [attempted, setAttempted] = React.useState(false);
+  // Un contador, no un booleano: al segundo intento fallido el valor no
+  // cambiaria y el efecto no volveria a correr.
+  const [intentos, setIntentos] = React.useState(0);
+  React.useEffect(() => {
+    if (!intentos) return;
+    // Un respiro antes de buscar: los campos recien llenados tardan un render
+    // en dejar de estar marcados, y sin esperar la vista salta al primero de
+    // esos —que ya se veia— en vez de al que de verdad falta.
+    const t = setTimeout(llevarAlPrimerFaltante, 60);
+    return () => clearTimeout(t);
+  }, [intentos]);
   const [entrega, setEntrega] = React.useState(null);
   const [enviando, setEnviando] = React.useState(false);
   const [error, setError] = React.useState(null);
 
   const confirmar = async () => {
-    if (!ready) return setAttempted(true);
+    if (!ready) {
+      setAttempted(true);
+      setIntentos((n) => n + 1);
+      return;
+    }
     setError(null);
     setEnviando(true);
     try {
