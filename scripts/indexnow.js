@@ -32,7 +32,10 @@ async function avisar() {
     keyLocation: 'https://' + SITIO + '/' + clave,
     urlList: urls,
   };
-  const r = await fetch('https://api.indexnow.org/IndexNow', {
+  // Se envia al endpoint de Bing, no a api.indexnow.org: ese ultimo resetea la
+  // conexion desde algunas redes. Los participantes de IndexNow se comparten los
+  // avisos entre si, asi que avisarle a uno alcanza.
+  const r = await fetch('https://www.bing.com/indexnow', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json; charset=utf-8' },
     body: JSON.stringify(cuerpo),
