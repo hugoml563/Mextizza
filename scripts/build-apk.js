@@ -30,8 +30,15 @@ const PUBLICADO = path.join(RAIZ, 'assets', 'app', 'mextizza.apk');
 const CERT = '9159176deacea0bd77675783151ee06828ce57fdc258e02654fbd4499fd12ca9';
 
 function paso(titulo) { console.log('\n· ' + titulo); }
+// En Windows npm es npm.cmd y Gradle es gradlew.bat. Node 20 dejo de ejecutar
+// .cmd y .bat sin shell (CVE-2024-27980), asi que ahi hace falta shell: true.
+// Los argumentos son literales fijos, no entrada de usuario, asi que es seguro.
+const WIN = process.platform === 'win32';
 function corre(cmd, args, opts = {}) {
-  return execFileSync(cmd, args, { cwd: RAIZ, stdio: 'inherit', ...opts });
+  const bin = WIN && cmd === 'npm' ? 'npm.cmd' : cmd;
+  return execFileSync(bin, args, {
+    cwd: RAIZ, stdio: 'inherit', shell: WIN, ...opts,
+  });
 }
 
 if (!fs.existsSync(path.join(ANDROID, 'keystore.properties'))) {
@@ -46,7 +53,13 @@ paso('Sitio y assets de la app (build:js + build-mobile + cap sync)');
 corre('npm', ['run', 'cap:sync']);
 
 paso('APK de release');
-corre('sh', ['gradlew', 'assembleRelease', '--no-daemon'], { cwd: ANDROID });
+// Ruta absoluta a proposito: cmd de Windows no busca ejecutables en el
+// directorio actual, asi que 'gradlew.bat' a secas no se encuentra aunque
+// cwd sea android/.
+corre(
+  WIN ? path.join(ANDROID, 'gradlew.bat') : 'sh',
+  WIN ? ['assembleRelease', '--no-daemon'] : ['gradlew', 'assembleRelease', '--no-daemon'],
+  { cwd: ANDROID });
 
 const salida = path.join(ANDROID, 'app/build/outputs/apk/release/app-release.apk');
 if (!fs.existsSync(salida)) {
@@ -56,14 +69,19 @@ if (!fs.existsSync(salida)) {
 
 paso('Verificando la firma antes de publicar');
 const sdk = process.env.ANDROID_HOME || process.env.ANDROID_SDK_ROOT;
+// En Windows la herramienta es apksigner.bat; en Linux y macOS no lleva
+// extension. Se prueban ambas para que el mismo script sirva en las tres.
+const NOMBRES = WIN ? ['apksigner.bat', 'apksigner'] : ['apksigner'];
 const apksigner = sdk && fs.readdirSync(path.join(sdk, 'build-tools')).sort().reverse()
-  .map((v) => path.join(sdk, 'build-tools', v, 'apksigner')).find((p) => fs.existsSync(p));
+  .flatMap((v) => NOMBRES.map((n) => path.join(sdk, 'build-tools', v, n)))
+  .find((p) => fs.existsSync(p));
 if (!apksigner) {
   console.error('\nNo encontre apksigner (define ANDROID_HOME). Sin verificar la\n' +
     'firma no publico: revisala a mano antes de copiar el APK.\n');
   process.exit(1);
 }
-const info = execFileSync(apksigner, ['verify', '--print-certs', salida], { encoding: 'utf8' });
+const info = execFileSync(apksigner, ['verify', '--print-certs', salida],
+  { encoding: 'utf8', shell: WIN });
 const firma = (info.match(/certificate SHA-256 digest: ([0-9a-f]+)/) || [])[1];
 if (firma !== CERT) {
   console.error(
