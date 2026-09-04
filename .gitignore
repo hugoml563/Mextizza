@@ -15,3 +15,7 @@
 
 # Ruta del SDK de Android: es de esta maquina, no del proyecto.
 android/local.properties
+
+# Andamios temporales de composicion de imagen y video. Se crean para una
+# tarea y se borran; nunca deben viajar en el repositorio.
+/.tmp-*/
