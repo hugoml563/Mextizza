@@ -56,6 +56,39 @@ function compilar(rel) {
   return res.code;
 }
 
+/* El horario vive en dos lugares que no se pueden ver entre si: MEXTIZZA_FACTS
+   en menu-data.js (navegador) y HORARIO en Code.gs (Apps Script). Los dos tienen
+   que decir lo mismo o el sitio y el servidor discrepan sobre cuando se puede
+   pedir. Aqui se comparan y el build se detiene si dejan de coincidir. */
+function verificarHorario() {
+  global.window = {};
+  require(path.join(RAIZ, 'ui_kits', 'menu-data.js'));
+  const web = global.window.MEXTIZZA_FACTS.horario;
+
+  const gs = fs.readFileSync(path.join(RAIZ, 'integration', 'sheets-backend', 'Code.gs'), 'utf8');
+  const m = gs.match(/const HORARIO = \{ dias: \[([^\]]*)\], desde: (\d+), hasta: (\d+) \};/);
+  if (!m) throw new Error('no encontre la constante HORARIO en Code.gs');
+
+  const dias = m[1].split(',').map((x) => Number(x.trim()));
+  const igual =
+    dias.length === web.dias.length &&
+    dias.every((d, i) => d === web.dias[i]) &&
+    Number(m[2]) === web.desde &&
+    Number(m[3]) === web.hasta;
+
+  if (!igual) {
+    throw new Error([
+      'El horario no coincide entre las dos capas.',
+      '    menu-data.js: dias=[' + web.dias + '] ' + web.desde + '-' + web.hasta,
+      '    Code.gs:      dias=[' + dias + '] ' + m[2] + '-' + m[3],
+      '  Actualiza los dos antes de construir.',
+    ].join('\n'));
+  }
+  console.log('  horario: menu-data.js y Code.gs coinciden (' + web.texto + ')');
+}
+
+verificarHorario();
+
 let totalAntes = 0;
 let totalDespues = 0;
 

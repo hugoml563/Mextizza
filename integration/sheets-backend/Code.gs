@@ -266,7 +266,34 @@ function jsonOut_(obj) {
  *         pago_metodo, notas, items:[{producto_id,nombre,cantidad,precio_unit,
  *         addons:[{id,nombre,precio}]}], estadoInicial }
  */
+/* El horario tambien se valida AQUI, no solo en el navegador.
+
+   Una orden entro a la 1:27 de la manana con el candado del frontend ya puesto:
+   basta un cliente desactualizado (una app instalada antes del arreglo, una
+   pestana abierta desde antes del despliegue) para brincarselo. Y el token
+   publico viaja en la web y dentro del APK, asi que cualquiera puede llamar a
+   crear_orden directo. Una validacion que solo vive en el frontend es una
+   comodidad de interfaz, no una regla.
+
+   OJO: estos valores estan duplicados a proposito desde MEXTIZZA_FACTS.horario
+   en ui_kits/menu-data.js, porque Apps Script no puede leer ese archivo. Si
+   cambias uno tienes que cambiar el otro; scripts/build-js.js compara los dos y
+   detiene el build si dejan de coincidir. */
+const HORARIO = { dias: [3, 4, 5, 6, 0], desde: 16, hasta: 23 };
+
+function estaAbierto_(ahora) {
+  const d = ahora || new Date();
+  // Siempre en hora de Ciudad de Mexico: el servidor de Apps Script puede
+  // estar en cualquier huso, y el reloj del cliente no es de fiar.
+  const dia = Number(Utilities.formatDate(d, 'America/Mexico_City', 'u')) % 7; // 1=lun..7=dom -> 0=dom
+  const hora = Number(Utilities.formatDate(d, 'America/Mexico_City', 'H'));
+  return HORARIO.dias.indexOf(dia) !== -1 && hora >= HORARIO.desde && hora < HORARIO.hasta;
+}
+
 function crearOrden_(body) {
+  if (!estaAbierto_()) {
+    throw new Error('La cocina esta cerrada. Tomamos pedidos de miercoles a domingo, de 4:00 pm a 11:00 pm.');
+  }
   const folio = nextFolio_();
   const now = new Date();
   const estado = body.estadoInicial === 'confirmada' ? 'confirmada' : 'recibida';
