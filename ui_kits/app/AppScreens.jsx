@@ -193,6 +193,7 @@ function AppDetail({ item, onBack, onAdd, onCustomize }) {
         <div style={{ display: 'flex', gap: 8, marginTop: 18, flexWrap: 'wrap' }}>
           <Badge tone="quiet">Horno de piedra</Badge><Badge tone="quiet">Masa de 48h</Badge><Badge tone="quiet">Horneada al pedido</Badge>
         </div>
+        {mextizzaAceptaComplementos(item) && (
         <button onClick={() => onCustomize && onCustomize(item)} style={{
           width: '100%', marginTop: 22, textAlign: 'left', cursor: 'pointer',
           background: 'var(--surface-accent-soft)', border: '2px solid var(--rosa-mexicano)',
@@ -205,6 +206,7 @@ function AppDetail({ item, onBack, onAdd, onCustomize }) {
           </span>
           <Icon name="chevronRight" size={20} color="var(--rosa-mexicano)" />
         </button>
+        )}
         <Field label="Notas para la cocina" as="textarea" rows={2} placeholder="Sin cebolla, orilla bien dorada" style={{ marginTop: 18 }} />
       </div>
       <div style={{ flex: 'none', borderTop: 'var(--border-paper)', background: 'var(--surface-page)', padding: '16px 20px 22px', display: 'flex', alignItems: 'center', gap: 12 }}>

@@ -162,7 +162,7 @@ function WebMenu({ onAdd, onCustomize, added }) {
                   divider={j < g.items.length - 1}
                   badge={it.flag ? <Badge tone={it.flag === 'Del mes' ? 'dorado' : 'rosa'}>{it.flag}</Badge> : null}
                   action={<Button size="sm" tone={added === it.id ? 'dark' : 'outline'}
-                    onClick={() => g.cat === 'Para cerrar' ? onAdd(it) : onCustomize(it)}>
+                    onClick={() => mextizzaAceptaComplementos(it) ? onCustomize(it) : onAdd(it)}>
                     {added === it.id ? 'Agregado' : 'Agregar'}
                   </Button>} />
               ))}

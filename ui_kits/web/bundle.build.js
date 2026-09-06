@@ -407,7 +407,7 @@ function WebMenu({
     action: /*#__PURE__*/React.createElement(Button, {
       size: "sm",
       tone: added === it.id ? 'dark' : 'outline',
-      onClick: () => g.cat === 'Para cerrar' ? onAdd(it) : onCustomize(it)
+      onClick: () => mextizzaAceptaComplementos(it) ? onCustomize(it) : onAdd(it)
     }, added === it.id ? 'Agregado' : 'Agregar')
   })))))));
 }

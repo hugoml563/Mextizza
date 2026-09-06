@@ -737,7 +737,7 @@ function AppDetail({
     tone: "quiet"
   }, "Masa de 48h"), /*#__PURE__*/React.createElement(Badge, {
     tone: "quiet"
-  }, "Horneada al pedido")), /*#__PURE__*/React.createElement("button", {
+  }, "Horneada al pedido")), mextizzaAceptaComplementos(item) && /*#__PURE__*/React.createElement("button", {
     onClick: () => onCustomize && onCustomize(item),
     style: {
       width: '100%',
@@ -1645,10 +1645,14 @@ function mextizzaLoadPersisted() {
 }
 function AppMobile() {
   const saved = React.useRef(mextizzaLoadPersisted()).current;
-  const [nav, setNav] = React.useState(saved && saved.entered ? {
-    ...NAV_ROOT,
-    entered: true
-  } : NAV_ROOT);
+
+  /* La app SIEMPRE arranca en la bienvenida. Antes se recordaba que ya habias
+     entrado y se saltaba directo al menu; ahorraba un toque, pero la pantalla
+     con el logo es lo unico de marca que ve alguien que abre la app, y perderla
+     convertia el arranque en una lista de precios. El carrito, el folio y los
+     datos del cliente si se siguen recordando: eso es trabajo del usuario, la
+     bienvenida no. */
+  const [nav, setNav] = React.useState(NAV_ROOT);
   const navRef = React.useRef(nav);
   navRef.current = nav;
   const {
@@ -1667,13 +1671,12 @@ function AppMobile() {
   React.useEffect(() => {
     try {
       window.localStorage.setItem(MEXTIZZA_LS_KEY, JSON.stringify({
-        entered,
         lines,
         folio,
         cliente
       }));
     } catch (e) {/* storage unavailable — degrade to in-memory only */}
-  }, [entered, lines, folio, cliente]);
+  }, [lines, folio, cliente]);
 
   /* --- history-backed navigation --- */
   const go = patch => {

@@ -106,6 +106,18 @@ function mextizzaEstaAbierto(ahora) {
 }
 
 
+/* Los complementos son ingredientes que van ENCIMA de una pizza: no tienen
+   sentido en un refresco ni en el brownie. La regla vive aqui, no en cada
+   pantalla, porque la web y la app la necesitan igual y si cada una la escribe
+   por su lado terminan discrepando. Se resuelve por grupo del menu, no por el
+   nombre del producto, para que una pizza que no empiece con 'Pizza' siga
+   funcionando. */
+function mextizzaAceptaComplementos(item) {
+  if (!item) return false;
+  const grupo = MEXTIZZA_MENU.find(g => g.items.some(i => i.id === item.id));
+  return !!grupo && grupo.cat !== 'Para cerrar';
+}
+
 function mextizzaWhatsappLink(mensaje) {
   return 'https://wa.me/' + MEXTIZZA_FACTS.whatsapp + '?text=' + encodeURIComponent(mensaje);
 }
@@ -113,4 +125,4 @@ const MEXTIZZA_SOCIAL = {
   instagram: 'https://www.instagram.com/mextizzamx/',
   facebook: 'https://www.facebook.com/profile.php?id=61592120047383'
 };
-Object.assign(window, { MEXTIZZA_MENU, MEXTIZZA_ADDONS, MEXTIZZA_FACTS, mextizzaWhatsappLink, mextizzaEstaAbierto, MEXTIZZA_SOCIAL });
+Object.assign(window, { MEXTIZZA_MENU, MEXTIZZA_ADDONS, MEXTIZZA_FACTS, mextizzaWhatsappLink, mextizzaEstaAbierto, mextizzaAceptaComplementos, MEXTIZZA_SOCIAL });
