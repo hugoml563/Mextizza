@@ -105,6 +105,14 @@ function CartDrawer({ open, lines, onClose, onQty, step, setStep, canal = 'Web',
   }, [intentos]);
   const [entrega, setEntrega] = React.useState(null);
   const [enviando, setEnviando] = React.useState(false);
+  // Lo que contesta el servidor al crear el pedido: como quedo la tarjeta y
+  // que promocion se aplico. Se pinta en la pantalla de confirmacion.
+  // La tarjeta ANTES de este pedido, para poder ofrecer el canje. Se consulta
+  // sola en cuanto el telefono esta completo; no hay que pedirle nada al cliente.
+  const [tarjetaPrevia, setTarjetaPrevia] = React.useState(null);
+  const [usarPremio, setUsarPremio] = React.useState(null);
+  const [tarjeta, setTarjeta] = React.useState(null);
+  const [premio, setPremio] = React.useState(null);
   const [error, setError] = React.useState(null);
   // El folio vive en el padre para que sobreviva a cerrar el carrito y a recargar.
   const folio = folioActivo;
@@ -126,11 +134,44 @@ function CartDrawer({ open, lines, onClose, onQty, step, setStep, canal = 'Web',
     } finally { setBuscando(false); }
   };
 
+  /* Por que no se puede enviar. Antes el aviso siempre decia "faltan datos",
+     aunque el formulario estuviera completo y lo unico que pasara fuera que la
+     cocina estaba cerrada. */
+  const apertura = typeof mextizzaEstaAbierto === 'function'
+    ? mextizzaEstaAbierto()
+    : { abierto: true, texto: '' };
+  const motivo = !apertura.abierto ? 'cerrado' : (!ready ? 'datos' : null);
+
+  // entrega arranca en null: DeliveryForm no ha reportado nada en el primer
+  // pintado, y leerlo directo tumbaba la pagina entera.
+  const tel10 = String((entrega && entrega.telefono) || '').replace(/\D/g, '').slice(0, 10);
+  React.useEffect(() => {
+    if (tel10.length !== 10 || typeof mextizzaTarjeta !== 'function') {
+      setTarjetaPrevia(null);
+      setUsarPremio(null);
+      return;
+    }
+    let vivo = true;
+    mextizzaTarjeta(tel10)
+      .then((r) => { if (vivo) setTarjetaPrevia(r.tarjeta || null); })
+      // Si la consulta falla no se dice nada: la tarjeta es un extra, y el
+      // pedido tiene que poder salir igual.
+      .catch(() => { if (vivo) setTarjetaPrevia(null); });
+    return () => { vivo = false; };
+  }, [tel10]);
+
   const subtotal = lines.reduce((s, l) => s + (l.price + (l.addonTotal || 0)) * l.qty, 0);
 
   const confirmar = async () => {
     if (step === 'cart') return setStep('checkout');
-    if (!ready) {
+
+    /* Se vuelve a mirar el reloj aqui. La pestana pudo quedarse abierta desde
+       antes de la hora de cierre, y el servidor rechaza igual: mas vale decirlo
+       nosotros que mandar el pedido a que rebote. */
+    const ap = typeof mextizzaEstaAbierto === 'function' ? mextizzaEstaAbierto() : { abierto: true };
+    if (!ap.abierto || !ready) {
+      // setIntentos fuerza un repintado: el motivo de abajo se recalcula con
+      // la hora de ahora, no con la de cuando se abrio la pestana.
       setAttempted(true);
       setIntentos((n) => n + 1);
       return;
@@ -138,7 +179,9 @@ function CartDrawer({ open, lines, onClose, onQty, step, setStep, canal = 'Web',
     setError(null);
     setEnviando(true);
     try {
-      const r = await mextizzaCrearOrden({ canal, lines, entrega });
+      const r = await mextizzaCrearOrden({ canal, lines, entrega, usarPremio });
+      setTarjeta(r.tarjeta || null);
+      setPremio(r.premio || null);
       // El padre guarda el folio y vacia el carrito: antes las lineas se quedaban
       // ahi despues de enviar y el siguiente pedido arrancaba con el anterior dentro.
       onOrdenCreada && onOrdenCreada(r.folio);
@@ -199,6 +242,10 @@ function CartDrawer({ open, lines, onClose, onQty, step, setStep, canal = 'Web',
           {step === 'checkout' && (
             <>
               <DeliveryForm compact attempted={attempted} onValidChange={setReady} onDataChange={setEntrega} />
+              <Aviso2x1 activo={typeof mextizzaEs2x1 === 'function' && mextizzaEs2x1()} style={{ marginTop: 12 }} />
+              <CanjeTarjeta tarjeta={tarjetaPrevia} lines={lines} valor={usarPremio}
+                onChange={setUsarPremio} style={{ marginTop: 12 }} />
+              {tarjetaPrevia && <TarjetaPremios tarjeta={tarjetaPrevia} style={{ marginTop: 12 }} />}
               {error && <StatusNote tone="block" title="Ups" style={{ marginTop: 12 }}>{error}</StatusNote>}
             </>
           )}
@@ -217,9 +264,13 @@ function CartDrawer({ open, lines, onClose, onQty, step, setStep, canal = 'Web',
           )}
 
           {step === 'done' && (
-            <FramedPanel variant="object" style={{ marginTop: 8 }}>
-              <SeguimientoPedido folio={folio} />
-            </FramedPanel>
+            <>
+              <FramedPanel variant="object" style={{ marginTop: 8 }}>
+                <SeguimientoPedido folio={folio} />
+              </FramedPanel>
+              {premio && <AvisoPremio premio={premio} style={{ marginTop: 12 }} />}
+              {tarjeta && <TarjetaPremios tarjeta={tarjeta} animarUltimo style={{ marginTop: 12 }} />}
+            </>
           )}
         </div>
 
@@ -234,13 +285,18 @@ function CartDrawer({ open, lines, onClose, onQty, step, setStep, canal = 'Web',
               <span style={{ fontFamily: 'var(--font-label)', fontSize: 11, letterSpacing: 1, textTransform: 'uppercase' }}>Total <span style={{ textTransform: 'none', letterSpacing: 0, color: 'var(--text-muted)' }}>· envío incluido</span></span>
               <span style={{ fontFamily: 'var(--font-body)', fontWeight: 800, fontSize: 22, color: 'var(--text-price)' }}>${subtotal}</span>
             </div>
-            <Button tone="primary" size="lg" block iconAfter="chevronRight" disabled={enviando}
-              onClick={confirmar}>
-              {step === 'cart' ? 'Continuar' : enviando ? 'Enviando…' : 'Confirmar pedido'}
+            <Button tone="primary" size="lg" block iconAfter={enviando ? undefined : 'chevronRight'}
+              disabled={enviando} onClick={confirmar}>
+              {step === 'cart' ? 'Continuar' : enviando ? <PuntosEnviando /> : 'Confirmar pedido'}
             </Button>
-            {step === 'checkout' && !ready && (
-              <p style={{ fontFamily: 'var(--font-body)', fontSize: 11.5, color: 'var(--text-muted)', textAlign: 'center', marginTop: 9 }}>
-                Faltan datos: dirección dentro del radio y forma de pago.
+            {step === 'checkout' && motivo && (
+              <p role="alert" style={{
+                fontFamily: 'var(--font-body)', fontSize: 11.5, textAlign: 'center', marginTop: 9,
+                color: motivo === 'cerrado' ? 'var(--rosa-mexicano-texto)' : 'var(--text-muted)',
+              }}>
+                {motivo === 'cerrado'
+                  ? 'La cocina está cerrada ahorita.' + (apertura.texto ? ' Abrimos ' + apertura.texto.toLowerCase() + '.' : '')
+                  : 'Faltan datos: dirección dentro del radio y forma de pago.'}
               </p>
             )}
           </div>

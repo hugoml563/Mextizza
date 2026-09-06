@@ -329,11 +329,43 @@ function AppCart({ lines, onQty, onConfirm, tab, onTab, count, inicialCliente })
     return () => clearTimeout(t);
   }, [intentos]);
   const [entrega, setEntrega] = React.useState(null);
+  // La tarjeta ANTES de este pedido, para poder ofrecer el canje. Se consulta
+  // sola en cuanto el telefono esta completo.
+  const [tarjetaPrevia, setTarjetaPrevia] = React.useState(null);
+  const [usarPremio, setUsarPremio] = React.useState(null);
+  const tel10 = String((entrega && entrega.telefono) || '').replace(/\D/g, '').slice(0, 10);
+  React.useEffect(() => {
+    if (tel10.length !== 10 || typeof mextizzaTarjeta !== 'function') {
+      setTarjetaPrevia(null);
+      setUsarPremio(null);
+      return;
+    }
+    let vivo = true;
+    mextizzaTarjeta(tel10)
+      .then((r) => { if (vivo) setTarjetaPrevia(r.tarjeta || null); })
+      // Si falla no se dice nada: la tarjeta es un extra y el pedido debe salir igual.
+      .catch(() => { if (vivo) setTarjetaPrevia(null); });
+    return () => { vivo = false; };
+  }, [tel10]);
   const [enviando, setEnviando] = React.useState(false);
   const [error, setError] = React.useState(null);
 
+  /* Por que no se puede enviar. Antes el aviso siempre decia "faltan datos",
+     aunque el formulario estuviera completo y lo unico que pasara fuera que la
+     cocina estaba cerrada. */
+  const apertura = typeof mextizzaEstaAbierto === 'function'
+    ? mextizzaEstaAbierto()
+    : { abierto: true, texto: '' };
+  const motivo = !apertura.abierto ? 'cerrado' : (!ready ? 'datos' : null);
+
   const confirmar = async () => {
-    if (!ready) {
+    /* Se vuelve a mirar el reloj aqui. La app se queda abierta en segundo plano
+       durante horas, y el servidor rechaza igual: mas vale decirlo nosotros que
+       mandar el pedido a que rebote. */
+    const ap = typeof mextizzaEstaAbierto === 'function' ? mextizzaEstaAbierto() : { abierto: true };
+    if (!ap.abierto || !ready) {
+      // setIntentos fuerza un repintado, para que el motivo de abajo se calcule
+      // con la hora de ahora y no con la de cuando se abrio la pantalla.
       setAttempted(true);
       setIntentos((n) => n + 1);
       return;
@@ -341,10 +373,10 @@ function AppCart({ lines, onQty, onConfirm, tab, onTab, count, inicialCliente })
     setError(null);
     setEnviando(true);
     try {
-      const { folio } = await mextizzaCrearOrden({ canal: 'App', lines, entrega });
+      const r = await mextizzaCrearOrden({ canal: 'App', lines, entrega, usarPremio });
       // entrega viaja de vuelta para que la app guarde los datos del cliente
       // y prellene el formulario en el siguiente pedido.
-      onConfirm(folio, entrega);
+      onConfirm(r.folio, entrega, { premio: r.premio || null, tarjeta: r.tarjeta || null });
     } catch (err) {
       setError('No se pudo enviar el pedido. Intenta de nuevo, o escríbenos por WhatsApp.');
     } finally {
@@ -372,6 +404,10 @@ function AppCart({ lines, onQty, onConfirm, tab, onTab, count, inicialCliente })
           <div style={{ marginTop: 24, paddingTop: 20, borderTop: 'var(--border-paper)' }}>
             <div style={{ fontFamily: 'var(--font-label)', fontSize: 10, letterSpacing: 1, textTransform: 'uppercase', color: 'var(--rosa-mexicano-texto)', marginBottom: 12 }}>Entrega y pago</div>
             <DeliveryForm compact attempted={attempted} inicial={inicialCliente} onValidChange={setReady} onDataChange={setEntrega} />
+            <Aviso2x1 activo={typeof mextizzaEs2x1 === 'function' && mextizzaEs2x1()} style={{ marginTop: 12 }} />
+            <CanjeTarjeta tarjeta={tarjetaPrevia} lines={lines} valor={usarPremio}
+              onChange={setUsarPremio} style={{ marginTop: 12 }} />
+            {tarjetaPrevia && <TarjetaPremios tarjeta={tarjetaPrevia} style={{ marginTop: 12 }} />}
             {error && <StatusNote tone="block" title="Ups" style={{ marginTop: 12 }}>{error}</StatusNote>}
           </div>
         )}
@@ -382,11 +418,17 @@ function AppCart({ lines, onQty, onConfirm, tab, onTab, count, inicialCliente })
             <span style={{ fontFamily: 'var(--font-body)', fontSize: 12.5, color: 'var(--text-muted)' }}>Envío incluido en el precio</span>
             <span style={{ fontFamily: 'var(--font-body)', fontWeight: 800, fontSize: 20, color: 'var(--text-price)' }}>${subtotal}</span>
           </div>
-          <Button tone="primary" size="lg" block iconAfter="chevronRight" disabled={enviando}
-            onClick={confirmar}>{enviando ? 'Enviando…' : `Confirmar · $${subtotal}`}</Button>
-          {!ready && (
-            <p style={{ fontFamily: 'var(--font-body)', fontSize: 11, color: 'var(--text-muted)', textAlign: 'center', marginTop: 8 }}>
-              Faltan datos: dirección dentro del radio y forma de pago.
+          <Button tone="primary" size="lg" block iconAfter={enviando ? undefined : 'chevronRight'}
+            disabled={enviando} onClick={confirmar}>
+            {enviando ? <PuntosEnviando /> : `Confirmar · $${subtotal}`}</Button>
+          {motivo && (
+            <p role="alert" style={{
+              fontFamily: 'var(--font-body)', fontSize: 11, textAlign: 'center', marginTop: 8,
+              color: motivo === 'cerrado' ? 'var(--rosa-mexicano-texto)' : 'var(--text-muted)',
+            }}>
+              {motivo === 'cerrado'
+                ? 'La cocina está cerrada ahorita.' + (apertura.texto ? ' Abrimos ' + apertura.texto.toLowerCase() + '.' : '')
+                : 'Faltan datos: dirección dentro del radio y forma de pago.'}
             </p>
           )}
         </div>
@@ -402,7 +444,7 @@ function AppCart({ lines, onQty, onConfirm, tab, onTab, count, inicialCliente })
    "en el horno" until the delivery actually leaves. */
 const ESTADO_A_PASO = { recibida: 0, confirmada: 0, horno: 1, lista: 1, camino: 2, entregada: 3 };
 
-function AppTracking({ tab, onTab, count, folio }) {
+function AppTracking({ tab, onTab, count, folio, premio, tarjeta }) {
   const [orden, setOrden] = React.useState(null);
   const [errorEstado, setErrorEstado] = React.useState(false);
 
@@ -454,6 +496,8 @@ function AppTracking({ tab, onTab, count, folio }) {
         <TapeStripe position="bottom" height={3} />
       </div>
       <div style={{ flex: 1, overflowY: 'auto', padding: '22px 20px', background: 'var(--surface-card)' }}>
+        {premio && <AvisoPremio premio={premio} style={{ marginBottom: 16 }} />}
+        {tarjeta && <TarjetaPremios tarjeta={tarjeta} animarUltimo style={{ marginBottom: 20 }} />}
         {steps.map(([t, d, done], i) => (
           <div key={t} style={{ display: 'flex', gap: 14, paddingBottom: i < steps.length - 1 ? 22 : 0 }}>
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>

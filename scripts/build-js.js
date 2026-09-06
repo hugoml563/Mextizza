@@ -25,7 +25,9 @@ const PAQUETES = [
     salida: 'ui_kits/web/bundle.build.js',
     fuentes: [
       'ui_kits/web/WebSurfaces.jsx',
+      'ui_kits/Puntos.jsx',
       'ui_kits/DeliveryForm.jsx',
+      'ui_kits/TarjetaPremios.jsx',
       'ui_kits/web/CartDrawer.jsx',
       'ui_kits/web/AddonsDialog.jsx',
       'ui_kits/web/Site.jsx',
@@ -34,7 +36,9 @@ const PAQUETES = [
   {
     salida: 'ui_kits/app/bundle.build.js',
     fuentes: [
+      'ui_kits/Puntos.jsx',
       'ui_kits/DeliveryForm.jsx',
+      'ui_kits/TarjetaPremios.jsx',
       'ui_kits/app/AppScreens.jsx',
       'ui_kits/app/AppMobile.jsx',
     ],
@@ -87,7 +91,46 @@ function verificarHorario() {
   console.log('  horario: menu-data.js y Code.gs coinciden (' + web.texto + ')');
 }
 
+/* Los premios tambien viven en dos capas: PREMIO_PRODUCTOS en TarjetaPremios.jsx
+   (lo que la interfaz ofrece canjear) y PREMIOS en Code.gs (lo que el servidor
+   regala de verdad). Si se separan, el cliente pide su brownie, el servidor no
+   se lo da, y no hay error visible en ninguna de las dos capas. */
+function verificarPremios() {
+  const ui = fs.readFileSync(path.join(RAIZ, 'ui_kits', 'TarjetaPremios.jsx'), 'utf8');
+  const mu = ui.match(/const PREMIO_PRODUCTOS = \{ brownie: '([^']+)', pizza: '([^']+)' \};/);
+  if (!mu) throw new Error('no encontre PREMIO_PRODUCTOS en TarjetaPremios.jsx');
+
+  const gs = fs.readFileSync(path.join(RAIZ, 'integration', 'sheets-backend', 'Code.gs'), 'utf8');
+  const mb = gs.match(/brownie:\s*\{ dia: (\d+), producto: '([^']+)' \}/);
+  const mp = gs.match(/pizza:\s*\{ dia: (\d+), producto: '([^']+)' \}/);
+  if (!mb || !mp) throw new Error('no encontre la constante PREMIOS en Code.gs');
+
+  if (mu[1] !== mb[2] || mu[2] !== mp[2]) {
+    throw new Error([
+      'Los productos de premio no coinciden entre las dos capas.',
+      '    TarjetaPremios.jsx: brownie=' + mu[1] + ' pizza=' + mu[2],
+      '    Code.gs:            brownie=' + mb[2] + ' pizza=' + mp[2],
+      '  Actualiza los dos antes de construir.',
+    ].join('\n'));
+  }
+
+  // Las casillas marcadas en la tarjeta tienen que caer en los dias del premio,
+  // o la tarjeta promete el brownie en una casilla y llega en otra.
+  const cb = Number((ui.match(/const CASILLA_BROWNIE = (\d+);/) || [])[1]);
+  const cp = Number((ui.match(/const CASILLA_PIZZA = (\d+);/) || [])[1]);
+  if (cb !== Number(mb[1]) || cp !== Number(mp[1])) {
+    throw new Error([
+      'Las casillas de la tarjeta no coinciden con los dias del premio.',
+      '    TarjetaPremios.jsx: brownie en la ' + cb + ', pizza en la ' + cp,
+      '    Code.gs:            brownie al dia ' + mb[1] + ', pizza al dia ' + mp[1],
+    ].join('\n'));
+  }
+  console.log('  premios: TarjetaPremios.jsx y Code.gs coinciden (brownie dia ' +
+    mb[1] + ', ' + mp[2] + ' dia ' + mp[1] + ')');
+}
+
 verificarHorario();
+verificarPremios();
 
 let totalAntes = 0;
 let totalDespues = 0;

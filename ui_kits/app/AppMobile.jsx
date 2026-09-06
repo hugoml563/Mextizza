@@ -56,6 +56,11 @@ function AppMobile() {
   const [lines, setLines] = React.useState(saved && Array.isArray(saved.lines) ? saved.lines : []);
   const [added, setAdded] = React.useState(null);
   const [folio, setFolio] = React.useState((saved && saved.folio) || null);
+  /* Lo que contesto el ultimo pedido. No se guarda en localStorage: es de este
+     pedido, no del cliente, y al reabrir la app la tarjeta se vuelve a
+     consultar al servidor, que es quien la sabe de verdad. */
+  const [premio, setPremio] = React.useState(null);
+  const [tarjeta, setTarjeta] = React.useState(null);
   const [cliente, setCliente] = React.useState((saved && saved.cliente) || null);
   const [toast, setToast] = React.useState(null);
   const toastTimer = React.useRef(null);
@@ -186,7 +191,10 @@ function AppMobile() {
   } else if (tab === 'pedido') {
     content = <AppCart lines={lines} onQty={qty} tab={tab} onTab={goTab} count={count}
       inicialCliente={cliente}
-      onConfirm={(nuevoFolio, entrega) => {
+      onConfirm={(nuevoFolio, entrega, extra) => {
+        // Como quedo la tarjeta y que se regalo: se pinta en seguimiento.
+        setPremio((extra && extra.premio) || null);
+        setTarjeta((extra && extra.tarjeta) || null);
         setFolio(nuevoFolio);
         // Solo los campos reutilizables del próximo pedido: nada de método de
         // pago ni notas, que son decisiones de cada pedido, no del cliente.
@@ -196,7 +204,7 @@ function AppMobile() {
         go({ tab: 'seguir', screen: 'list' });
       }} />;
   } else if (tab === 'seguir') {
-    content = <AppTracking tab={tab} onTab={goTab} count={count} folio={folio} />;
+    content = <AppTracking tab={tab} onTab={goTab} count={count} folio={folio} premio={premio} tarjeta={tarjeta} />;
   } else {
     content = <AppPerfil tab={tab} onTab={goTab} count={count}
       cliente={cliente} folio={folio}

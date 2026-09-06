@@ -64,7 +64,7 @@ if (!window.__mextizzaSheetsConfigLoaded) {
   };
 
   /** lines: el arreglo de líneas del carrito (misma forma que usan CartDrawer/AppCart) */
-  const mextizzaCrearOrden = ({ canal, lines, entrega, estadoInicial }) => {
+  const mextizzaCrearOrden = ({ canal, lines, entrega, estadoInicial, usarPremio }) => {
     const items = lines.map(l => ({
       producto_id: l.id,
       nombre: l.name,
@@ -90,7 +90,10 @@ if (!window.__mextizzaSheetsConfigLoaded) {
       pago_metodo: entrega.pago === 'Tarjeta' ? 'Tarjeta en línea' : entrega.pago,
       notas: entrega.notas,
       items,
-      estadoInicial
+      estadoInicial,
+      /* Cual premio quiere canjear. Es una PETICION, no una orden: el servidor
+         solo lo aplica si la tarjeta de ese telefono de verdad lo tiene. */
+      usarPremio
     });
   };
 
@@ -108,5 +111,10 @@ if (!window.__mextizzaSheetsConfigLoaded) {
   const mextizzaSolicitarCatering = ({ nombre, telefono, personas, fecha_evento, notas }) =>
     mextizzaApiPost('solicitar_catering', { nombre, telefono, personas, fecha_evento, notas });
 
-  Object.assign(window, { mextizzaCrearOrden, mextizzaAvanzarEstado, mextizzaCancelarOrden, mextizzaEstadoOrden, mextizzaEstadoPorTelefono, mextizzaCancelarPorCliente, mextizzaListarAbiertas, mextizzaListarHoy, mextizzaSolicitarCatering, mextizzaTokenAdmin, mextizzaGuardarTokenAdmin, mextizzaOlvidarTokenAdmin });
+  /* Estado de la tarjeta de un telefono, mas si en este momento corre el 2x1.
+     El horario del 2x1 lo decide el servidor y no el reloj del telefono: si el
+     cliente tiene mal la hora, la promesa y el cobro discreparian. */
+  const mextizzaTarjeta = (telefono) => mextizzaApiGet('tarjeta', { telefono: telefono || '' });
+
+  Object.assign(window, { mextizzaTarjeta, mextizzaCrearOrden, mextizzaAvanzarEstado, mextizzaCancelarOrden, mextizzaEstadoOrden, mextizzaEstadoPorTelefono, mextizzaCancelarPorCliente, mextizzaListarAbiertas, mextizzaListarHoy, mextizzaSolicitarCatering, mextizzaTokenAdmin, mextizzaGuardarTokenAdmin, mextizzaOlvidarTokenAdmin });
 }

@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>Prueba — Tarjeta de premios</title>
+<link rel="stylesheet" href="/styles.css">
+<style>
+  body { background: var(--surface-page); margin: 0; padding: 24px; }
+  .rejilla { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 22px; max-width: 1300px; margin: 0 auto; }
+  .caso > h2 { font-family: var(--font-label); font-size: 10.5px; letter-spacing: 1.4px;
+    text-transform: uppercase; color: var(--text-muted); margin: 0 0 8px; }
+</style>
+</head>
+<body>
+<div id="raiz" class="rejilla"></div>
+
+<script src="/vendor/react.production.min.js"></script>
+<script src="/vendor/react-dom.production.min.js"></script>
+<script src="/_ds_bundle.js"></script>
+<script src="/ui_kits/menu-data.js"></script>
+<script src="/ui_kits/delivery-zone.js"></script>
+<script src="/ui_kits/sheets-config.js"></script>
+<script src="/ui_kits/web/bundle.build.js"></script>
+<script>
+/* Página de prueba visual de la tarjeta. No se enlaza desde ningún lado y
+   lleva noindex; sirve para ver todos los estados juntos sin tener que hacer
+   nueve pedidos reales. */
+const e = React.createElement;
+
+const t = (dias, extra) => Object.assign({
+  dias,
+  brownie: dias >= 4,
+  pizza: dias >= 9,
+  faltanBrownie: Math.max(0, 4 - dias),
+  faltanPizza: Math.max(0, 9 - dias),
+  ciclos: 0,
+}, extra || {});
+
+const CASOS = [
+  ['Recién empieza (día 1, sellando)', { tarjeta: t(1), animarUltimo: true }],
+  ['A un día del brownie', { tarjeta: t(3) }],
+  ['Brownie disponible (día 4)', { tarjeta: t(4), animarUltimo: true }],
+  ['Brownie ya usado', { tarjeta: t(6, { brownie: false }) }],
+  ['Traviesa disponible (día 9)', { tarjeta: t(9), animarUltimo: true }],
+  ['Acumuló de más (día 12)', { tarjeta: t(12) }],
+  ['Segunda vuelta', { tarjeta: t(2, { ciclos: 1, brownie: false, pizza: false }) }],
+  ['Sin pedidos todavía', { tarjeta: t(0) }],
+];
+
+function Caso({ nombre, props }) {
+  return e('div', { className: 'caso' },
+    e('h2', null, nombre),
+    e(window.TarjetaPremios, props));
+}
+
+function Prueba() {
+  return e(React.Fragment, null,
+    e('div', { className: 'caso' },
+      e('h2', null, 'Aviso de 2x1'),
+      e(window.Aviso2x1, { activo: true })),
+    e('div', { className: 'caso' },
+      e('h2', null, 'Premio aplicado — 2x1'),
+      e(window.AvisoPremio, { premio: { tipo: '2x1', producto: 'Aloha', valor: 189 } })),
+    e('div', { className: 'caso' },
+      e('h2', null, 'Premio aplicado — tarjeta'),
+      e(window.AvisoPremio, { premio: { tipo: 'tarjeta:pizza', producto: 'Traviesa', valor: 199 } })),
+    CASOS.map(([nombre, props]) => e(Caso, { key: nombre, nombre, props })));
+}
+
+ReactDOM.createRoot(document.getElementById('raiz')).render(e(Prueba));
+</script>
+</body>
+</html>

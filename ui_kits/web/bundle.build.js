@@ -1041,6 +1041,38 @@ Object.assign(window, {
 });
 })();
 
+/* ui_kits/Puntos.jsx */
+(function () {
+/* Los tres puntos de "se esta procesando", compartidos por la web y la app.
+
+   El CSS vive en tokens/base.css porque el Centro de Ventas usa el mismo
+   indicador y no tiene React. Aqui solo va el marcado.
+
+   Lleva texto para lector de pantalla: tres puntos que se mueven no dicen nada
+   a quien no los ve. */
+function PuntosEnviando({
+  etiqueta = 'Enviando tu pedido'
+}) {
+  return /*#__PURE__*/React.createElement("span", {
+    className: "mx-puntos",
+    role: "status",
+    "aria-live": "polite"
+  }, /*#__PURE__*/React.createElement("i", null), /*#__PURE__*/React.createElement("i", null), /*#__PURE__*/React.createElement("i", null), /*#__PURE__*/React.createElement("span", {
+    style: {
+      position: 'absolute',
+      width: 1,
+      height: 1,
+      overflow: 'hidden',
+      clip: 'rect(0 0 0 0)',
+      whiteSpace: 'nowrap'
+    }
+  }, etiqueta));
+}
+Object.assign(window, {
+  PuntosEnviando
+});
+})();
+
 /* ui_kits/DeliveryForm.jsx */
 (function () {
 const {
@@ -1213,6 +1245,410 @@ function DeliveryForm({
 Object.assign(window, {
   DeliveryForm,
   PAGOS
+});
+})();
+
+/* ui_kits/TarjetaPremios.jsx */
+(function () {
+const {
+  FramedPanel,
+  TapeStripe,
+  Badge
+} = window.MextizzaDesignSystem_8a35ee;
+
+/* Tarjeta de sellos, compartida por la web y la app.
+
+   Cuenta dias DISTINTOS con pedido, no pedidos: dos el mismo dia valen uno.
+   Esa regla vive en el servidor (registrarDia_ en Code.gs); aqui solo se pinta
+   lo que el servidor contesta, para que la tarjeta nunca prometa un premio que
+   la caja no va a dar.
+
+   Nueve casillas, la 4 y la 9 marcadas. Si alguien acumula de mas antes de
+   canjear, las casillas se llenan y los dias extra se dicen aparte: el ciclo
+   resta 9 al canjear, no se va a cero, asi que esos dias no se pierden. */
+
+const DIAS_TARJETA = 9;
+const CASILLA_BROWNIE = 4;
+const CASILLA_PIZZA = 9;
+
+/* El sello nuevo cae con un golpe seco, como un sello de tinta de verdad: entra
+   grande y girado, y se asienta. Los demas ya estaban ahi, no se animan. */
+const CSS_TARJETA = ['@keyframes mxsello{', '0%{opacity:0;transform:scale(2.1) rotate(-24deg)}', '55%{opacity:1;transform:scale(.92) rotate(3deg)}', '75%{transform:scale(1.04) rotate(-1deg)}', '100%{opacity:1;transform:scale(1) rotate(0deg)}}', '@keyframes mxbrillo{0%{opacity:0}35%{opacity:.55}100%{opacity:0}}', '.mx-sello-nuevo{animation:mxsello .58s cubic-bezier(.2,.9,.3,1.4) both}', '.mx-premio-listo{animation:mxbrillo 1.9s ease-in-out infinite}', /* Quien pidio menos movimiento ve el sello aparecer, sin el golpe ni el brillo. */
+'@media (prefers-reduced-motion:reduce){', '.mx-sello-nuevo{animation:none}', '.mx-premio-listo{animation:none;opacity:.4}}'].join('');
+function inyectarCSS() {
+  if (typeof document === 'undefined') return;
+  if (document.getElementById('mx-tarjeta-css')) return;
+  const s = document.createElement('style');
+  s.id = 'mx-tarjeta-css';
+  s.textContent = CSS_TARJETA;
+  document.head.appendChild(s);
+}
+
+/* Una casilla. `estado`: 'vacia' | 'sellada' | 'nueva'. */
+function Casilla({
+  n,
+  estado,
+  premio,
+  listo
+}) {
+  const sellada = estado !== 'vacia';
+  const esPremio = !!premio;
+  const acento = 'var(--rosa-mexicano)';
+  return /*#__PURE__*/React.createElement("div", {
+    style: {
+      position: 'relative',
+      paddingBottom: esPremio ? 15 : 0
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      aspectRatio: '1 / 1',
+      borderRadius: '50%',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      border: sellada ? '2px solid ' + (esPremio ? acento : 'var(--negro-carbon)') : '2px dashed ' + (esPremio ? acento : 'var(--hueso-linea)'),
+      background: sellada ? esPremio ? 'var(--rosa-tinte)' : 'var(--hueso-hondo)' : 'transparent',
+      // Doble anillo: la casilla de premio se ve distinta aun sin leer nada.
+      boxShadow: esPremio ? 'inset 0 0 0 3px var(--surface-card)' : 'none',
+      position: 'relative'
+    }
+  }, sellada && /*#__PURE__*/React.createElement("span", {
+    className: estado === 'nueva' ? 'mx-sello-nuevo' : undefined,
+    style: {
+      fontFamily: 'var(--font-label)',
+      fontSize: 13,
+      fontWeight: 400,
+      letterSpacing: 0.5,
+      lineHeight: 1,
+      color: esPremio ? 'var(--rosa-mexicano-texto)' : 'var(--negro-carbon)',
+      // Los sellos de verdad no caen derechos.
+      transform: 'rotate(' + (n * 37 % 11 - 5) + 'deg)',
+      display: 'block'
+    }
+  }, n), !sellada && esPremio && /*#__PURE__*/React.createElement("span", {
+    style: {
+      fontFamily: 'var(--font-label)',
+      fontSize: 12,
+      letterSpacing: 0.5,
+      color: acento,
+      opacity: 0.75
+    }
+  }, n), listo && /*#__PURE__*/React.createElement("span", {
+    className: "mx-premio-listo",
+    "aria-hidden": "true",
+    style: {
+      position: 'absolute',
+      inset: -5,
+      borderRadius: '50%',
+      border: '2px solid ' + acento,
+      pointerEvents: 'none'
+    }
+  })), esPremio && /*#__PURE__*/React.createElement("span", {
+    style: {
+      position: 'absolute',
+      left: 0,
+      right: 0,
+      bottom: 0,
+      textAlign: 'center',
+      fontFamily: 'var(--font-label)',
+      fontSize: 8.5,
+      letterSpacing: 0.8,
+      textTransform: 'uppercase',
+      color: acento,
+      whiteSpace: 'nowrap'
+    }
+  }, premio));
+}
+
+/* tarjeta: lo que contesta el servidor —
+     { dias, brownie, pizza, faltanBrownie, faltanPizza, ciclos }
+   animarUltimo: sella el dia recien ganado con el golpe. Se usa al confirmar un
+   pedido; en el carrito la tarjeta se pinta quieta. */
+function TarjetaPremios({
+  tarjeta,
+  animarUltimo = false,
+  titulo,
+  style
+}) {
+  React.useEffect(inyectarCSS, []);
+  if (!tarjeta) return null;
+  const dias = Math.max(0, Number(tarjeta.dias) || 0);
+  const llenas = Math.min(dias, DIAS_TARJETA);
+  const extra = Math.max(0, dias - DIAS_TARJETA);
+  const premios = {
+    [CASILLA_BROWNIE]: 'brownie',
+    [CASILLA_PIZZA]: 'pizza'
+  };
+  const casillas = [];
+  for (let n = 1; n <= DIAS_TARJETA; n++) {
+    const sellada = n <= llenas;
+    casillas.push(/*#__PURE__*/React.createElement(Casilla, {
+      key: n,
+      n: n,
+      premio: premios[n],
+      estado: !sellada ? 'vacia' : animarUltimo && n === llenas ? 'nueva' : 'sellada',
+      listo: n === CASILLA_BROWNIE && tarjeta.brownie || n === CASILLA_PIZZA && tarjeta.pizza
+    }));
+  }
+
+  // Un solo renglon, el que importa ahora mismo.
+  let mensaje;
+  if (tarjeta.pizza) mensaje = 'Tienes una Traviesa gratis esperándote.';else if (tarjeta.brownie) mensaje = 'Tienes un brownie gratis esperándote.';else if (tarjeta.faltanBrownie > 0) {
+    mensaje = tarjeta.faltanBrownie === 1 ? 'Un día más y el brownie es tuyo.' : 'Faltan ' + tarjeta.faltanBrownie + ' días para tu brownie.';
+  } else {
+    mensaje = tarjeta.faltanPizza === 1 ? 'Un día más y la Traviesa es tuya.' : 'Faltan ' + tarjeta.faltanPizza + ' días para tu Traviesa gratis.';
+  }
+  return /*#__PURE__*/React.createElement(FramedPanel, {
+    variant: "object",
+    style: {
+      position: 'relative',
+      ...style
+    }
+  }, /*#__PURE__*/React.createElement(TapeStripe, {
+    position: "top",
+    height: 4
+  }), /*#__PURE__*/React.createElement("div", {
+    style: {
+      padding: '4px 2px 2px'
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: 'flex',
+      alignItems: 'baseline',
+      justifyContent: 'space-between',
+      gap: 10,
+      marginBottom: 12
+    }
+  }, /*#__PURE__*/React.createElement("span", {
+    style: {
+      fontFamily: 'var(--font-label)',
+      fontSize: 10.5,
+      letterSpacing: 1.4,
+      textTransform: 'uppercase',
+      color: 'var(--text-muted)'
+    }
+  }, titulo || 'Tu tarjeta'), tarjeta.ciclos > 0 && /*#__PURE__*/React.createElement(Badge, {
+    tone: "dorado"
+  }, tarjeta.ciclos === 1 ? '1 tarjeta llena' : tarjeta.ciclos + ' tarjetas llenas')), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: 'grid',
+      gridTemplateColumns: 'repeat(3, 1fr)',
+      gap: 12,
+      maxWidth: 236,
+      margin: '0 auto'
+    }
+  }, casillas), /*#__PURE__*/React.createElement("p", {
+    style: {
+      fontFamily: 'var(--font-body)',
+      fontSize: 13,
+      lineHeight: 1.45,
+      color: 'var(--text-body)',
+      textAlign: 'center',
+      margin: '16px 0 0'
+    }
+  }, mensaje), extra > 0 && /*#__PURE__*/React.createElement("p", {
+    style: {
+      fontFamily: 'var(--font-body)',
+      fontSize: 11.5,
+      color: 'var(--text-muted)',
+      textAlign: 'center',
+      margin: '5px 0 0'
+    }
+  }, extra === 1 ? 'Llevas 1 día extra guardado.' : 'Llevas ' + extra + ' días extra guardados.', " No se pierden.")));
+}
+
+/* Que producto vale por cada premio. Tiene que decir lo mismo que PREMIOS en
+   Code.gs: si aqui se ofrece canjear un producto y alla se espera otro, el
+   cliente pide su premio y el servidor no se lo da. build-js.js compara las dos
+   capas y detiene la construccion si dejan de coincidir. */
+const PREMIO_PRODUCTOS = {
+  brownie: 'chocolatoso',
+  pizza: 'traviesa'
+};
+
+/* Ofrece canjear un premio que el cliente YA tiene. Solo aparece cuando el
+   producto esta en el carrito: regalar algo que no pidio no tiene sentido, y el
+   servidor lo rechazaria igual.
+
+   Es una sola opcion a la vez porque las promociones no se acumulan. Quien
+   decide de verdad es el servidor: aqui solo se pide. */
+function CanjeTarjeta({
+  tarjeta,
+  lines,
+  valor,
+  onChange,
+  style
+}) {
+  if (!tarjeta) return null;
+  const enCarrito = id => (lines || []).some(l => l.id === id);
+  const disponibles = [];
+  if (tarjeta.pizza) disponibles.push({
+    clave: 'pizza',
+    nombre: 'Traviesa',
+    articulo: 'una Traviesa',
+    id: PREMIO_PRODUCTOS.pizza
+  });
+  if (tarjeta.brownie) disponibles.push({
+    clave: 'brownie',
+    nombre: 'brownie',
+    articulo: 'un brownie',
+    id: PREMIO_PRODUCTOS.brownie
+  });
+  if (!disponibles.length) return null;
+  const listos = disponibles.filter(p => enCarrito(p.id));
+  const faltantes = disponibles.filter(p => !enCarrito(p.id));
+  return /*#__PURE__*/React.createElement("div", {
+    style: {
+      border: '2px solid var(--rosa-mexicano)',
+      borderRadius: 'var(--radius-md)',
+      background: 'var(--rosa-tinte)',
+      padding: '12px 14px',
+      ...style
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontFamily: 'var(--font-label)',
+      fontSize: 10,
+      letterSpacing: 1.3,
+      textTransform: 'uppercase',
+      color: 'var(--rosa-mexicano-texto)',
+      marginBottom: 8
+    }
+  }, "Tu tarjeta tiene premio"), listos.map(p => {
+    const activo = valor === p.clave;
+    return /*#__PURE__*/React.createElement("button", {
+      key: p.clave,
+      type: "button",
+      "aria-pressed": activo,
+      onClick: () => onChange(activo ? null : p.clave),
+      style: {
+        display: 'block',
+        width: '100%',
+        textAlign: 'left',
+        cursor: 'pointer',
+        marginBottom: 6,
+        padding: '10px 12px',
+        borderRadius: 'var(--radius-sm)',
+        border: '2px solid ' + (activo ? 'var(--rosa-mexicano)' : 'var(--hueso-linea)'),
+        background: activo ? 'var(--surface-card)' : 'transparent',
+        fontFamily: 'var(--font-body)',
+        fontSize: 13.5,
+        color: 'var(--text-body)'
+      }
+    }, /*#__PURE__*/React.createElement("span", {
+      style: {
+        display: 'inline-block',
+        width: 14,
+        height: 14,
+        marginRight: 9,
+        borderRadius: 3,
+        verticalAlign: -2,
+        border: '2px solid var(--rosa-mexicano)',
+        background: activo ? 'var(--rosa-mexicano)' : 'transparent'
+      }
+    }), "Usar mi ", p.nombre, " gratis");
+  }), faltantes.map(p => /*#__PURE__*/React.createElement("p", {
+    key: p.clave,
+    style: {
+      fontFamily: 'var(--font-body)',
+      fontSize: 12.5,
+      lineHeight: 1.45,
+      color: 'var(--text-body)',
+      margin: '2px 0 0'
+    }
+  }, "Tienes ", p.articulo, " gratis. Agr\xE9galo a tu pedido para canjearlo.")));
+}
+
+/* Lo que se regalo en ESTE pedido. El servidor manda { tipo, producto, valor };
+   se nombra el producto y cuanto valia, para que el cliente vea el descuento
+   aunque el total ya venga cobrado de menos. */
+function AvisoPremio({
+  premio,
+  style
+}) {
+  if (!premio) return null;
+  const texto = {
+    '2x1': 'Se aplicó tu 2x1 de viernes',
+    'tarjeta:brownie': 'Canjeaste tu brownie de la tarjeta',
+    'tarjeta:pizza': 'Canjeaste tu Traviesa de la tarjeta'
+  }[premio.tipo] || 'Promoción aplicada';
+  return /*#__PURE__*/React.createElement("div", {
+    style: {
+      border: '2px solid var(--rosa-mexicano)',
+      borderRadius: 'var(--radius-md)',
+      background: 'var(--rosa-tinte)',
+      padding: '12px 14px',
+      ...style
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontFamily: 'var(--font-label)',
+      fontSize: 10,
+      letterSpacing: 1.3,
+      textTransform: 'uppercase',
+      color: 'var(--rosa-mexicano-texto)',
+      marginBottom: 4
+    }
+  }, texto), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontFamily: 'var(--font-body)',
+      fontSize: 14,
+      color: 'var(--text-body)'
+    }
+  }, premio.producto, " va por nuestra cuenta", premio.valor ? /*#__PURE__*/React.createElement("span", {
+    style: {
+      color: 'var(--text-muted)'
+    }
+  }, ' · $' + premio.valor + ' menos') : null));
+}
+
+/* Aviso del 2x1 de viernes. `activo` lo dice el servidor (campo dosPorUno), no
+   el reloj del telefono: si el cliente trae mal la hora, el anuncio y el cobro
+   dirian cosas distintas. */
+function Aviso2x1({
+  activo,
+  style
+}) {
+  if (!activo) return null;
+  return /*#__PURE__*/React.createElement("div", {
+    role: "status",
+    style: {
+      display: 'flex',
+      alignItems: 'center',
+      gap: 10,
+      border: '2px solid var(--negro-carbon)',
+      borderRadius: 'var(--radius-md)',
+      background: 'var(--dorado-masa)',
+      padding: '11px 14px',
+      ...style
+    }
+  }, /*#__PURE__*/React.createElement("span", {
+    style: {
+      fontFamily: 'var(--font-display)',
+      fontSize: 20,
+      lineHeight: 1,
+      color: 'var(--negro-carbon)',
+      letterSpacing: 0.5,
+      flexShrink: 0
+    }
+  }, "2x1"), /*#__PURE__*/React.createElement("span", {
+    style: {
+      fontFamily: 'var(--font-body)',
+      fontSize: 13,
+      lineHeight: 1.4,
+      color: 'var(--negro-carbon)'
+    }
+  }, "Viernes de 2x1: pide dos pizzas y la m\xE1s barata va por nuestra cuenta."));
+}
+Object.assign(window, {
+  TarjetaPremios,
+  AvisoPremio,
+  Aviso2x1,
+  CanjeTarjeta,
+  PREMIO_PRODUCTOS,
+  DIAS_TARJETA,
+  CASILLA_BROWNIE,
+  CASILLA_PIZZA
 });
 })();
 
@@ -1408,6 +1844,14 @@ function CartDrawer({
   }, [intentos]);
   const [entrega, setEntrega] = React.useState(null);
   const [enviando, setEnviando] = React.useState(false);
+  // Lo que contesta el servidor al crear el pedido: como quedo la tarjeta y
+  // que promocion se aplico. Se pinta en la pantalla de confirmacion.
+  // La tarjeta ANTES de este pedido, para poder ofrecer el canje. Se consulta
+  // sola en cuanto el telefono esta completo; no hay que pedirle nada al cliente.
+  const [tarjetaPrevia, setTarjetaPrevia] = React.useState(null);
+  const [usarPremio, setUsarPremio] = React.useState(null);
+  const [tarjeta, setTarjeta] = React.useState(null);
+  const [premio, setPremio] = React.useState(null);
   const [error, setError] = React.useState(null);
   // El folio vive en el padre para que sobreviva a cerrar el carrito y a recargar.
   const folio = folioActivo;
@@ -1433,10 +1877,51 @@ function CartDrawer({
       setBuscando(false);
     }
   };
+
+  /* Por que no se puede enviar. Antes el aviso siempre decia "faltan datos",
+     aunque el formulario estuviera completo y lo unico que pasara fuera que la
+     cocina estaba cerrada. */
+  const apertura = typeof mextizzaEstaAbierto === 'function' ? mextizzaEstaAbierto() : {
+    abierto: true,
+    texto: ''
+  };
+  const motivo = !apertura.abierto ? 'cerrado' : !ready ? 'datos' : null;
+
+  // entrega arranca en null: DeliveryForm no ha reportado nada en el primer
+  // pintado, y leerlo directo tumbaba la pagina entera.
+  const tel10 = String(entrega && entrega.telefono || '').replace(/\D/g, '').slice(0, 10);
+  React.useEffect(() => {
+    if (tel10.length !== 10 || typeof mextizzaTarjeta !== 'function') {
+      setTarjetaPrevia(null);
+      setUsarPremio(null);
+      return;
+    }
+    let vivo = true;
+    mextizzaTarjeta(tel10).then(r => {
+      if (vivo) setTarjetaPrevia(r.tarjeta || null);
+    })
+    // Si la consulta falla no se dice nada: la tarjeta es un extra, y el
+    // pedido tiene que poder salir igual.
+    .catch(() => {
+      if (vivo) setTarjetaPrevia(null);
+    });
+    return () => {
+      vivo = false;
+    };
+  }, [tel10]);
   const subtotal = lines.reduce((s, l) => s + (l.price + (l.addonTotal || 0)) * l.qty, 0);
   const confirmar = async () => {
     if (step === 'cart') return setStep('checkout');
-    if (!ready) {
+
+    /* Se vuelve a mirar el reloj aqui. La pestana pudo quedarse abierta desde
+       antes de la hora de cierre, y el servidor rechaza igual: mas vale decirlo
+       nosotros que mandar el pedido a que rebote. */
+    const ap = typeof mextizzaEstaAbierto === 'function' ? mextizzaEstaAbierto() : {
+      abierto: true
+    };
+    if (!ap.abierto || !ready) {
+      // setIntentos fuerza un repintado: el motivo de abajo se recalcula con
+      // la hora de ahora, no con la de cuando se abrio la pestana.
       setAttempted(true);
       setIntentos(n => n + 1);
       return;
@@ -1447,8 +1932,11 @@ function CartDrawer({
       const r = await mextizzaCrearOrden({
         canal,
         lines,
-        entrega
+        entrega,
+        usarPremio
       });
+      setTarjeta(r.tarjeta || null);
+      setPremio(r.premio || null);
       // El padre guarda el folio y vacia el carrito: antes las lineas se quedaban
       // ahi despues de enviar y el siguiente pedido arrancaba con el anterior dentro.
       onOrdenCreada && onOrdenCreada(r.folio);
@@ -1561,6 +2049,24 @@ function CartDrawer({
     attempted: attempted,
     onValidChange: setReady,
     onDataChange: setEntrega
+  }), /*#__PURE__*/React.createElement(Aviso2x1, {
+    activo: typeof mextizzaEs2x1 === 'function' && mextizzaEs2x1(),
+    style: {
+      marginTop: 12
+    }
+  }), /*#__PURE__*/React.createElement(CanjeTarjeta, {
+    tarjeta: tarjetaPrevia,
+    lines: lines,
+    valor: usarPremio,
+    onChange: setUsarPremio,
+    style: {
+      marginTop: 12
+    }
+  }), tarjetaPrevia && /*#__PURE__*/React.createElement(TarjetaPremios, {
+    tarjeta: tarjetaPrevia,
+    style: {
+      marginTop: 12
+    }
   }), error && /*#__PURE__*/React.createElement(StatusNote, {
     tone: "block",
     title: "Ups",
@@ -1603,13 +2109,24 @@ function CartDrawer({
       marginTop: 16
     },
     onClick: buscarPorTelefono
-  }, buscando ? "Buscando..." : "Buscar mi pedido")), step === 'done' && /*#__PURE__*/React.createElement(FramedPanel, {
+  }, buscando ? "Buscando..." : "Buscar mi pedido")), step === 'done' && /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement(FramedPanel, {
     variant: "object",
     style: {
       marginTop: 8
     }
   }, /*#__PURE__*/React.createElement(SeguimientoPedido, {
     folio: folio
+  })), premio && /*#__PURE__*/React.createElement(AvisoPremio, {
+    premio: premio,
+    style: {
+      marginTop: 12
+    }
+  }), tarjeta && /*#__PURE__*/React.createElement(TarjetaPremios, {
+    tarjeta: tarjeta,
+    animarUltimo: true,
+    style: {
+      marginTop: 12
+    }
   }))), step !== 'done' && step !== 'buscar' && lines.length > 0 && /*#__PURE__*/React.createElement("div", {
     style: {
       borderTop: 'var(--border-frame)',
@@ -1658,18 +2175,19 @@ function CartDrawer({
     tone: "primary",
     size: "lg",
     block: true,
-    iconAfter: "chevronRight",
+    iconAfter: enviando ? undefined : 'chevronRight',
     disabled: enviando,
     onClick: confirmar
-  }, step === 'cart' ? 'Continuar' : enviando ? 'Enviando…' : 'Confirmar pedido'), step === 'checkout' && !ready && /*#__PURE__*/React.createElement("p", {
+  }, step === 'cart' ? 'Continuar' : enviando ? /*#__PURE__*/React.createElement(PuntosEnviando, null) : 'Confirmar pedido'), step === 'checkout' && motivo && /*#__PURE__*/React.createElement("p", {
+    role: "alert",
     style: {
       fontFamily: 'var(--font-body)',
       fontSize: 11.5,
-      color: 'var(--text-muted)',
       textAlign: 'center',
-      marginTop: 9
+      marginTop: 9,
+      color: motivo === 'cerrado' ? 'var(--rosa-mexicano-texto)' : 'var(--text-muted)'
     }
-  }, "Faltan datos: direcci\xF3n dentro del radio y forma de pago."))));
+  }, motivo === 'cerrado' ? 'La cocina está cerrada ahorita.' + (apertura.texto ? ' Abrimos ' + apertura.texto.toLowerCase() + '.' : '') : 'Faltan datos: dirección dentro del radio y forma de pago.'))));
 }
 Object.assign(window, {
   CartDrawer

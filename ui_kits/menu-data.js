@@ -105,6 +105,15 @@ function mextizzaEstaAbierto(ahora) {
   return { abierto, texto: h.texto };
 }
 
+/* Viernes de 2x1, de 7 pm en adelante. Sirve solo para ANUNCIARLO: quien
+   decide si el descuento se aplica es el servidor (es2x1_ en Code.gs), que usa
+   su propio reloj. Si el telefono trae mal la hora, lo peor que pasa es que el
+   letrero no cuadre; el cobro no cambia. */
+function mextizzaEs2x1(ahora) {
+  const cdmx = mextizzaAhoraCDMX(ahora);
+  return cdmx.dia === 5 && cdmx.hora >= 19;
+}
+
 
 /* Los complementos son ingredientes que van ENCIMA de una pizza: no tienen
    sentido en un refresco ni en el brownie. La regla vive aqui, no en cada
@@ -125,4 +134,4 @@ const MEXTIZZA_SOCIAL = {
   instagram: 'https://www.instagram.com/mextizzamx/',
   facebook: 'https://www.facebook.com/profile.php?id=61592120047383'
 };
-Object.assign(window, { MEXTIZZA_MENU, MEXTIZZA_ADDONS, MEXTIZZA_FACTS, mextizzaWhatsappLink, mextizzaEstaAbierto, mextizzaAceptaComplementos, MEXTIZZA_SOCIAL });
+Object.assign(window, { MEXTIZZA_MENU, MEXTIZZA_ADDONS, MEXTIZZA_FACTS, mextizzaWhatsappLink, mextizzaEstaAbierto, mextizzaEs2x1, mextizzaAceptaComplementos, MEXTIZZA_SOCIAL });

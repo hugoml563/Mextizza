@@ -24,3 +24,8 @@ node_modules/
 # cargaban React desde unpkg, lo que obligaba a mantener ese dominio en la CSP.
 guidelines/
 ui_kits/app/
+
+# Paginas de prueba visual: sirven para ver todos los estados de un componente
+# sin tener que provocarlos a mano (nueve pedidos para llenar una tarjeta, por
+# ejemplo). Utiles en local, ruido en produccion.
+pruebas/
