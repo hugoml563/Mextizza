@@ -1078,11 +1078,11 @@ function DeliveryForm({
   const telOk = digits.length === 10;
   const zona = colonia ? zonaEvaluar(colonia) : null;
   const zonaOk = !!zona && zona.estado === 'dentro';
-  /* El horario ya NO cierra el checkout. Se sigue evaluando y se sigue avisando,
-     porque el cliente tiene derecho a saber que su pizza no sale ahorita; pero
-     bloquear el boton mandaba a la basura un pedido que si se puede surtir al
-     abrir. Se reevalua cada minuto para que el aviso desaparezca solo cuando den
-     las 4 y el cliente siga con la pantalla abierta. */
+  /* Fuera de horario el checkout se cierra: un pedido que nadie puede cocinar
+     es peor que ningun pedido, porque el cliente se queda esperando algo que no
+     va a llegar. Se reevalua cada minuto para que la pantalla no se quede
+     bloqueada si dan las 4 mientras el cliente escribe, ni siga abierta si dan
+     las 11 a media captura. */
   const [ahora, setAhora] = React.useState(() => new Date());
   React.useEffect(() => {
     const id = setInterval(() => setAhora(new Date()), 60000);
@@ -1092,7 +1092,7 @@ function DeliveryForm({
     abierto: true,
     texto: ""
   };
-  const valid = !!nombre.trim() && telOk && !!calle.trim() && zonaOk && !!pago;
+  const valid = !!nombre.trim() && telOk && !!calle.trim() && zonaOk && !!pago && apertura.abierto;
   React.useEffect(() => {
     onValidChange && onValidChange(valid);
   }, [valid]);
@@ -1111,12 +1111,12 @@ function DeliveryForm({
   const gap = compact ? 12 : 14;
   const tone = zona ? zona.estado === 'dentro' ? 'ok' : zona.estado === 'limite' ? 'warn' : 'block' : 'ok';
   return /*#__PURE__*/React.createElement("div", null, !apertura.abierto && /*#__PURE__*/React.createElement(StatusNote, {
-    tone: "warn",
-    title: "La cocina est\xE1 cerrada ahorita",
+    tone: "block",
+    title: "El horno est\xE1 apagado",
     style: {
       marginBottom: 14
     }
-  }, "Puedes dejar tu pedido y entra a la cola. Abrimos ", apertura.texto.toLowerCase(), ", y sale en cuanto prendamos el horno."), /*#__PURE__*/React.createElement(Field, {
+  }, "Abrimos ", apertura.texto.toLowerCase(), ". Si quieres dejarlo apuntado desde ahorita, escr\xEDbenos por WhatsApp."), /*#__PURE__*/React.createElement(Field, {
     label: "Nombre",
     required: true,
     placeholder: "Tu nombre",

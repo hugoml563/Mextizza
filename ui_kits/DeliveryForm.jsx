@@ -23,11 +23,11 @@ function DeliveryForm({ compact = false, attempted = false, onValidChange, onDat
   const telOk = digits.length === 10;
   const zona = colonia ? zonaEvaluar(colonia) : null;
   const zonaOk = !!zona && zona.estado === 'dentro';
-  /* El horario ya NO cierra el checkout. Se sigue evaluando y se sigue avisando,
-     porque el cliente tiene derecho a saber que su pizza no sale ahorita; pero
-     bloquear el boton mandaba a la basura un pedido que si se puede surtir al
-     abrir. Se reevalua cada minuto para que el aviso desaparezca solo cuando den
-     las 4 y el cliente siga con la pantalla abierta. */
+  /* Fuera de horario el checkout se cierra: un pedido que nadie puede cocinar
+     es peor que ningun pedido, porque el cliente se queda esperando algo que no
+     va a llegar. Se reevalua cada minuto para que la pantalla no se quede
+     bloqueada si dan las 4 mientras el cliente escribe, ni siga abierta si dan
+     las 11 a media captura. */
   const [ahora, setAhora] = React.useState(() => new Date());
   React.useEffect(() => {
     const id = setInterval(() => setAhora(new Date()), 60000);
@@ -37,7 +37,7 @@ function DeliveryForm({ compact = false, attempted = false, onValidChange, onDat
     ? mextizzaEstaAbierto(ahora)
     : { abierto: true, texto: "" };
 
-  const valid = !!nombre.trim() && telOk && !!calle.trim() && zonaOk && !!pago;
+  const valid = !!nombre.trim() && telOk && !!calle.trim() && zonaOk && !!pago && apertura.abierto;
 
   React.useEffect(() => { onValidChange && onValidChange(valid); }, [valid]);
   React.useEffect(() => {
@@ -50,8 +50,8 @@ function DeliveryForm({ compact = false, attempted = false, onValidChange, onDat
   return (
     <div>
       {!apertura.abierto && (
-        <StatusNote tone="warn" title="La cocina está cerrada ahorita" style={{ marginBottom: 14 }}>
-          Puedes dejar tu pedido y entra a la cola. Abrimos {apertura.texto.toLowerCase()}, y sale en cuanto prendamos el horno.
+        <StatusNote tone="block" title="El horno está apagado" style={{ marginBottom: 14 }}>
+          Abrimos {apertura.texto.toLowerCase()}. Si quieres dejarlo apuntado desde ahorita, escríbenos por WhatsApp.
         </StatusNote>
       )}
       <Field label="Nombre" required placeholder="Tu nombre" value={nombre}
