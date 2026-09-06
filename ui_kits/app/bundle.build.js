@@ -38,9 +38,11 @@ function DeliveryForm({
   const telOk = digits.length === 10;
   const zona = colonia ? zonaEvaluar(colonia) : null;
   const zonaOk = !!zona && zona.estado === 'dentro';
-  /* Fuera del horario de operacion el checkout se cierra: un pedido que no se
-     puede cocinar es peor que ningun pedido. Se reevalua cada minuto para que
-     la pantalla no se quede abierta si dan las 11 mientras el cliente escribe. */
+  /* El horario ya NO cierra el checkout. Se sigue evaluando y se sigue avisando,
+     porque el cliente tiene derecho a saber que su pizza no sale ahorita; pero
+     bloquear el boton mandaba a la basura un pedido que si se puede surtir al
+     abrir. Se reevalua cada minuto para que el aviso desaparezca solo cuando den
+     las 4 y el cliente siga con la pantalla abierta. */
   const [ahora, setAhora] = React.useState(() => new Date());
   React.useEffect(() => {
     const id = setInterval(() => setAhora(new Date()), 60000);
@@ -50,7 +52,7 @@ function DeliveryForm({
     abierto: true,
     texto: ""
   };
-  const valid = !!nombre.trim() && telOk && !!calle.trim() && zonaOk && !!pago && apertura.abierto;
+  const valid = !!nombre.trim() && telOk && !!calle.trim() && zonaOk && !!pago;
   React.useEffect(() => {
     onValidChange && onValidChange(valid);
   }, [valid]);
@@ -69,12 +71,12 @@ function DeliveryForm({
   const gap = compact ? 12 : 14;
   const tone = zona ? zona.estado === 'dentro' ? 'ok' : zona.estado === 'limite' ? 'warn' : 'block' : 'ok';
   return /*#__PURE__*/React.createElement("div", null, !apertura.abierto && /*#__PURE__*/React.createElement(StatusNote, {
-    tone: "block",
-    title: "Cocina cerrada",
+    tone: "warn",
+    title: "La cocina est\xE1 cerrada ahorita",
     style: {
       marginBottom: 14
     }
-  }, "Tomamos pedidos ", apertura.texto, ". Dejanos tu pedido por WhatsApp y lo preparamos en cuanto abramos."), /*#__PURE__*/React.createElement(Field, {
+  }, "Puedes dejar tu pedido y entra a la cola. Abrimos ", apertura.texto.toLowerCase(), ", y sale en cuanto prendamos el horno."), /*#__PURE__*/React.createElement(Field, {
     label: "Nombre",
     required: true,
     placeholder: "Tu nombre",
