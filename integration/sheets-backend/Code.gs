@@ -46,11 +46,11 @@ const TS_POR_ESTADO = {
 };
 
 const ORDENES_HEADERS = ['folio', 'canal', 'estado', 'cliente_telefono', 'cliente_nombre', 'direccion', 'colonia', 'km', 'pago_metodo', 'pago_estado', 'subtotal', 'total', 't_recibida', 't_confirmada', 't_horno', 't_lista', 't_camino', 't_entregada', 'reparto', 'notas', 'motivo_cancelacion'];
-const ORDEN_ITEMS_HEADERS = ['linea_id', 'folio', 'producto_id', 'producto_nombre', 'cantidad', 'precio_unit', 'complementos_total', 'importe'];
+const ORDEN_ITEMS_HEADERS = ['linea_id', 'folio', 'producto_id', 'producto_nombre', 'cantidad', 'precio_unit', 'complementos_total', 'importe', 'promocion'];
 const ITEM_COMPLEMENTOS_HEADERS = ['linea_id', 'complemento_id', 'complemento_nombre', 'precio'];
 const PRODUCTOS_HEADERS = ['id', 'nombre', 'descripcion', 'categoria', 'precio', 'activo', 'foto'];
 const COMPLEMENTOS_HEADERS = ['id', 'nombre', 'grupo', 'precio', 'activo'];
-const CLIENTES_HEADERS = ['telefono', 'nombre', 'direccion', 'colonia', 'notas', 'pedidos'];
+const CLIENTES_HEADERS = ['telefono', 'nombre', 'direccion', 'colonia', 'notas', 'pedidos', 'dias_ciclo', 'ultimo_dia', 'brownie_usado', 'pizza_usada', 'ciclos'];
 const CATERING_HEADERS = ['folio', 'nombre', 'telefono', 'personas', 'fecha_evento', 'notas', 'estado', 'creado_en'];
 
 /** Corre esto UNA vez para crear las 6 pestañas con encabezados. No borra datos si ya existen. */
@@ -71,6 +71,25 @@ function configurarHojas() {
     if (sh.getLastRow() === 0) {
       sh.getRange(1, 1, 1, headers.length).setValues([headers]);
       sh.setFrozenRows(1);
+      return;
+    }
+    /* La hoja ya tiene datos. Las columnas nuevas (las de la tarjeta, por
+       ejemplo) se agregan SIEMPRE al final de la constante, nunca en medio, asi
+       que basta con escribir los encabezados que faltan a la derecha: las filas
+       existentes no se mueven y quedan con esas celdas vacias, que se leen
+       como cero. */
+    const actuales = sh.getRange(1, 1, 1, sh.getLastColumn()).getValues()[0];
+    for (let i = 0; i < actuales.length; i++) {
+      if (String(actuales[i]) !== headers[i]) {
+        throw new Error('La hoja ' + nombre + ' tiene la columna ' + (i + 1) +
+          ' como "' + actuales[i] + '" y el codigo espera "' + headers[i] +
+          '". Revisala a mano antes de seguir: mover columnas corrompe los datos.');
+      }
+    }
+    if (actuales.length < headers.length) {
+      const faltan = headers.slice(actuales.length);
+      sh.getRange(1, actuales.length + 1, 1, faltan.length).setValues([faltan]);
+      Logger.log(nombre + ': columnas agregadas -> ' + faltan.join(', '));
     }
   });
   const def = ss.getSheetByName('Sheet1') || ss.getSheetByName('Hoja 1');
@@ -242,6 +261,16 @@ function doGet(e) {
       requiereAdmin_(nivel);
       return jsonOut_({ ok: true, ordenes: listarHoy_() });
     }
+    /* La tarjeta la consultan la web y la app para pintar el progreso. Va con
+       token publico: es el propio cliente preguntando por su telefono, la misma
+       exposicion que estado_por_telefono, que ya existia. */
+    if (e.parameter.action === 'tarjeta') {
+      return jsonOut_({
+        ok: true,
+        tarjeta: premiosDe_(leerTarjeta_(e.parameter.telefono)),
+        dosPorUno: es2x1_(),
+      });
+    }
     if (e.parameter.action === 'estado_por_telefono') {
       return jsonOut_({ ok: true, orden: estadoPorTelefono_(e.parameter.telefono) });
     }
@@ -266,6 +295,79 @@ function jsonOut_(obj) {
  *         pago_metodo, notas, items:[{producto_id,nombre,cantidad,precio_unit,
  *         addons:[{id,nombre,precio}]}], estadoInicial }
  */
+// <catalogo:inicio>
+/* GENERADO por scripts/build-catalogo.js desde ui_kits/menu-data.js.
+   No editar a mano: el build lo reescribe y descarta los cambios.
+   Para cambiar un precio, cambialo en menu-data.js y vuelve a construir. */
+const CATALOGO = {
+  productos: {
+    'serranita': { nombre: 'Pizza Serranita', precio: 229, cat: 'Del horno' },
+    'aloha': { nombre: 'Pizza Aloha', precio: 189, cat: 'Del horno' },
+    'newyork': { nombre: 'Pizza Newyork', precio: 199, cat: 'Del horno' },
+    'provola': { nombre: 'Pizza Provola', precio: 229, cat: 'Del horno' },
+    'chisi': { nombre: 'Pizza Chisi', precio: 219, cat: 'Del horno' },
+    'combinada': { nombre: 'Pizza Combinada', precio: 229, cat: 'Del horno' },
+    'roni': { nombre: 'Pizza Roni', precio: 189, cat: 'Del horno' },
+    'traviesa': { nombre: 'Pizza Traviesa', precio: 199, cat: 'Del horno' },
+    'cochinita': { nombre: 'Pizza Cochinita', precio: 229, cat: 'Rotativa' },
+    'chocolatoso': { nombre: 'Brownie', precio: 40, cat: 'Para cerrar' },
+    'refresco-coca': { nombre: 'Refresco Coca-Cola', precio: 35, cat: 'Para cerrar' },
+    'refresco-sprite': { nombre: 'Refresco Sprite', precio: 35, cat: 'Para cerrar' },
+    'agua': { nombre: 'Agua Mineral', precio: 35, cat: 'Para cerrar' },
+  },
+  complementos: {
+    'provolone': { nombre: 'Extra provolone', precio: 55 },
+    'monterrey': { nombre: 'Extra queso monterrey', precio: 30 },
+    'gorgonzola': { nombre: 'Extra gorgonzola', precio: 30 },
+    'parmesano': { nombre: 'Extra parmesano', precio: 20 },
+    'peperoni': { nombre: 'Extra peperoni', precio: 45 },
+    'serrano': { nombre: 'Extra jamón serrano', precio: 45 },
+    'jamon': { nombre: 'Extra jamón', precio: 20 },
+    'pina': { nombre: 'Extra piña', precio: 20 },
+    'arugula': { nombre: 'Extra arúgula', precio: 15 },
+    'morada': { nombre: 'Extra cebolla morada encurtida', precio: 15 },
+    'champinones': { nombre: 'Extra champiñones', precio: 15 },
+    'miel': { nombre: 'Drizzle de miel', precio: 15 },
+    'habanero': { nombre: 'Toque de salsa habanero', precio: 15 },
+    'macha': { nombre: 'Toque de salsa macha', precio: 15 },
+    'aoev': { nombre: 'Terminado con aceite de oliva extra virgen', precio: 15 },
+  },
+};
+// <catalogo:fin>
+
+/* Tarjeta de recompensas y promocion del viernes.
+
+   Se cuentan DIAS DISTINTOS con pedido, no pedidos: dos ordenes el mismo dia
+   valen una. Sin eso, cuatro pedidos seguidos en una tarde regalan un brownie.
+
+   Al canjear la pizza el ciclo se reinicia restando 9, no poniendo cero: si
+   alguien llego al dia 12 sin canjear, no pierde los tres que le sobran.
+
+   Todo se decide AQUI, nunca en el navegador. El cliente puede pedir un premio;
+   el servidor comprueba si de verdad lo tiene. */
+const PREMIOS = {
+  brownie: { dia: 4, producto: 'chocolatoso' },
+  pizza:   { dia: 9, producto: 'traviesa' },
+};
+
+function hoyCDMX_(d) {
+  return Utilities.formatDate(d || new Date(), 'America/Mexico_City', 'yyyy-MM-dd');
+}
+
+/* Viernes despues de las 7. El dia se lee en hora de Mexico, no del servidor. */
+function es2x1_(d) {
+  const f = d || new Date();
+  const dia = Number(Utilities.formatDate(f, 'America/Mexico_City', 'u')) % 7; // 5 = viernes
+  const hora = Number(Utilities.formatDate(f, 'America/Mexico_City', 'H'));
+  return dia === 5 && hora >= 19;
+}
+
+function precioProducto_(id) {
+  const p = CATALOGO.productos[String(id)];
+  if (!p) throw new Error('Producto desconocido: ' + id);
+  return p;
+}
+
 /* El horario tambien se valida AQUI, no solo en el navegador.
 
    Una orden entro a la 1:27 de la manana con el candado del frontend ya puesto:
@@ -294,30 +396,203 @@ function crearOrden_(body) {
   if (!estaAbierto_()) {
     throw new Error('La cocina esta cerrada. Tomamos pedidos de miercoles a domingo, de 4:00 pm a 11:00 pm.');
   }
-  const folio = nextFolio_();
   const now = new Date();
-  const estado = body.estadoInicial === 'confirmada' ? 'confirmada' : 'recibida';
+  const telefono = body.cliente && body.cliente.telefono;
 
-  let subtotal = 0;
+  /* Los precios salen del CATALOGO, no del cuerpo de la peticion. Antes se
+     usaba it.precio_unit tal cual: con recompensas de por medio, confiar en el
+     cliente es invitar a que pida ocho pizzas en cero. */
+  const lineas = (body.items || []).map(function (it) {
+    const prod = precioProducto_(it.producto_id);
+    /* Con id, el precio sale del catalogo. Sin id, se acepta el que manda el
+       cliente: los carritos viejos (y los APK ya instalados) mandan los
+       complementos colapsados en un solo renglon con el nombre concatenado y
+       sin id, y rechazarlos tumbaria pedidos reales. No es un hueco: un
+       complemento solo SUMA, y el minimo es cero, asi que lo peor que puede
+       hacer alguien manipulando ese campo es pagar de mas. El producto, que es
+       donde esta el dinero, si se cotiza siempre contra el catalogo. */
+    const addons = (it.addons || []).map(function (a) {
+      const c = a.id ? CATALOGO.complementos[String(a.id)] : null;
+      if (a.id && !c) throw new Error('Complemento desconocido: ' + a.id);
+      return {
+        id: a.id ? String(a.id) : '',
+        nombre: c ? c.nombre : String(a.nombre || 'complemento'),
+        precio: c ? c.precio : Math.max(0, Number(a.precio) || 0)
+      };
+    });
+    return {
+      producto_id: String(it.producto_id),
+      nombre: prod.nombre,
+      cat: prod.cat,
+      cantidad: Math.max(1, Number(it.cantidad) || 1),
+      precio_unit: prod.precio,
+      complementos: addons,
+      complementosTotal: addons.reduce(function (t, a) { return t + a.precio; }, 0),
+      promocion: ''
+    };
+  });
+  if (!lineas.length) throw new Error('El pedido va vacio');
+
+  const premio = aplicarPromos_(lineas, telefono, body.usarPremio, now);
+
+  const folio = nextFolio_();
+  const estado = body.estadoInicial === 'confirmada' ? 'confirmada' : 'recibida';
   const itemsSh = sheet_(SHEETS.ordenItems);
   const addonsSh = sheet_(SHEETS.itemComplementos);
-  (body.items || []).forEach((it, i) => {
+  let subtotal = 0;
+
+  lineas.forEach(function (l, i) {
     const lineaId = folio + '-' + (i + 1);
-    const addons = it.addons || [];
-    const complementosTotal = addons.reduce((s, a) => s + Number(a.precio || 0), 0);
-    const importe = (Number(it.precio_unit) + complementosTotal) * Number(it.cantidad || 1);
+    // Una linea regalada conserva su precio_unit para saber cuanto se regalo,
+    // pero su importe es 0: la cocina la hace y el corte no la cobra.
+    const importe = l.promocion ? 0 : (l.precio_unit + l.complementosTotal) * l.cantidad;
     subtotal += importe;
-    itemsSh.appendRow([lineaId, folio, textoSeguro_(it.producto_id), textoSeguro_(it.nombre), it.cantidad || 1, it.precio_unit, complementosTotal, importe]);
-    addons.forEach(a => addonsSh.appendRow([lineaId, textoSeguro_(a.id), textoSeguro_(a.nombre), a.precio]));
+    itemsSh.appendRow([lineaId, folio, textoSeguro_(l.producto_id), textoSeguro_(l.nombre),
+      l.cantidad, l.precio_unit, l.complementosTotal, importe, textoSeguro_(l.promocion)]);
+    l.complementos.forEach(function (a) {
+      addonsSh.appendRow([lineaId, textoSeguro_(a.id), textoSeguro_(a.nombre), a.precio]);
+    });
   });
 
   const ordenesSh = sheet_(SHEETS.ordenes);
-  const row = { folio, canal: body.canal, estado, cliente_telefono: textoSeguro_(body.cliente && body.cliente.telefono), cliente_nombre: textoSeguro_(body.cliente && body.cliente.nombre), direccion: textoSeguro_(body.direccion), colonia: textoSeguro_(body.colonia), km: body.km || '', pago_metodo: textoSeguro_(body.pago_metodo), pago_estado: 'pendiente', subtotal, total: subtotal, t_recibida: now, t_confirmada: estado === 'confirmada' ? now : '', t_horno: '', t_lista: '', t_camino: '', t_entregada: '', reparto: '', notas: textoSeguro_(body.notas), motivo_cancelacion: '' };
-  ordenesSh.appendRow(ORDENES_HEADERS.map(h => row[h]));
+  const row = {
+    folio: folio, canal: body.canal, estado: estado,
+    cliente_telefono: textoSeguro_(telefono),
+    cliente_nombre: textoSeguro_(body.cliente && body.cliente.nombre),
+    direccion: textoSeguro_(body.direccion), colonia: textoSeguro_(body.colonia),
+    km: body.km, pago_metodo: textoSeguro_(body.pago_metodo), pago_estado: 'pendiente',
+    subtotal: subtotal, total: subtotal, reparto: 0,
+    notas: textoSeguro_(body.notas), motivo_cancelacion: '',
+    t_recibida: now, t_confirmada: '', t_horno: '', t_lista: '', t_camino: '', t_entregada: ''
+  };
+  ordenesSh.appendRow(ORDENES_HEADERS.map(function (h) { return row[h]; }));
 
   upsertCliente_(body.cliente, body.direccion, body.colonia);
+  const tarjeta = registrarDia_(telefono, premio, now);
 
-  return { folio };
+  return { folio: folio, premio: premio, tarjeta: tarjeta };
+}
+
+/* Lee la tarjeta de un telefono. Devuelve el estado ANTES del pedido en curso,
+   que es lo que decide si hay premio disponible. */
+function leerTarjeta_(telefono) {
+  const vacia = { dias: 0, ultimoDia: '', brownieUsado: false, pizzaUsada: false, ciclos: 0 };
+  if (!telefono) return vacia;
+  const sh = sheet_(SHEETS.clientes);
+  const data = sh.getDataRange().getValues();
+  const c = CLIENTES_HEADERS;
+  for (let r = 1; r < data.length; r++) {
+    if (String(data[r][0]) !== String(telefono)) continue;
+    return {
+      fila: r + 1,
+      dias: Number(data[r][c.indexOf('dias_ciclo')]) || 0,
+      ultimoDia: String(data[r][c.indexOf('ultimo_dia')] || ''),
+      brownieUsado: data[r][c.indexOf('brownie_usado')] === true || data[r][c.indexOf('brownie_usado')] === 'si',
+      pizzaUsada: data[r][c.indexOf('pizza_usada')] === true || data[r][c.indexOf('pizza_usada')] === 'si',
+      ciclos: Number(data[r][c.indexOf('ciclos')]) || 0
+    };
+  }
+  return vacia;
+}
+
+/* Que premios tiene disponibles hoy, segun los dias acumulados. */
+function premiosDe_(t) {
+  return {
+    dias: t.dias,
+    brownie: t.dias >= PREMIOS.brownie.dia && !t.brownieUsado,
+    pizza: t.dias >= PREMIOS.pizza.dia && !t.pizzaUsada,
+    faltanBrownie: Math.max(0, PREMIOS.brownie.dia - t.dias),
+    faltanPizza: Math.max(0, PREMIOS.pizza.dia - t.dias),
+    ciclos: t.ciclos
+  };
+}
+
+/* Decide que se regala. Las promociones NO se acumulan: se aplica la que mas le
+   conviene al cliente, y se dice cual fue. */
+function aplicarPromos_(lineas, telefono, usarPremio, ahora) {
+  const disp = premiosDe_(leerTarjeta_(telefono));
+  const opciones = [];
+
+  // 2x1 del viernes: gratis la mas barata del par, una por pedido. Postres y
+  // bebidas no cuentan: la promocion es de pizzas.
+  const pizzas = [];
+  lineas.forEach(function (l, idx) {
+    if (l.cat === 'Para cerrar') return;
+    for (let n = 0; n < l.cantidad; n++) pizzas.push({ idx: idx, precio: l.precio_unit });
+  });
+  if (es2x1_(ahora) && pizzas.length >= 2) {
+    const barata = pizzas.slice().sort(function (a, b) { return a.precio - b.precio; })[0];
+    opciones.push({ tipo: '2x1', idx: barata.idx, valor: barata.precio });
+  }
+
+  // Premios de la tarjeta: solo si el cliente los pidio Y de verdad los tiene.
+  if (usarPremio === 'pizza' && disp.pizza) {
+    const i = indiceDe_(lineas, PREMIOS.pizza.producto);
+    if (i >= 0) opciones.push({ tipo: 'tarjeta:pizza', idx: i, valor: lineas[i].precio_unit });
+  }
+  if (usarPremio === 'brownie' && disp.brownie) {
+    const i = indiceDe_(lineas, PREMIOS.brownie.producto);
+    if (i >= 0) opciones.push({ tipo: 'tarjeta:brownie', idx: i, valor: lineas[i].precio_unit });
+  }
+
+  if (!opciones.length) return null;
+  opciones.sort(function (a, b) { return b.valor - a.valor; });
+  const gana = opciones[0];
+
+  // Si la linea trae varias unidades se parte: una gratis, el resto se cobra.
+  const l = lineas[gana.idx];
+  if (l.cantidad > 1) {
+    l.cantidad -= 1;
+    lineas.push({
+      producto_id: l.producto_id, nombre: l.nombre, cat: l.cat, cantidad: 1,
+      precio_unit: l.precio_unit, complementos: [], complementosTotal: 0,
+      promocion: gana.tipo
+    });
+  } else {
+    l.promocion = gana.tipo;
+  }
+  return { tipo: gana.tipo, producto: l.nombre, valor: gana.valor };
+}
+
+function indiceDe_(lineas, productoId) {
+  for (let i = 0; i < lineas.length; i++) {
+    if (lineas[i].producto_id === productoId && !lineas[i].promocion) return i;
+  }
+  return -1;
+}
+
+/* Cuenta el dia y aplica el canje. Dias DISTINTOS: si ya hubo pedido hoy, no
+   suma. Al canjear la pizza el ciclo resta 9 en vez de irse a cero, para no
+   castigar a quien acumulo de mas antes de canjear. */
+function registrarDia_(telefono, premio, ahora) {
+  if (!telefono) return null;
+  const sh = sheet_(SHEETS.clientes);
+  const t = leerTarjeta_(telefono);
+  const hoy = hoyCDMX_(ahora);
+  const c = CLIENTES_HEADERS;
+
+  let dias = t.dias;
+  if (t.ultimoDia !== hoy) dias += 1;
+  let brownieUsado = t.brownieUsado;
+  let pizzaUsada = t.pizzaUsada;
+  let ciclos = t.ciclos;
+
+  if (premio && premio.tipo === 'tarjeta:brownie') brownieUsado = true;
+  if (premio && premio.tipo === 'tarjeta:pizza') {
+    dias = Math.max(0, dias - PREMIOS.pizza.dia);
+    brownieUsado = false;
+    pizzaUsada = false;
+    ciclos += 1;
+  }
+
+  if (t.fila) {
+    sh.getRange(t.fila, c.indexOf('dias_ciclo') + 1).setValue(dias);
+    sh.getRange(t.fila, c.indexOf('ultimo_dia') + 1).setValue(hoy);
+    sh.getRange(t.fila, c.indexOf('brownie_usado') + 1).setValue(brownieUsado);
+    sh.getRange(t.fila, c.indexOf('pizza_usada') + 1).setValue(pizzaUsada);
+    sh.getRange(t.fila, c.indexOf('ciclos') + 1).setValue(ciclos);
+  }
+  return premiosDe_({ dias: dias, brownieUsado: brownieUsado, pizzaUsada: pizzaUsada, ciclos: ciclos });
 }
 
 function upsertCliente_(cliente, direccion, colonia) {

@@ -70,14 +70,15 @@ if (!window.__mextizzaSheetsConfigLoaded) {
       nombre: l.name,
       cantidad: l.qty,
       precio_unit: l.price,
-      addons: (l.addonNames || []).map(n => ({ nombre: n, precio: 0 })) // el precio ya va sumado en l.addonTotal
+      addons: []
     }));
-    // Ajuste: si hay complementos, el total por línea ya incluye addonTotal — lo reflejamos
-    // como un solo renglón de complementos con el total congelado, en vez de desglosar cada uno
-    // (el desglose fino de nombre+precio por complemento no sobrevive al carrito actual).
+    /* Los complementos viajan por id y el servidor les pone precio. Si la linea
+       viene de un carrito viejo, sin addonIds, se manda el renglon colapsado de
+       siempre (nombre concatenado + total) y el servidor lo acepta tal cual. */
     items.forEach((it, i) => {
       const l = lines[i];
-      if (l.addonTotal) it.addons = [{ nombre: (l.addonNames || []).join(', '), precio: l.addonTotal }];
+      if (l.addonList && l.addonList.length) it.addons = l.addonList;
+      else if (l.addonTotal) it.addons = [{ nombre: (l.addonNames || []).join(', '), precio: l.addonTotal }];
     });
 
     return mextizzaApiPost('crear_orden', {

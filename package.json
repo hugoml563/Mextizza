@@ -1,18 +1,18 @@
 {
   "name": "mextizza-design",
   "version": "1.0.0",
-  "description": "**Mextizza** is a **dark-kitchen pizzer\u00eda** in Col. Lomas Lindas, Atizap\u00e1n de Zaragoza, Estado de M\u00e9xico (CP 52947). Founders: Hugo Mart\u00ednez (logistics & commercial strategy) and Ricardo Rodr\u00edguez (executive chef & product). Official launch: **1 September 2026**.",
+  "description": "**Mextizza** is a **dark-kitchen pizzería** in Col. Lomas Lindas, Atizapán de Zaragoza, Estado de México (CP 52947). Founders: Hugo Martínez (logistics & commercial strategy) and Ricardo Rodríguez (executive chef & product). Official launch: **1 September 2026**.",
   "main": "_ds_bundle.js",
   "directories": {
     "doc": "docs"
   },
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
+    "test": "node scripts/probar-premios.js",
     "build:mobile": "npm run build:js && node scripts/build-mobile.js",
     "cap:sync": "npm run build:mobile && npx cap sync android",
     "build:apk": "node scripts/build-apk.js",
     "cap:open": "npx cap open android",
-    "build:js": "node scripts/build-fonts.js && node scripts/build-js.js && node scripts/build-prerender.js && node scripts/build-raiz.js && node scripts/build-paginas.js && node scripts/build-seo.js && node scripts/build-portable.js && node scripts/build-sales-center.js",
+    "build:js": "node scripts/build-catalogo.js && node scripts/probar-premios.js && node scripts/build-fonts.js && node scripts/build-js.js && node scripts/build-prerender.js && node scripts/build-raiz.js && node scripts/build-paginas.js && node scripts/build-seo.js && node scripts/build-portable.js && node scripts/build-sales-center.js",
     "indexnow": "node scripts/indexnow.js"
   },
   "repository": {

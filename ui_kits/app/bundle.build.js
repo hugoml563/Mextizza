@@ -1016,7 +1016,15 @@ function AppAddons({
     block: true,
     onClick: () => onAdd(item, 1, {
       addonTotal,
-      addonNames: chosen.map(c => c.name + (picks[c.id] > 1 ? ' x' + picks[c.id] : ''))
+      addonNames: chosen.map(c => c.name + (picks[c.id] > 1 ? ' x' + picks[c.id] : '')),
+      /* Un renglon por unidad, con id y precio. El servidor nuevo cotiza por
+         id; el viejo usa el precio. Mandar los dos evita que el cobro
+         dependa de cual de las dos capas se despliegue primero. */
+      addonList: chosen.reduce((xs, c) => xs.concat(Array(picks[c.id]).fill({
+        id: c.id,
+        nombre: c.name,
+        precio: c.price
+      })), [])
     })
   }, "Agregar al pedido")));
 }
