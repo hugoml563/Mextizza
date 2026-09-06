@@ -204,9 +204,12 @@ comparar('pizza disponible al dia 9', [tarjeta().dias, tarjeta().pizza], [9, tru
 d = DIA(cursor++);
 while (!ctx.estaAbierto_(d)) d = DIA(cursor++);
 const diasAntes = tarjeta().dias;
-const r7 = pedir([{ producto_id: PIZZA, cantidad: 1 }], { cuando: d, usarPremio: 'pizza' });
+/* Va con otra pizza cobrada: desde que el canje exige que quede algo que
+   cobrar, un pedido de pura Traviesa gratis se rechaza (se prueba abajo). */
+const r7 = pedir([{ producto_id: PIZZA, cantidad: 1 }, { producto_id: CARA, cantidad: 1 }],
+  { cuando: d, usarPremio: 'pizza' });
 comparar('canjea la pizza', r7.premio && r7.premio.tipo, 'tarjeta:pizza');
-comparar('el pedido queda en cero', totalDe(r7.folio), 0);
+comparar('solo se cobra la que no era premio', totalDe(r7.folio), CATALOGO.productos[CARA].precio);
 comparar('resta 9, no reinicia a cero', r7.tarjeta.dias, diasAntes + 1 - 9);
 comparar('el brownie se reinicia', r7.tarjeta.brownie, false);
 comparar('cuenta un ciclo', r7.tarjeta.ciclos, 1);
@@ -282,6 +285,91 @@ let cerrado = false;
 try { pedir([{ producto_id: CARA, cantidad: 1 }], { cuando: new Date(Date.UTC(2026, 8, 12, 7)) }); }
 catch (e) { cerrado = /cerrada/.test(String(e)); }
 comparar('a la 1:00 am no se puede pedir', cerrado, true);
+
+console.log('\nEL SELLO EXIGE UNA PIZZA COBRADA');
+/* Sin esta regla, nueve pedidos de agua de $35 valen una Traviesa de $199 mas
+   un brownie. Cada telefono nuevo arranca limpio, para no arrastrar los dias
+   acumulados en las pruebas de arriba. */
+const diaAbierto = () => { let d = DIA(cursor++); while (!ctx.estaAbierto_(d)) d = DIA(cursor++); return d; };
+const TEL_AGUA = '5599999999';
+const AGUA = 'agua';
+const REFRESCO = 'refresco-coca';
+
+const rAgua = pedir([{ producto_id: AGUA, cantidad: 1 }], { cuando: diaAbierto(), tel: TEL_AGUA });
+comparar('un pedido de pura agua NO sella', rAgua.tarjeta.dias, 0);
+
+const diaMixto = diaAbierto();
+pedir([{ producto_id: AGUA, cantidad: 3 }, { producto_id: REFRESCO, cantidad: 2 },
+       { producto_id: BROWNIE, cantidad: 1 }], { cuando: diaMixto, tel: TEL_AGUA });
+comparar('agua, refrescos y postres tampoco, por muchos que sean',
+  ctx.premiosDe_(ctx.leerTarjeta_(TEL_AGUA)).dias, 0);
+
+// El mismo dia, ya con pizza, si cuenta: el pedido de agua no quemo el dia.
+const rPizzaMismoDia = pedir([{ producto_id: CARA, cantidad: 1 }, { producto_id: AGUA, cantidad: 1 }],
+  { cuando: diaMixto, tel: TEL_AGUA });
+comparar('la pizza del mismo dia si sella', rPizzaMismoDia.tarjeta.dias, 1);
+
+console.log('\nEL CANJE EXIGE QUE QUEDE UNA PIZZA COBRADA');
+const TEL_C = '5588888888';
+let guardaC = 0;
+while (ctx.premiosDe_(ctx.leerTarjeta_(TEL_C)).dias < PREMIOS.pizza.dia) {
+  if (++guardaC > 40) throw new Error('no llegue al dia 9 con TEL_C');
+  pedir([{ producto_id: CARA, cantidad: 1 }], { cuando: diaAbierto(), tel: TEL_C });
+}
+comparar('listo en el dia 9', ctx.premiosDe_(ctx.leerTarjeta_(TEL_C)).pizza, true);
+
+const rSola = pedir([{ producto_id: PIZZA, cantidad: 1 }],
+  { cuando: diaAbierto(), tel: TEL_C, usarPremio: 'pizza' });
+comparar('la Traviesa gratis SOLA no se canjea', rSola.premio, null);
+comparar('y por lo tanto se cobra', totalDe(rSola.folio), CATALOGO.productos[PIZZA].precio);
+comparar('el premio sigue guardado', ctx.premiosDe_(ctx.leerTarjeta_(TEL_C)).pizza, true);
+
+const rConAgua = pedir([{ producto_id: PIZZA, cantidad: 1 }, { producto_id: AGUA, cantidad: 1 }],
+  { cuando: diaAbierto(), tel: TEL_C, usarPremio: 'pizza' });
+comparar('la Traviesa gratis mas un agua tampoco', rConAgua.premio, null);
+
+const rDosUnidades = pedir([{ producto_id: PIZZA, cantidad: 2 }],
+  { cuando: diaAbierto(), tel: TEL_C, usarPremio: 'pizza' });
+comparar('dos Traviesas si: una se regala y la otra se cobra',
+  rDosUnidades.premio && rDosUnidades.premio.tipo, 'tarjeta:pizza');
+comparar('y se cobra una sola', totalDe(rDosUnidades.folio), CATALOGO.productos[PIZZA].precio);
+
+console.log('\nUN BROWNIE SIN RECLAMAR NO SE PIERDE');
+const TEL_B = '5577777777';
+let guardaB = 0;
+while (ctx.premiosDe_(ctx.leerTarjeta_(TEL_B)).dias < PREMIOS.pizza.dia) {
+  if (++guardaB > 40) throw new Error('no llegue al dia 9 con TEL_B');
+  pedir([{ producto_id: CARA, cantidad: 1 }], { cuando: diaAbierto(), tel: TEL_B });
+}
+const antesB = ctx.premiosDe_(ctx.leerTarjeta_(TEL_B));
+comparar('llega al 9 con el brownie todavia sin usar', [antesB.brownie, antesB.pizza], [true, true]);
+
+// Canjea la pizza SIN haber usado nunca el brownie: la tarjeta se cierra.
+const rCierra = pedir([{ producto_id: PIZZA, cantidad: 1 }, { producto_id: CARA, cantidad: 1 }],
+  { cuando: diaAbierto(), tel: TEL_B, usarPremio: 'pizza' });
+comparar('canjeo la pizza', rCierra.premio && rCierra.premio.tipo, 'tarjeta:pizza');
+comparar('el brownie SIGUE disponible en la tarjeta nueva', rCierra.tarjeta.brownie, true);
+comparar('aunque la tarjeta nueva apenas empiece',
+  rCierra.tarjeta.dias < PREMIOS.brownie.dia, true);
+
+const rGasta = pedir([{ producto_id: CARA, cantidad: 1 }, { producto_id: BROWNIE, cantidad: 1 }],
+  { cuando: diaAbierto(), tel: TEL_B, usarPremio: 'brownie' });
+comparar('el brownie heredado se canjea', rGasta.premio && rGasta.premio.tipo, 'tarjeta:brownie');
+comparar('y ya no vuelve a aparecer', rGasta.tarjeta.brownie, false);
+
+console.log('\nUN PREMIO SIN RECLAMAR SE CONSERVA');
+const TEL_G = '5566666666';
+let guardaG = 0;
+while (ctx.premiosDe_(ctx.leerTarjeta_(TEL_G)).dias < PREMIOS.brownie.dia) {
+  if (++guardaG > 20) throw new Error('no llegue al dia 4 con TEL_G');
+  pedir([{ producto_id: CARA, cantidad: 1 }], { cuando: diaAbierto(), tel: TEL_G });
+}
+comparar('brownie disponible al dia 4', ctx.premiosDe_(ctx.leerTarjeta_(TEL_G)).brownie, true);
+// Tres pedidos mas sin canjear nada.
+for (let k = 0; k < 3; k++) pedir([{ producto_id: CARA, cantidad: 1 }], { cuando: diaAbierto(), tel: TEL_G });
+const gTras = ctx.premiosDe_(ctx.leerTarjeta_(TEL_G));
+comparar('sigue ahi varios pedidos despues', gTras.brownie, true);
+comparar('y los dias siguieron sumando', gTras.dias, PREMIOS.brownie.dia + 3);
 
 console.log('\n  ' + ok + ' pruebas ok, ' + mal + ' mal\n');
 process.exit(mal ? 1 : 0);

@@ -50,7 +50,7 @@ const ORDEN_ITEMS_HEADERS = ['linea_id', 'folio', 'producto_id', 'producto_nombr
 const ITEM_COMPLEMENTOS_HEADERS = ['linea_id', 'complemento_id', 'complemento_nombre', 'precio'];
 const PRODUCTOS_HEADERS = ['id', 'nombre', 'descripcion', 'categoria', 'precio', 'activo', 'foto'];
 const COMPLEMENTOS_HEADERS = ['id', 'nombre', 'grupo', 'precio', 'activo'];
-const CLIENTES_HEADERS = ['telefono', 'nombre', 'direccion', 'colonia', 'notas', 'pedidos', 'dias_ciclo', 'ultimo_dia', 'brownie_usado', 'pizza_usada', 'ciclos'];
+const CLIENTES_HEADERS = ['telefono', 'nombre', 'direccion', 'colonia', 'notas', 'pedidos', 'dias_ciclo', 'ultimo_dia', 'brownie_usado', 'pizza_usada', 'ciclos', 'brownie_guardado'];
 const CATERING_HEADERS = ['folio', 'nombre', 'telefono', 'personas', 'fecha_evento', 'notas', 'estado', 'creado_en'];
 
 /** Corre esto UNA vez para crear las 6 pestañas con encabezados. No borra datos si ya existen. */
@@ -362,6 +362,23 @@ function es2x1_(d) {
   return dia === 5 && hora >= 19;
 }
 
+/* Una pizza es cualquier cosa que salga del horno: 'Del horno' y la 'Rotativa'
+   del mes. 'Para cerrar' son el brownie, los refrescos y el agua.
+
+   Esta distincion sostiene toda la mecanica de premios: el sello se gana con
+   una pizza COBRADA. Sin eso, nueve pedidos de agua de $35 valen una pizza
+   gratis y el programa de lealtad se vuelve una forma de perder dinero. */
+function esPizza_(linea) {
+  return linea.cat !== 'Para cerrar';
+}
+
+/* El pedido trae al menos una pizza que si se esta cobrando. Vale para ganar el
+   sello y para poder canjear: un pedido de puro premio sale en cero y el
+   reparto lo terminamos pagando nosotros. */
+function tienePizzaPagada_(lineas) {
+  return lineas.some(function (l) { return esPizza_(l) && !l.promocion; });
+}
+
 function precioProducto_(id) {
   const p = CATALOGO.productos[String(id)];
   if (!p) throw new Error('Producto desconocido: ' + id);
@@ -468,7 +485,8 @@ function crearOrden_(body) {
   ordenesSh.appendRow(ORDENES_HEADERS.map(function (h) { return row[h]; }));
 
   upsertCliente_(body.cliente, body.direccion, body.colonia);
-  const tarjeta = registrarDia_(telefono, premio, now);
+  // El sello se gana con una pizza cobrada, no con cualquier pedido.
+  const tarjeta = registrarDia_(telefono, premio, now, tienePizzaPagada_(lineas));
 
   return { folio: folio, premio: premio, tarjeta: tarjeta };
 }
@@ -476,7 +494,7 @@ function crearOrden_(body) {
 /* Lee la tarjeta de un telefono. Devuelve el estado ANTES del pedido en curso,
    que es lo que decide si hay premio disponible. */
 function leerTarjeta_(telefono) {
-  const vacia = { dias: 0, ultimoDia: '', brownieUsado: false, pizzaUsada: false, ciclos: 0 };
+  const vacia = { dias: 0, ultimoDia: '', brownieUsado: false, pizzaUsada: false, ciclos: 0, brownieGuardado: false };
   if (!telefono) return vacia;
   const sh = sheet_(SHEETS.clientes);
   const data = sh.getDataRange().getValues();
@@ -489,7 +507,8 @@ function leerTarjeta_(telefono) {
       ultimoDia: String(data[r][c.indexOf('ultimo_dia')] || ''),
       brownieUsado: data[r][c.indexOf('brownie_usado')] === true || data[r][c.indexOf('brownie_usado')] === 'si',
       pizzaUsada: data[r][c.indexOf('pizza_usada')] === true || data[r][c.indexOf('pizza_usada')] === 'si',
-      ciclos: Number(data[r][c.indexOf('ciclos')]) || 0
+      ciclos: Number(data[r][c.indexOf('ciclos')]) || 0,
+      brownieGuardado: data[r][c.indexOf('brownie_guardado')] === true || data[r][c.indexOf('brownie_guardado')] === 'si'
     };
   }
   return vacia;
@@ -499,7 +518,9 @@ function leerTarjeta_(telefono) {
 function premiosDe_(t) {
   return {
     dias: t.dias,
-    brownie: t.dias >= PREMIOS.brownie.dia && !t.brownieUsado,
+    // Un brownie guardado viene de una tarjeta anterior que se cerro sin
+    // reclamarlo. Vale aunque la tarjeta nueva apenas vaya empezando.
+    brownie: t.brownieGuardado || (t.dias >= PREMIOS.brownie.dia && !t.brownieUsado),
     pizza: t.dias >= PREMIOS.pizza.dia && !t.pizzaUsada,
     faltanBrownie: Math.max(0, PREMIOS.brownie.dia - t.dias),
     faltanPizza: Math.max(0, PREMIOS.pizza.dia - t.dias),
@@ -517,7 +538,7 @@ function aplicarPromos_(lineas, telefono, usarPremio, ahora) {
   // bebidas no cuentan: la promocion es de pizzas.
   const pizzas = [];
   lineas.forEach(function (l, idx) {
-    if (l.cat === 'Para cerrar') return;
+    if (!esPizza_(l)) return;
     for (let n = 0; n < l.cantidad; n++) pizzas.push({ idx: idx, precio: l.precio_unit });
   });
   if (es2x1_(ahora) && pizzas.length >= 2) {
@@ -525,14 +546,26 @@ function aplicarPromos_(lineas, telefono, usarPremio, ahora) {
     opciones.push({ tipo: '2x1', idx: barata.idx, valor: barata.precio });
   }
 
-  // Premios de la tarjeta: solo si el cliente los pidio Y de verdad los tiene.
+  /* Premios de la tarjeta: el cliente los pidio, de verdad los tiene, y DESPUES
+     de regalar la linea sigue quedando una pizza cobrada.
+
+     Lo ultimo no es lo mismo que 'hay una pizza en el pedido': un pedido de pura
+     Traviesa gratis tiene una pizza y sale en cero, con el reparto pagado por
+     nosotros. Por eso se mira si queda OTRA pizza cobrada, o si a la misma linea
+     le sobran unidades. */
+  const quedaPizzaPagada = function (idx) {
+    return lineas.some(function (l, j) {
+      if (!esPizza_(l) || l.promocion) return false;
+      return j !== idx || l.cantidad > 1;
+    });
+  };
   if (usarPremio === 'pizza' && disp.pizza) {
     const i = indiceDe_(lineas, PREMIOS.pizza.producto);
-    if (i >= 0) opciones.push({ tipo: 'tarjeta:pizza', idx: i, valor: lineas[i].precio_unit });
+    if (i >= 0 && quedaPizzaPagada(i)) opciones.push({ tipo: 'tarjeta:pizza', idx: i, valor: lineas[i].precio_unit });
   }
   if (usarPremio === 'brownie' && disp.brownie) {
     const i = indiceDe_(lineas, PREMIOS.brownie.producto);
-    if (i >= 0) opciones.push({ tipo: 'tarjeta:brownie', idx: i, valor: lineas[i].precio_unit });
+    if (i >= 0 && quedaPizzaPagada(i)) opciones.push({ tipo: 'tarjeta:brownie', idx: i, valor: lineas[i].precio_unit });
   }
 
   if (!opciones.length) return null;
@@ -564,7 +597,7 @@ function indiceDe_(lineas, productoId) {
 /* Cuenta el dia y aplica el canje. Dias DISTINTOS: si ya hubo pedido hoy, no
    suma. Al canjear la pizza el ciclo resta 9 en vez de irse a cero, para no
    castigar a quien acumulo de mas antes de canjear. */
-function registrarDia_(telefono, premio, ahora) {
+function registrarDia_(telefono, premio, ahora, ganaSello) {
   if (!telefono) return null;
   const sh = sheet_(SHEETS.clientes);
   const t = leerTarjeta_(telefono);
@@ -572,13 +605,27 @@ function registrarDia_(telefono, premio, ahora) {
   const c = CLIENTES_HEADERS;
 
   let dias = t.dias;
-  if (t.ultimoDia !== hoy) dias += 1;
   let brownieUsado = t.brownieUsado;
   let pizzaUsada = t.pizzaUsada;
   let ciclos = t.ciclos;
+  let brownieGuardado = t.brownieGuardado;
 
-  if (premio && premio.tipo === 'tarjeta:brownie') brownieUsado = true;
+  /* El sello se gana con una pizza cobrada, y uno por dia. ultimoDia solo se
+     mueve cuando de verdad se gano: si no, un pedido de agua en la manana
+     marcaria el dia y la pizza de la noche ya no contaria. */
+  const nuevoDia = ganaSello && t.ultimoDia !== hoy;
+  if (nuevoDia) dias += 1;
+
+  if (premio && premio.tipo === 'tarjeta:brownie') {
+    // Se gasta primero el brownie heredado, y si no hay, el de esta tarjeta.
+    if (brownieGuardado) brownieGuardado = false;
+    else brownieUsado = true;
+  }
   if (premio && premio.tipo === 'tarjeta:pizza') {
+    /* La tarjeta se cierra. Un brownie que quedo sin reclamar NO se pierde:
+       pasa a la siguiente. Ya se promete que los dias extra se conservan, y
+       seria incoherente que el premio si se evaporara. */
+    if (!brownieUsado) brownieGuardado = true;
     dias = Math.max(0, dias - PREMIOS.pizza.dia);
     brownieUsado = false;
     pizzaUsada = false;
@@ -587,12 +634,13 @@ function registrarDia_(telefono, premio, ahora) {
 
   if (t.fila) {
     sh.getRange(t.fila, c.indexOf('dias_ciclo') + 1).setValue(dias);
-    sh.getRange(t.fila, c.indexOf('ultimo_dia') + 1).setValue(hoy);
+    if (nuevoDia) sh.getRange(t.fila, c.indexOf('ultimo_dia') + 1).setValue(hoy);
     sh.getRange(t.fila, c.indexOf('brownie_usado') + 1).setValue(brownieUsado);
     sh.getRange(t.fila, c.indexOf('pizza_usada') + 1).setValue(pizzaUsada);
     sh.getRange(t.fila, c.indexOf('ciclos') + 1).setValue(ciclos);
+    sh.getRange(t.fila, c.indexOf('brownie_guardado') + 1).setValue(brownieGuardado);
   }
-  return premiosDe_({ dias: dias, brownieUsado: brownieUsado, pizzaUsada: pizzaUsada, ciclos: ciclos });
+  return premiosDe_({ dias: dias, brownieUsado: brownieUsado, pizzaUsada: pizzaUsada, ciclos: ciclos, brownieGuardado: brownieGuardado });
 }
 
 function upsertCliente_(cliente, direccion, colonia) {

@@ -437,6 +437,7 @@ function CanjeTarjeta({
   lines,
   valor,
   onChange,
+  onAgregar,
   style
 }) {
   if (!tarjeta) return null;
@@ -455,7 +456,19 @@ function CanjeTarjeta({
     id: PREMIO_PRODUCTOS.brownie
   });
   if (!disponibles.length) return null;
-  const listos = disponibles.filter(p => enCarrito(p.id));
+
+  /* Espejo de quedaPizzaPagada en Code.gs. Regalar la linea no puede dejar el
+     pedido sin nada que cobrar: una Traviesa gratis sola sale en cero y el
+     reparto lo pagamos nosotros. Si el servidor lo va a rechazar, aqui no se
+     ofrece: prometer un premio y luego cobrarlo completo es peor que no
+     ofrecerlo. */
+  const esPizza = id => typeof mextizzaEsPizza === 'function' && mextizzaEsPizza(id);
+  const quedaPizzaPagada = idPremio => (lines || []).some(l => {
+    if (!esPizza(l.id)) return false;
+    return l.id !== idPremio || l.qty > 1;
+  });
+  const listos = disponibles.filter(p => enCarrito(p.id) && quedaPizzaPagada(p.id));
+  const bloqueados = disponibles.filter(p => enCarrito(p.id) && !quedaPizzaPagada(p.id));
   const faltantes = disponibles.filter(p => !enCarrito(p.id));
   return /*#__PURE__*/React.createElement("div", {
     style: {
@@ -507,7 +520,7 @@ function CanjeTarjeta({
         background: activo ? 'var(--rosa-mexicano)' : 'transparent'
       }
     }), "Usar mi ", p.nombre, " gratis");
-  }), faltantes.map(p => /*#__PURE__*/React.createElement("p", {
+  }), bloqueados.map(p => /*#__PURE__*/React.createElement("p", {
     key: p.clave,
     style: {
       fontFamily: 'var(--font-body)',
@@ -516,7 +529,122 @@ function CanjeTarjeta({
       color: 'var(--text-body)',
       margin: '2px 0 0'
     }
-  }, "Tienes ", p.articulo, " gratis. Agr\xE9galo a tu pedido para canjearlo.")));
+  }, "Para canjear ", p.articulo, " gratis, agrega otra pizza a tu pedido.")), faltantes.map(p => {
+    const prod = typeof mextizzaProducto === 'function' ? mextizzaProducto(p.id) : null;
+    if (!prod || !onAgregar) {
+      return /*#__PURE__*/React.createElement("p", {
+        key: p.clave,
+        style: {
+          fontFamily: 'var(--font-body)',
+          fontSize: 12.5,
+          lineHeight: 1.45,
+          color: 'var(--text-body)',
+          margin: '2px 0 0'
+        }
+      }, "Tienes ", p.articulo, " gratis. Agr\xE9galo a tu pedido para canjearlo.");
+    }
+    return /*#__PURE__*/React.createElement("button", {
+      key: p.clave,
+      type: "button",
+      onClick: () => {
+        onAgregar(prod);
+        onChange(p.clave);
+      },
+      style: {
+        display: 'block',
+        width: '100%',
+        textAlign: 'left',
+        cursor: 'pointer',
+        marginBottom: 6,
+        padding: '10px 12px',
+        borderRadius: 'var(--radius-sm)',
+        border: '2px dashed var(--rosa-mexicano)',
+        background: 'transparent',
+        fontFamily: 'var(--font-body)',
+        fontSize: 13.5,
+        color: 'var(--text-body)'
+      }
+    }, /*#__PURE__*/React.createElement("span", {
+      style: {
+        display: 'inline-block',
+        width: 14,
+        height: 14,
+        marginRight: 9,
+        borderRadius: 3,
+        verticalAlign: -2,
+        lineHeight: '10px',
+        textAlign: 'center',
+        border: '2px solid var(--rosa-mexicano)',
+        color: 'var(--rosa-mexicano)',
+        fontSize: 13,
+        fontWeight: 700
+      }
+    }, "+"), "Agregar ", p.articulo, " gratis");
+  }));
+}
+
+/* Cuanto va a descontar el servidor por este pedido, para poder MOSTRARLO.
+
+   Sin esto, agregar la Traviesa gratis subia el total de $229 a $428: el
+   servidor cobraba bien, pero el cliente veia el precio subir justo al reclamar
+   su premio, que es la peor forma posible de dar algo gratis.
+
+   Es un espejo de aplicarPromos_ en Code.gs, no una segunda fuente de verdad:
+   quien decide el cobro sigue siendo el servidor. Si las dos llegaran a
+   discrepar, el pedido se cobra por lo que diga el servidor. Por eso aqui se es
+   conservador — ante la duda, no se descuenta — y asi el error posible es
+   cobrar de menos, nunca prometer un descuento que no llega.
+
+   Devuelve { descuento, motivo } o null. */
+/* Como se le llama a cada promocion en el ticket. */
+const NOMBRE_PROMO = {
+  '2x1': '2x1 de viernes',
+  'tarjeta:pizza': 'Traviesa de tu tarjeta',
+  'tarjeta:brownie': 'Brownie de tu tarjeta'
+};
+function mextizzaDescuentoPrevisto(lines, tarjeta, usarPremio, hayDosPorUno) {
+  const esPizza = id => typeof mextizzaEsPizza === 'function' && mextizzaEsPizza(id);
+  const opciones = [];
+
+  // Cada unidad por separado: dos pizzas iguales en una linea son dos unidades.
+  const unidades = [];
+  (lines || []).forEach(l => {
+    if (!esPizza(l.id)) return;
+    for (let n = 0; n < l.qty; n++) unidades.push({
+      id: l.id,
+      precio: l.price
+    });
+  });
+
+  // 2x1: se regala la mas barata del par, una por pedido.
+  if (hayDosPorUno && unidades.length >= 2) {
+    const barata = unidades.slice().sort((a, b) => a.precio - b.precio)[0];
+    opciones.push({
+      tipo: '2x1',
+      valor: barata.precio
+    });
+  }
+
+  // Premio de la tarjeta: pedido, disponible, y que quede algo que cobrar.
+  if (tarjeta && usarPremio) {
+    const id = PREMIO_PRODUCTOS[usarPremio];
+    const disponible = usarPremio === 'pizza' ? tarjeta.pizza : tarjeta.brownie;
+    const linea = (lines || []).filter(l => l.id === id)[0];
+    const quedaPagada = (lines || []).some(l => esPizza(l.id) && (l.id !== id || l.qty > 1));
+    if (disponible && linea && quedaPagada) {
+      opciones.push({
+        tipo: 'tarjeta:' + usarPremio,
+        valor: linea.price
+      });
+    }
+  }
+  if (!opciones.length) return null;
+  // No se acumulan: gana la que mas le conviene al cliente.
+  opciones.sort((a, b) => b.valor - a.valor);
+  return {
+    descuento: opciones[0].valor,
+    motivo: opciones[0].tipo
+  };
 }
 
 /* Lo que se regalo en ESTE pedido. El servidor manda { tipo, producto, valor };
@@ -606,6 +734,8 @@ Object.assign(window, {
   Aviso2x1,
   CanjeTarjeta,
   PREMIO_PRODUCTOS,
+  mextizzaDescuentoPrevisto,
+  NOMBRE_PROMO,
   DIAS_TARJETA,
   CASILLA_BROWNIE,
   CASILLA_PIZZA
@@ -1473,9 +1603,9 @@ function AppCart({
   tab,
   onTab,
   count,
-  inicialCliente
+  inicialCliente,
+  onAgregarPremio
 }) {
-  const subtotal = lines.reduce((s, l) => s + (l.price + (l.addonTotal || 0)) * l.qty, 0);
   const [ready, setReady] = React.useState(false);
   const [attempted, setAttempted] = React.useState(false);
   // Un contador, no un booleano: al segundo intento fallido el valor no
@@ -1513,6 +1643,11 @@ function AppCart({
       vivo = false;
     };
   }, [tel10]);
+  const bruto = lines.reduce((s, l) => s + (l.price + (l.addonTotal || 0)) * l.qty, 0);
+  /* Lo que el servidor va a descontar. Se muestra porque agregar algo gratis
+     subiendo el total es la peor forma de dar un premio. */
+  const promo = typeof mextizzaDescuentoPrevisto === 'function' ? mextizzaDescuentoPrevisto(lines, tarjetaPrevia, usarPremio, typeof mextizzaEs2x1 === 'function' && mextizzaEs2x1()) : null;
+  const subtotal = Math.max(0, bruto - (promo ? promo.descuento : 0));
   const [enviando, setEnviando] = React.useState(false);
   const [error, setError] = React.useState(null);
 
@@ -1633,6 +1768,7 @@ function AppCart({
     lines: lines,
     valor: usarPremio,
     onChange: setUsarPremio,
+    onAgregar: onAgregarPremio,
     style: {
       marginTop: 12
     }
@@ -1667,7 +1803,7 @@ function AppCart({
       fontSize: 12.5,
       color: 'var(--text-muted)'
     }
-  }, "Env\xEDo incluido en el precio"), /*#__PURE__*/React.createElement("span", {
+  }, promo ? (NOMBRE_PROMO[promo.motivo] || 'Promoción') + ' · −$' + promo.descuento : 'Envío incluido en el precio'), /*#__PURE__*/React.createElement("span", {
     style: {
       fontFamily: 'var(--font-body)',
       fontWeight: 800,
@@ -2390,6 +2526,7 @@ function AppMobile() {
       onTab: goTab,
       count: count,
       inicialCliente: cliente,
+      onAgregarPremio: it => add(it),
       onConfirm: (nuevoFolio, entrega, extra) => {
         // Como quedo la tarjeta y que se regalo: se pinta en seguimiento.
         setPremio(extra && extra.premio || null);

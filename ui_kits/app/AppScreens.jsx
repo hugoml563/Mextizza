@@ -313,8 +313,7 @@ function AppAddons({ item, onBack, onAdd }) {
 }
 
 /* ---------- Screen 5: cart / checkout ---------- */
-function AppCart({ lines, onQty, onConfirm, tab, onTab, count, inicialCliente }) {
-  const subtotal = lines.reduce((s, l) => s + (l.price + (l.addonTotal || 0)) * l.qty, 0);
+function AppCart({ lines, onQty, onConfirm, tab, onTab, count, inicialCliente, onAgregarPremio }) {
   const [ready, setReady] = React.useState(false);
   const [attempted, setAttempted] = React.useState(false);
   // Un contador, no un booleano: al segundo intento fallido el valor no
@@ -347,6 +346,15 @@ function AppCart({ lines, onQty, onConfirm, tab, onTab, count, inicialCliente })
       .catch(() => { if (vivo) setTarjetaPrevia(null); });
     return () => { vivo = false; };
   }, [tel10]);
+
+  const bruto = lines.reduce((s, l) => s + (l.price + (l.addonTotal || 0)) * l.qty, 0);
+  /* Lo que el servidor va a descontar. Se muestra porque agregar algo gratis
+     subiendo el total es la peor forma de dar un premio. */
+  const promo = typeof mextizzaDescuentoPrevisto === 'function'
+    ? mextizzaDescuentoPrevisto(lines, tarjetaPrevia, usarPremio,
+        typeof mextizzaEs2x1 === 'function' && mextizzaEs2x1())
+    : null;
+  const subtotal = Math.max(0, bruto - (promo ? promo.descuento : 0));
   const [enviando, setEnviando] = React.useState(false);
   const [error, setError] = React.useState(null);
 
@@ -406,7 +414,7 @@ function AppCart({ lines, onQty, onConfirm, tab, onTab, count, inicialCliente })
             <DeliveryForm compact attempted={attempted} inicial={inicialCliente} onValidChange={setReady} onDataChange={setEntrega} />
             <Aviso2x1 activo={typeof mextizzaEs2x1 === 'function' && mextizzaEs2x1()} style={{ marginTop: 12 }} />
             <CanjeTarjeta tarjeta={tarjetaPrevia} lines={lines} valor={usarPremio}
-              onChange={setUsarPremio} style={{ marginTop: 12 }} />
+              onChange={setUsarPremio} onAgregar={onAgregarPremio} style={{ marginTop: 12 }} />
             {tarjetaPrevia && <TarjetaPremios tarjeta={tarjetaPrevia} style={{ marginTop: 12 }} />}
             {error && <StatusNote tone="block" title="Ups" style={{ marginTop: 12 }}>{error}</StatusNote>}
           </div>
@@ -415,7 +423,9 @@ function AppCart({ lines, onQty, onConfirm, tab, onTab, count, inicialCliente })
       {lines.length > 0 && (
         <div style={{ flex: 'none', borderTop: 'var(--border-paper)', background: 'var(--surface-page)', padding: '16px 20px' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
-            <span style={{ fontFamily: 'var(--font-body)', fontSize: 12.5, color: 'var(--text-muted)' }}>Envío incluido en el precio</span>
+            <span style={{ fontFamily: 'var(--font-body)', fontSize: 12.5, color: 'var(--text-muted)' }}>
+              {promo ? (NOMBRE_PROMO[promo.motivo] || 'Promoción') + ' · −$' + promo.descuento : 'Envío incluido en el precio'}
+            </span>
             <span style={{ fontFamily: 'var(--font-body)', fontWeight: 800, fontSize: 20, color: 'var(--text-price)' }}>${subtotal}</span>
           </div>
           <Button tone="primary" size="lg" block iconAfter={enviando ? undefined : 'chevronRight'}

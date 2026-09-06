@@ -191,6 +191,7 @@ function AppMobile() {
   } else if (tab === 'pedido') {
     content = <AppCart lines={lines} onQty={qty} tab={tab} onTab={goTab} count={count}
       inicialCliente={cliente}
+      onAgregarPremio={(it) => add(it)}
       onConfirm={(nuevoFolio, entrega, extra) => {
         // Como quedo la tarjeta y que se regalo: se pinta en seguimiento.
         setPremio((extra && extra.premio) || null);

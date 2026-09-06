@@ -89,7 +89,7 @@ function SeguimientoPedido({ folio }) {
     </div>
   );
 }
-function CartDrawer({ open, lines, onClose, onQty, step, setStep, canal = 'Web', folioActivo, onOrdenCreada, onFolioEncontrado }) {
+function CartDrawer({ open, lines, onClose, onQty, step, setStep, canal = 'Web', folioActivo, onOrdenCreada, onFolioEncontrado, onAgregarPremio }) {
   const [ready, setReady] = React.useState(false);
   const [attempted, setAttempted] = React.useState(false);
   // Un contador, no un booleano: al segundo intento fallido el valor no
@@ -160,7 +160,14 @@ function CartDrawer({ open, lines, onClose, onQty, step, setStep, canal = 'Web',
     return () => { vivo = false; };
   }, [tel10]);
 
-  const subtotal = lines.reduce((s, l) => s + (l.price + (l.addonTotal || 0)) * l.qty, 0);
+  const bruto = lines.reduce((s, l) => s + (l.price + (l.addonTotal || 0)) * l.qty, 0);
+  /* Lo que el servidor va a descontar. Se muestra porque agregar algo gratis
+     subiendo el total es la peor forma de dar un premio. */
+  const promo = typeof mextizzaDescuentoPrevisto === 'function'
+    ? mextizzaDescuentoPrevisto(lines, tarjetaPrevia, usarPremio,
+        typeof mextizzaEs2x1 === 'function' && mextizzaEs2x1())
+    : null;
+  const subtotal = Math.max(0, bruto - (promo ? promo.descuento : 0));
 
   const confirmar = async () => {
     if (step === 'cart') return setStep('checkout');
@@ -244,7 +251,7 @@ function CartDrawer({ open, lines, onClose, onQty, step, setStep, canal = 'Web',
               <DeliveryForm compact attempted={attempted} onValidChange={setReady} onDataChange={setEntrega} />
               <Aviso2x1 activo={typeof mextizzaEs2x1 === 'function' && mextizzaEs2x1()} style={{ marginTop: 12 }} />
               <CanjeTarjeta tarjeta={tarjetaPrevia} lines={lines} valor={usarPremio}
-                onChange={setUsarPremio} style={{ marginTop: 12 }} />
+                onChange={setUsarPremio} onAgregar={onAgregarPremio} style={{ marginTop: 12 }} />
               {tarjetaPrevia && <TarjetaPremios tarjeta={tarjetaPrevia} style={{ marginTop: 12 }} />}
               {error && <StatusNote tone="block" title="Ups" style={{ marginTop: 12 }}>{error}</StatusNote>}
             </>
@@ -276,11 +283,16 @@ function CartDrawer({ open, lines, onClose, onQty, step, setStep, canal = 'Web',
 
         {step !== 'done' && step !== 'buscar' && lines.length > 0 && (
           <div style={{ borderTop: 'var(--border-frame)', padding: '18px 24px', background: 'var(--surface-page)' }}>
-            {[['Subtotal', subtotal]].map(([k, v]) => (
+            {[['Subtotal', bruto]].map(([k, v]) => (
               <div key={k} style={{ display: 'flex', justifyContent: 'space-between', fontFamily: 'var(--font-body)', fontSize: 13, color: 'var(--text-muted)', marginBottom: 6 }}>
                 <span>{k}</span><span>${v}</span>
               </div>
             ))}
+            {promo && (
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontFamily: 'var(--font-body)', fontSize: 13, color: 'var(--rosa-mexicano-texto)', marginBottom: 6 }}>
+                <span>{NOMBRE_PROMO[promo.motivo] || 'Promoción'}</span><span>−${promo.descuento}</span>
+              </div>
+            )}
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginTop: 8, marginBottom: 16 }}>
               <span style={{ fontFamily: 'var(--font-label)', fontSize: 11, letterSpacing: 1, textTransform: 'uppercase' }}>Total <span style={{ textTransform: 'none', letterSpacing: 0, color: 'var(--text-muted)' }}>· envío incluido</span></span>
               <span style={{ fontFamily: 'var(--font-body)', fontWeight: 800, fontSize: 22, color: 'var(--text-price)' }}>${subtotal}</span>

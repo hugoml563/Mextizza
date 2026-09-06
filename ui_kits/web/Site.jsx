@@ -15,10 +15,14 @@ function Site(){
   const [added,setAdded]=React.useState(null);
   const [view,setView]=React.useState('home');
   const [custom,setCustom]=React.useState(null);
-  const add=(it,q=1,extra={})=>{
+  const add=(it,q=1,extra={},mantenerPaso=false)=>{
     const key=it.id+(extra.addonNames&&extra.addonNames.length?':'+extra.addonNames.join('|'):'');
     setLines(ls=>{const e=ls.find(l=>l.key===key);return e?ls.map(l=>l.key===key?{...l,qty:l.qty+q}:l):[...ls,{...it,...extra,key,qty:q}];});
-    setAdded(it.id); setTimeout(()=>setAdded(null),900); setStep('cart'); setCustom(null);
+    setAdded(it.id); setTimeout(()=>setAdded(null),900);
+    // Agregar desde el menu lleva al carrito; agregar el premio desde el
+    // checkout no, o sacaria al cliente de la pantalla donde va a pagar.
+    if(!mantenerPaso) setStep('cart');
+    setCustom(null);
   };
   const qty=(key,n)=>setLines(ls=>n<=0?ls.filter(l=>l.key!==key):ls.map(l=>l.key===key?{...l,qty:n}:l));
   const nav=(k)=>{setView(k);const el=document.getElementById(k);window.scrollTo({top:el?el.offsetTop-90:0,behavior:'smooth'});};
@@ -44,7 +48,8 @@ function Site(){
     <WebFooter />
     <AddonsDialog item={custom} onClose={()=>setCustom(null)} onAdd={add} />
     <CartDrawer open={open} lines={lines} step={step} setStep={setStep} onQty={qty} onClose={()=>setOpen(false)} canal={canal}
-      folioActivo={folio} onOrdenCreada={(f)=>{setFolio(f);setLines([]);}} onFolioEncontrado={setFolio} />
+      folioActivo={folio} onOrdenCreada={(f)=>{setFolio(f);setLines([]);}} onFolioEncontrado={setFolio}
+      onAgregarPremio={(it)=>add(it,1,{},true)} />
   </>;
 }
 ReactDOM.createRoot(document.getElementById('root')).render(<Site/>);

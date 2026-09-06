@@ -109,6 +109,16 @@ function mextizzaEstaAbierto(ahora) {
    decide si el descuento se aplica es el servidor (es2x1_ en Code.gs), que usa
    su propio reloj. Si el telefono trae mal la hora, lo peor que pasa es que el
    letrero no cuadre; el cobro no cambia. */
+/* Busca un producto del menu por su id. Los premios se guardan como id
+   ('traviesa'), pero el carrito necesita el objeto completo. Devuelve null si
+   el id no existe, para que un premio mal escrito no meta una linea vacia. */
+function mextizzaProducto(id) {
+  for (const g of MEXTIZZA_MENU) {
+    for (const it of g.items) if (it.id === id) return it;
+  }
+  return null;
+}
+
 function mextizzaEs2x1(ahora) {
   const cdmx = mextizzaAhoraCDMX(ahora);
   return cdmx.dia === 5 && cdmx.hora >= 19;
@@ -121,10 +131,20 @@ function mextizzaEs2x1(ahora) {
    por su lado terminan discrepando. Se resuelve por grupo del menu, no por el
    nombre del producto, para que una pizza que no empiece con 'Pizza' siga
    funcionando. */
-function mextizzaAceptaComplementos(item) {
-  if (!item) return false;
-  const grupo = MEXTIZZA_MENU.find(g => g.items.some(i => i.id === item.id));
+/* Sale del horno: 'Del horno' y la 'Rotativa' del mes. 'Para cerrar' son el
+   brownie, los refrescos y el agua.
+
+   Espejo de esPizza_ en Code.gs, que decide quien gana sello y quien puede
+   canjear. Aqui solo sirve para no OFRECER lo que el servidor va a rechazar:
+   quien manda sigue siendo el servidor. */
+function mextizzaEsPizza(id) {
+  const grupo = MEXTIZZA_MENU.find(g => g.items.some(i => i.id === id));
   return !!grupo && grupo.cat !== 'Para cerrar';
+}
+
+// Los complementos son para las pizzas: nadie le pone extra provolone al agua.
+function mextizzaAceptaComplementos(item) {
+  return !!item && mextizzaEsPizza(item.id);
 }
 
 function mextizzaWhatsappLink(mensaje) {
@@ -134,4 +154,4 @@ const MEXTIZZA_SOCIAL = {
   instagram: 'https://www.instagram.com/mextizzamx/',
   facebook: 'https://www.facebook.com/profile.php?id=61592120047383'
 };
-Object.assign(window, { MEXTIZZA_MENU, MEXTIZZA_ADDONS, MEXTIZZA_FACTS, mextizzaWhatsappLink, mextizzaEstaAbierto, mextizzaEs2x1, mextizzaAceptaComplementos, MEXTIZZA_SOCIAL });
+Object.assign(window, { MEXTIZZA_MENU, MEXTIZZA_ADDONS, MEXTIZZA_FACTS, mextizzaWhatsappLink, mextizzaEstaAbierto, mextizzaEs2x1, mextizzaProducto, mextizzaEsPizza, mextizzaAceptaComplementos, MEXTIZZA_SOCIAL });
