@@ -1626,8 +1626,7 @@ const {
 const NAV_ROOT = {
   entered: false,
   tab: 'menu',
-  screen: 'list',
-  depth: 0
+  screen: 'list'
 };
 
 /* Survives the app being closed: an open order folio has to outlive the
@@ -1652,9 +1651,15 @@ function AppMobile() {
      convertia el arranque en una lista de precios. El carrito, el folio y los
      datos del cliente si se siguen recordando: eso es trabajo del usuario, la
      bienvenida no. */
-  const [nav, setNav] = React.useState(NAV_ROOT);
-  const navRef = React.useRef(nav);
-  navRef.current = nav;
+  /* La pila de navegacion vive aqui, no en el historial del navegador. El boton
+     nativo de Android puede disparar DOS retrocesos por pulsacion: el suyo
+     propio y el de nuestro listener. Leyendo el historial eso daba dos pasos y
+     te mandaba al fondo. Con pila propia y un guardia de tiempo, cada pulsacion
+     retrocede exactamente una pantalla venga de donde venga. */
+  const [pila, setPila] = React.useState([NAV_ROOT]);
+  const pilaRef = React.useRef(pila);
+  pilaRef.current = pila;
+  const nav = pila[pila.length - 1];
   const {
     entered,
     tab,
@@ -1678,32 +1683,51 @@ function AppMobile() {
     } catch (e) {/* storage unavailable — degrade to in-memory only */}
   }, [lines, folio, cliente]);
 
-  /* --- history-backed navigation --- */
-  const go = patch => {
-    const next = {
-      ...navRef.current,
-      ...patch,
-      depth: navRef.current.depth + 1
-    };
-    navRef.current = next;
+  /* --- navegacion con pila propia --- */
+  /* Al historial solo se le EMPUJAN entradas, nunca se le pide retroceder: asi
+     nunca se queda vacio y el boton nativo jamas cierra la app por accidente
+     estando en una pantalla interna. */
+  const marcarHistorial = n => {
     try {
-      window.history.pushState(next, '');
+      window.history.pushState({
+        mextizza: n
+      }, '');
     } catch (e) {}
-    setNav(next);
   };
+  const go = patch => {
+    const actual = pilaRef.current;
+    const nueva = actual.concat([{
+      ...actual[actual.length - 1],
+      ...patch
+    }]);
+    pilaRef.current = nueva;
+    marcarHistorial(nueva.length);
+    setPila(nueva);
+  };
+
+  /* Guardia de tiempo. Android puede entregar la MISMA pulsacion por dos vias:
+     el listener de Capacitor y el popstate del retroceso nativo del WebView.
+     Llegan con milisegundos de diferencia, asi que la segunda se descarta y la
+     pulsacion cuenta una sola vez. La ventana es corta a proposito: dos toques
+     deliberados del usuario van separados por mucho mas y si deben dar dos
+     pasos. */
+  const ultimoBack = React.useRef(0);
   const back = (steps = 1) => {
-    try {
-      window.history.go(-steps);
-    } catch (e) {}
+    const ahora = Date.now();
+    if (ahora - ultimoBack.current < 400) return;
+    ultimoBack.current = ahora;
+    const actual = pilaRef.current;
+    const nueva = actual.slice(0, Math.max(1, actual.length - steps));
+    pilaRef.current = nueva;
+    marcarHistorial(nueva.length);
+    setPila(nueva);
   };
   React.useEffect(() => {
-    try {
-      window.history.replaceState(navRef.current, '');
-    } catch (e) {}
-    const onPop = e => {
-      const s = e.state && typeof e.state === 'object' && e.state.tab ? e.state : NAV_ROOT;
-      navRef.current = s;
-      setNav(s);
+    marcarHistorial(1);
+    /* Respaldo: si el listener de Capacitor no alcanza a registrarse, el
+       retroceso nativo llega igual por aqui y el boton sigue sirviendo. */
+    const onPop = () => {
+      if (pilaRef.current.length > 1) back(1);
     };
     window.addEventListener('popstate', onPop);
     return () => window.removeEventListener('popstate', onPop);
@@ -1752,7 +1776,7 @@ function AppMobile() {
      default; both paths end up calling the same history rewind, so behaviour
      matches either way. Only a true root screen exits the app. */
   const handleBack = React.useCallback(() => {
-    if (navRef.current.depth > 0) {
+    if (pilaRef.current.length > 1) {
       back(1);
       return;
     }
