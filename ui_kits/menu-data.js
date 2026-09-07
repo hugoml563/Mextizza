@@ -125,6 +125,22 @@ function mextizzaProducto(id) {
    compara las dos capas y se detiene si dejan de coincidir. */
 const MEXTIZZA_2X1 = { dia: 3, desde: 19, nombre: 'Miércoles', enMinuscula: 'miércoles' };
 
+/* Vista previa de un anuncio, para poder revisarlo cualquier dia sin mover la
+   promocion. Se activa con ?vista=2x1 en la direccion.
+
+   Solo enciende el LETRERO. El descuento lo sigue decidiendo el servidor con su
+   propio reloj, asi que esto no puede regalar comida: lo peor que hace es
+   mostrar un cartel un dia que no toca. Por eso el aviso se marca como vista
+   previa cuando viene de aqui — si alguien cae en esa direccion por accidente,
+   tiene que quedarle claro que no hay 2x1 hoy. */
+function mextizzaVistaPrevia(nombre) {
+  try {
+    return new URLSearchParams(window.location.search).get('vista') === nombre;
+  } catch (e) {
+    return false;
+  }
+}
+
 /* Sirve solo para ANUNCIARLO: quien decide si el descuento se aplica es el
    servidor (es2x1_ en Code.gs), que usa su propio reloj. Si el telefono trae mal
    la hora, lo peor que pasa es que el letrero no cuadre; el cobro no cambia. */
@@ -182,4 +198,4 @@ const MEXTIZZA_SOCIAL = {
   instagram: 'https://www.instagram.com/mextizzamx/',
   facebook: 'https://www.facebook.com/profile.php?id=61592120047383'
 };
-Object.assign(window, { MEXTIZZA_MENU, MEXTIZZA_ADDONS, MEXTIZZA_FACTS, mextizzaWhatsappLink, mextizzaEstaAbierto, mextizzaEs2x1, MEXTIZZA_2X1, mextizzaProducto, mextizzaEsPizza, MEXTIZZA_PICKUP_DESCUENTO, MEXTIZZA_PICKUP_ACTIVO, mextizzaAceptaComplementos, MEXTIZZA_SOCIAL });
+Object.assign(window, { MEXTIZZA_MENU, MEXTIZZA_ADDONS, MEXTIZZA_FACTS, mextizzaWhatsappLink, mextizzaEstaAbierto, mextizzaEs2x1, MEXTIZZA_2X1, mextizzaVistaPrevia, mextizzaProducto, mextizzaEsPizza, MEXTIZZA_PICKUP_DESCUENTO, MEXTIZZA_PICKUP_ACTIVO, mextizzaAceptaComplementos, MEXTIZZA_SOCIAL });

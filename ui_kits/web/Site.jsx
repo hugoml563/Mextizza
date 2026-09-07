@@ -44,7 +44,8 @@ function Site(){
       {/* Justo debajo del encabezado: es lo primero que se ve al llegar, y ahi
           todavia se puede decidir pedir dos pizzas. En el checkout el aviso
           llega tarde — para entonces ya escogio. */}
-      <CintaPromo activo={typeof mextizzaEs2x1 === 'function' && mextizzaEs2x1()} />
+      <CintaPromo activo={typeof mextizzaEs2x1 === 'function' && mextizzaEs2x1()}
+        vistaPrevia={typeof mextizzaVistaPrevia === 'function' && mextizzaVistaPrevia('2x1')} />
     <WebHero onNav={nav} />
     <WebMenu onAdd={add} onCustomize={setCustom} added={added} />
     <WebProcess />

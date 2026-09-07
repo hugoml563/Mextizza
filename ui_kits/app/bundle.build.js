@@ -162,9 +162,10 @@ const MENSAJE_2X1 = P2X1.nombre + ' de 2x1 · desde las ' + HORA_2X1_TEXTO + ' �
    habria peleado con el boton de pedir. */
 function CintaPromo({
   activo,
+  vistaPrevia,
   style
 }) {
-  if (!activo) return null;
+  if (!activo && !vistaPrevia) return null;
 
   // Cuatro copias llenan una pantalla ancha; el grupo va duplicado para que el
   // ciclo no tenga costura. Solo la primera se anuncia a un lector de pantalla:
@@ -214,7 +215,24 @@ function CintaPromo({
     }
   }, /*#__PURE__*/React.createElement("div", {
     className: "mx-cinta-pista"
-  }, grupo(false), grupo(true)));
+  }, grupo(false), grupo(true)), vistaPrevia && !activo && /*#__PURE__*/React.createElement("span", {
+    style: {
+      position: 'absolute',
+      top: 0,
+      right: 0,
+      bottom: 0,
+      display: 'flex',
+      alignItems: 'center',
+      padding: '0 12px',
+      background: 'var(--rosa-mexicano)',
+      color: '#fff',
+      fontFamily: 'var(--font-label)',
+      fontSize: 9.5,
+      letterSpacing: 1.2,
+      textTransform: 'uppercase',
+      whiteSpace: 'nowrap'
+    }
+  }, "Vista previa \xB7 hoy no hay 2x1"));
 }
 
 /* ------------------------------------------------------------------ app ---
@@ -257,7 +275,8 @@ function marcarPromoVista() {
 function PopupPromo({
   abierto,
   onCerrar,
-  onVerMenu
+  onVerMenu,
+  vistaPrevia
 }) {
   const caja = React.useRef(null);
   const cerrarRef = React.useRef(null);
@@ -298,6 +317,7 @@ function PopupPromo({
   }, [abierto, onCerrar]);
   if (!abierto) return null;
   const yaEmpezo = typeof mextizzaEs2x1 === 'function' && mextizzaEs2x1();
+  const esDiaDePromo = typeof mextizzaAhoraCDMX === 'function' && mextizzaAhoraCDMX().dia === P2X1.dia;
   return /*#__PURE__*/React.createElement("div", {
     onClick: onCerrar,
     style: {
@@ -385,7 +405,7 @@ function PopupPromo({
       textAlign: 'center',
       margin: '8px 0 0'
     }
-  }, yaEmpezo ? 'Está activa ahorita mismo.' : 'Empieza a las ' + HORA_2X1_TEXTO + '.'), /*#__PURE__*/React.createElement(Button, {
+  }, vistaPrevia && !esDiaDePromo ? 'Vista previa — hoy no es ' + P2X1.enMinuscula + ', no hay 2x1.' : yaEmpezo ? 'Está activa ahorita mismo.' : 'Empieza a las ' + HORA_2X1_TEXTO + '.'), /*#__PURE__*/React.createElement(Button, {
     tone: "primary",
     size: "lg",
     block: true,
@@ -3040,7 +3060,8 @@ function AppMobile() {
         });
         // Se evalua al entrar, no al arrancar: asi el aviso cae sobre el menu y no
         // encima de la pantalla de bienvenida.
-        if (typeof debeMostrarPromo === 'function' && debeMostrarPromo()) setPromoAbierta(true);
+        const vista = typeof mextizzaVistaPrevia === 'function' && mextizzaVistaPrevia('2x1');
+        if (vista || typeof debeMostrarPromo === 'function' && debeMostrarPromo()) setPromoAbierta(true);
       }
     });
   } else if (tab === 'menu') {
@@ -3143,6 +3164,7 @@ function AppMobile() {
   return /*#__PURE__*/React.createElement(React.Fragment, null, content, /*#__PURE__*/React.createElement(PopupPromo, {
     abierto: promoAbierta,
     onCerrar: cerrarPromo,
+    vistaPrevia: typeof mextizzaVistaPrevia === 'function' && mextizzaVistaPrevia('2x1'),
     onVerMenu: () => {
       cerrarPromo();
       goTab('menu');

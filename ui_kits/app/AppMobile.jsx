@@ -196,7 +196,8 @@ function AppMobile() {
       go({ entered: true });
       // Se evalua al entrar, no al arrancar: asi el aviso cae sobre el menu y no
       // encima de la pantalla de bienvenida.
-      if (typeof debeMostrarPromo === 'function' && debeMostrarPromo()) setPromoAbierta(true);
+      const vista = typeof mextizzaVistaPrevia === 'function' && mextizzaVistaPrevia('2x1');
+      if (vista || (typeof debeMostrarPromo === 'function' && debeMostrarPromo())) setPromoAbierta(true);
     }} />;
   } else if (tab === 'menu') {
     if (screen === 'detail') {
@@ -243,6 +244,7 @@ function AppMobile() {
     <>
       {content}
       <PopupPromo abierto={promoAbierta} onCerrar={cerrarPromo}
+        vistaPrevia={typeof mextizzaVistaPrevia === 'function' && mextizzaVistaPrevia('2x1')}
         onVerMenu={() => { cerrarPromo(); goTab('menu'); }} />
       {toast && (
         <div style={{

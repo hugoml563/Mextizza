@@ -29,8 +29,8 @@ const MENSAJE_2X1 = P2X1.nombre + ' de 2x1 · desde las ' + HORA_2X1_TEXTO +
    Cinta bajo el encabezado. Negro con dorado: 7.9:1 de contraste, y no compite
    con el rosa, que en esta pagina es el color de las acciones. Una cinta rosa
    habria peleado con el boton de pedir. */
-function CintaPromo({ activo, style }) {
-  if (!activo) return null;
+function CintaPromo({ activo, vistaPrevia, style }) {
+  if (!activo && !vistaPrevia) return null;
 
   // Cuatro copias llenan una pantalla ancha; el grupo va duplicado para que el
   // ciclo no tenga costura. Solo la primera se anuncia a un lector de pantalla:
@@ -66,6 +66,16 @@ function CintaPromo({ activo, style }) {
         {grupo(false)}
         {grupo(true)}
       </div>
+      {/* Solo en vista previa. Si alguien cae aqui por accidente un dia que no
+          es de promocion, tiene que quedarle claro que no hay 2x1 hoy. */}
+      {vistaPrevia && !activo && (
+        <span style={{
+          position: 'absolute', top: 0, right: 0, bottom: 0, display: 'flex', alignItems: 'center',
+          padding: '0 12px', background: 'var(--rosa-mexicano)', color: '#fff',
+          fontFamily: 'var(--font-label)', fontSize: 9.5, letterSpacing: 1.2,
+          textTransform: 'uppercase', whiteSpace: 'nowrap',
+        }}>Vista previa · hoy no hay 2x1</span>
+      )}
     </div>
   );
 }
@@ -105,7 +115,7 @@ function marcarPromoVista() {
   try { window.localStorage.setItem(CLAVE_VISTO, hoyEnCDMX()); } catch (e) {}
 }
 
-function PopupPromo({ abierto, onCerrar, onVerMenu }) {
+function PopupPromo({ abierto, onCerrar, onVerMenu, vistaPrevia }) {
   const caja = React.useRef(null);
   const cerrarRef = React.useRef(null);
 
@@ -137,6 +147,8 @@ function PopupPromo({ abierto, onCerrar, onVerMenu }) {
   if (!abierto) return null;
 
   const yaEmpezo = typeof mextizzaEs2x1 === 'function' && mextizzaEs2x1();
+  const esDiaDePromo = typeof mextizzaAhoraCDMX === 'function' &&
+    mextizzaAhoraCDMX().dia === P2X1.dia;
 
   return (
     <div onClick={onCerrar} style={{
@@ -182,9 +194,11 @@ function PopupPromo({ abierto, onCerrar, onVerMenu }) {
           fontFamily: 'var(--font-body)', fontSize: 12.5, lineHeight: 1.5,
           color: 'rgba(255,255,255,.72)', textAlign: 'center', margin: '8px 0 0',
         }}>
-          {yaEmpezo
-            ? 'Está activa ahorita mismo.'
-            : 'Empieza a las ' + HORA_2X1_TEXTO + '.'}
+          {vistaPrevia && !esDiaDePromo
+            ? 'Vista previa — hoy no es ' + P2X1.enMinuscula + ', no hay 2x1.'
+            : yaEmpezo
+              ? 'Está activa ahorita mismo.'
+              : 'Empieza a las ' + HORA_2X1_TEXTO + '.'}
         </p>
 
         <Button tone="primary" size="lg" block iconAfter="chevronRight"
