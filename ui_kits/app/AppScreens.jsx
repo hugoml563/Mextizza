@@ -97,17 +97,17 @@ function AppWelcome({ onEnter }) {
           <p style={{ fontFamily: 'var(--font-body)', fontSize: 14, lineHeight: 1.6, color: 'var(--text-muted)', marginTop: 30 }}>
             {MEXTIZZA_FACTS.estilo}. Entregamos en Lomas Lindas y colonias vecinas.
           </p>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 18, marginTop: 22 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 22 }}>
             <a href={mextizzaWhatsappLink('Hola, quiero hacer un pedido en Mextizza.')} target="_blank" rel="noopener" aria-label="Mextizza en WhatsApp"
-              style={{ display: 'flex', color: 'var(--text-muted)', borderBottom: 'none' }}>
+              style={{ display: 'flex', color: 'var(--text-muted)', borderBottom: 'none', padding: 6 }}>
               <Icon name="whatsapp" size={20} />
             </a>
             <a href={MEXTIZZA_SOCIAL.instagram} target="_blank" rel="noopener" aria-label="Mextizza en Instagram"
-              style={{ display: 'flex', color: 'var(--text-muted)', borderBottom: 'none' }}>
+              style={{ display: 'flex', color: 'var(--text-muted)', borderBottom: 'none', padding: 6 }}>
               <Icon name="instagram" size={20} />
             </a>
             <a href={MEXTIZZA_SOCIAL.facebook} target="_blank" rel="noopener" aria-label="Mextizza en Facebook"
-              style={{ display: 'flex', color: 'var(--text-muted)', borderBottom: 'none' }}>
+              style={{ display: 'flex', color: 'var(--text-muted)', borderBottom: 'none', padding: 6 }}>
               <Icon name="facebook" size={20} />
             </a>
           </div>

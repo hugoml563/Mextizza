@@ -1194,7 +1194,7 @@ function AppWelcome({
     style: {
       display: 'flex',
       alignItems: 'center',
-      gap: 18,
+      gap: 6,
       marginTop: 22
     }
   }, /*#__PURE__*/React.createElement("a", {
@@ -1205,7 +1205,8 @@ function AppWelcome({
     style: {
       display: 'flex',
       color: 'var(--text-muted)',
-      borderBottom: 'none'
+      borderBottom: 'none',
+      padding: 6
     }
   }, /*#__PURE__*/React.createElement(Icon, {
     name: "whatsapp",
@@ -1218,7 +1219,8 @@ function AppWelcome({
     style: {
       display: 'flex',
       color: 'var(--text-muted)',
-      borderBottom: 'none'
+      borderBottom: 'none',
+      padding: 6
     }
   }, /*#__PURE__*/React.createElement(Icon, {
     name: "instagram",
@@ -1231,7 +1233,8 @@ function AppWelcome({
     style: {
       display: 'flex',
       color: 'var(--text-muted)',
-      borderBottom: 'none'
+      borderBottom: 'none',
+      padding: 6
     }
   }, /*#__PURE__*/React.createElement(Icon, {
     name: "facebook",

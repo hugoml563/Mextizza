@@ -107,4 +107,19 @@ if (firma !== CERT) {
 
 fs.copyFileSync(salida, PUBLICADO);
 const mb = (fs.statSync(PUBLICADO).size / 1024 / 1024).toFixed(1);
+
+/* La pagina de descarga anunciaba el peso a mano, y se quedo en 13 MB cuando el
+   APK ya pesaba 11.6. Se escribe aqui, que es el unico momento en que se sabe
+   el tamano de verdad. */
+const DESCARGA = path.join(__dirname, '..', 'descarga.html');
+const PATRON = /(Descargar APK &middot; )[0-9.]+ MB/;
+const antes = fs.readFileSync(DESCARGA, 'utf8');
+if (!PATRON.test(antes)) {
+  throw new Error('No encontre el peso anunciado en descarga.html: se quedaria viejo en silencio.');
+}
+const despues = antes.replace(PATRON, '$1' + mb + ' MB');
+if (despues !== antes) {
+  fs.writeFileSync(DESCARGA, despues);
+  console.log('  descarga.html: ahora anuncia ' + mb + ' MB');
+}
 console.log('\n  assets/app/mextizza.apk actualizado — ' + mb + ' MB, firma correcta.\n');

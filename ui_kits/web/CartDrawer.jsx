@@ -287,7 +287,10 @@ function CartDrawer({ open, lines, onClose, onQty, step, setStep, canal = 'Web',
             <span style={{ fontFamily: 'var(--font-display)', fontSize: 23, color: 'var(--negro-carbon)' }}>
               {step === 'cart' ? 'Tu pedido' : step === 'checkout' ? 'Entrega' : step === 'buscar' ? 'Seguir mi pedido' : 'Confirmado'}
             </span>
-            <button onClick={onClose} aria-label="Cerrar" style={{ background: 'transparent', border: 'none', color: 'var(--negro-carbon)', cursor: 'pointer' }}>
+            {/* padding con margen negativo: medía 32x22 y el minimo tactil de
+                WCAG 2.2 es 24x24. Crece el area que responde al dedo, no la
+                equis, y el margen negativo evita que se mueva el encabezado. */}
+            <button onClick={onClose} aria-label="Cerrar" style={{ background: 'transparent', border: 'none', color: 'var(--negro-carbon)', cursor: 'pointer', padding: 8, margin: -8 }}>
               <Icon name="close" size={20} />
             </button>
           </div>

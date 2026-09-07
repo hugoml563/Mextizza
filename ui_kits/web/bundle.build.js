@@ -665,6 +665,8 @@ function SocialPost({
     src: "../../assets/social/mextizza-perfil-ig-fb-320.png",
     alt: "",
     "aria-hidden": "true",
+    loading: "lazy",
+    decoding: "async",
     style: {
       width: 24,
       height: 24,
@@ -845,7 +847,7 @@ function WebSocial() {
     style: {
       display: 'flex',
       alignItems: 'center',
-      gap: 18,
+      gap: 6,
       marginBottom: 20
     }
   }, /*#__PURE__*/React.createElement("a", {
@@ -857,7 +859,8 @@ function WebSocial() {
       display: 'flex',
       alignItems: 'center',
       borderBottom: 'none',
-      color: 'var(--negro-carbon)'
+      color: 'var(--negro-carbon)',
+      padding: 6
     }
   }, /*#__PURE__*/React.createElement(Icon, {
     name: "whatsapp",
@@ -892,7 +895,8 @@ function WebSocial() {
       display: 'flex',
       alignItems: 'center',
       borderBottom: 'none',
-      color: 'var(--negro-carbon)'
+      color: 'var(--negro-carbon)',
+      padding: 6
     }
   }, /*#__PURE__*/React.createElement(Icon, {
     name: "facebook",
@@ -942,7 +946,7 @@ function WebFooter() {
     style: {
       display: 'flex',
       alignItems: 'center',
-      gap: 14,
+      gap: 2,
       marginTop: 22
     }
   }, /*#__PURE__*/React.createElement("a", {
@@ -955,7 +959,8 @@ function WebFooter() {
       display: 'flex',
       color: 'var(--blanco-hueso)',
       opacity: 0.8,
-      borderBottom: 'none'
+      borderBottom: 'none',
+      padding: 6
     }
   }, /*#__PURE__*/React.createElement(Icon, {
     name: "whatsapp",
@@ -970,7 +975,8 @@ function WebFooter() {
       display: 'flex',
       color: 'var(--blanco-hueso)',
       opacity: 0.8,
-      borderBottom: 'none'
+      borderBottom: 'none',
+      padding: 6
     }
   }, /*#__PURE__*/React.createElement(Icon, {
     name: "instagram",
@@ -985,7 +991,8 @@ function WebFooter() {
       display: 'flex',
       color: 'var(--blanco-hueso)',
       opacity: 0.8,
-      borderBottom: 'none'
+      borderBottom: 'none',
+      padding: 6
     }
   }, /*#__PURE__*/React.createElement(Icon, {
     name: "facebook",
@@ -2395,7 +2402,9 @@ function CartDrawer({
       background: 'transparent',
       border: 'none',
       color: 'var(--negro-carbon)',
-      cursor: 'pointer'
+      cursor: 'pointer',
+      padding: 8,
+      margin: -8
     }
   }, /*#__PURE__*/React.createElement(Icon, {
     name: "close",

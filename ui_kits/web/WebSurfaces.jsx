@@ -300,7 +300,10 @@ function SocialPost({ imagen, alt, pie }) {
         borderBottom: 'var(--border-frame)', color: 'var(--negro-carbon)' }}>
 
       <div style={{ flex: 'none', display: 'flex', alignItems: 'center', gap: 8, padding: '9px 11px' }}>
-        <img src="../../assets/social/mextizza-perfil-ig-fb-320.png" alt="" aria-hidden="true"
+        {/* lazy: son ocho copias a ~2900 px de scroll. Cargarlas al abrir la pagina
+              gastaba datos del cliente antes de que nadie las viera. */}
+          <img src="../../assets/social/mextizza-perfil-ig-fb-320.png" alt="" aria-hidden="true"
+            loading="lazy" decoding="async"
           style={{ width: 24, height: 24, borderRadius: '50%', objectFit: 'cover', border: 'var(--border-paper)' }} />
         <span style={{ fontFamily: 'var(--font-body)', fontWeight: 700, fontSize: 12.5 }}>mextizzamx</span>
         <Icon name="instagram" size={14} style={{ marginLeft: 'auto', opacity: 0.45 }} />
@@ -403,9 +406,9 @@ function WebSocial() {
       <div style={webShell.page}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12 }}>
           <SectionLabel>En redes</SectionLabel>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 18, marginBottom: 20 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 20 }}>
             <a href={mextizzaWhatsappLink('Hola, quiero hacer un pedido en Mextizza.')} target="_blank" rel="noopener" aria-label="Mextizza en WhatsApp"
-              style={{ display: 'flex', alignItems: 'center', borderBottom: 'none', color: 'var(--negro-carbon)' }}>
+              style={{ display: 'flex', alignItems: 'center', borderBottom: 'none', color: 'var(--negro-carbon)', padding: 6 }}>
               <Icon name="whatsapp" size={18} />
             </a>
             <a href={MEXTIZZA_SOCIAL.instagram} target="_blank" rel="noopener" aria-label="Mextizza en Instagram"
@@ -414,7 +417,7 @@ function WebSocial() {
               <span style={{ fontFamily: 'var(--font-body)', fontWeight: 600, fontSize: 13 }}>@mextizzamx</span>
             </a>
             <a href={MEXTIZZA_SOCIAL.facebook} target="_blank" rel="noopener" aria-label="Mextizza en Facebook"
-              style={{ display: 'flex', alignItems: 'center', borderBottom: 'none', color: 'var(--negro-carbon)' }}>
+              style={{ display: 'flex', alignItems: 'center', borderBottom: 'none', color: 'var(--negro-carbon)', padding: 6 }}>
               <Icon name="facebook" size={18} />
             </a>
           </div>
@@ -443,17 +446,17 @@ function WebFooter() {
       <div className="web-footer-grid" style={{ ...webShell.page, display: 'grid', gridTemplateColumns: '1.4fr 1fr 1fr 1fr', gap: 28 }}>
         <div>
           <Lockup variant="completo" tone="hueso" size={36} align="left" base="../../" subtitle="Pizzería" tagline="Horneada como allá, gozada como acá" />
-          <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginTop: 22 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 2, marginTop: 22 }}>
             <a href={mextizzaWhatsappLink('Hola, quiero hacer un pedido en Mextizza.')} target="_blank" rel="noopener" aria-label="Mextizza en WhatsApp"
-              className="footer-icon-link" style={{ display: 'flex', color: 'var(--blanco-hueso)', opacity: 0.8, borderBottom: 'none' }}>
+              className="footer-icon-link" style={{ display: 'flex', color: 'var(--blanco-hueso)', opacity: 0.8, borderBottom: 'none', padding: 6 }}>
               <Icon name="whatsapp" size={19} />
             </a>
             <a href={MEXTIZZA_SOCIAL.instagram} target="_blank" rel="noopener" aria-label="Mextizza en Instagram"
-              className="footer-icon-link" style={{ display: 'flex', color: 'var(--blanco-hueso)', opacity: 0.8, borderBottom: 'none' }}>
+              className="footer-icon-link" style={{ display: 'flex', color: 'var(--blanco-hueso)', opacity: 0.8, borderBottom: 'none', padding: 6 }}>
               <Icon name="instagram" size={19} />
             </a>
             <a href={MEXTIZZA_SOCIAL.facebook} target="_blank" rel="noopener" aria-label="Mextizza en Facebook"
-              className="footer-icon-link" style={{ display: 'flex', color: 'var(--blanco-hueso)', opacity: 0.8, borderBottom: 'none' }}>
+              className="footer-icon-link" style={{ display: 'flex', color: 'var(--blanco-hueso)', opacity: 0.8, borderBottom: 'none', padding: 6 }}>
               <Icon name="facebook" size={19} />
             </a>
           </div>

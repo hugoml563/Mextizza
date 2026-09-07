@@ -8,7 +8,10 @@
      despliegue, sin reinstalar nada en el telefono de la cocina. -->
 <link rel="manifest" href="./cocina.webmanifest">
 <link rel="apple-touch-icon" href="/assets/social/cocina-icon-180.png">
-<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+    <!-- La de Apple sigue porque iOS todavia la usa; el navegador la reporta
+         como obsoleta solo si va sola. -->
+    <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Cocina">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="theme-color" content="#1A1A1A">
