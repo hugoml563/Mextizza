@@ -27,6 +27,7 @@ const PAQUETES = [
       'ui_kits/web/WebSurfaces.jsx',
       'ui_kits/Puntos.jsx',
       'ui_kits/Recoger.jsx',
+      'ui_kits/Promo2x1.jsx',
       'ui_kits/DeliveryForm.jsx',
       'ui_kits/TarjetaPremios.jsx',
       'ui_kits/web/CartDrawer.jsx',
@@ -39,6 +40,7 @@ const PAQUETES = [
     fuentes: [
       'ui_kits/Puntos.jsx',
       'ui_kits/Recoger.jsx',
+      'ui_kits/Promo2x1.jsx',
       'ui_kits/DeliveryForm.jsx',
       'ui_kits/TarjetaPremios.jsx',
       'ui_kits/app/AppScreens.jsx',

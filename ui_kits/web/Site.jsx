@@ -40,6 +40,11 @@ function Site(){
     {modoCaptura && <div style={{background:'#1A1A1A',color:'#F5F0E8',textAlign:'center',padding:'8px 12px',fontFamily:'var(--font-label)',fontSize:11,letterSpacing:1,textTransform:'uppercase'}}>Modo captura · WhatsApp — este pedido se registra como canal WhatsApp</div>}
     <WebHeader count={count} view={view} onNav={nav} onCart={()=>{setOpen(true);setStep('cart');}}
       folio={folio} onSeguir={()=>{setOpen(true);setStep(folio?'done':'buscar');}} />
+
+      {/* Justo debajo del encabezado: es lo primero que se ve al llegar, y ahi
+          todavia se puede decidir pedir dos pizzas. En el checkout el aviso
+          llega tarde — para entonces ya escogio. */}
+      <CintaPromo activo={typeof mextizzaEs2x1 === 'function' && mextizzaEs2x1()} />
     <WebHero onNav={nav} />
     <WebMenu onAdd={add} onCustomize={setCustom} added={added} />
     <WebProcess />

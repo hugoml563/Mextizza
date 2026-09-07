@@ -62,6 +62,18 @@ function AppMobile() {
   const [premio, setPremio] = React.useState(null);
   const [tarjeta, setTarjeta] = React.useState(null);
   const [selloPendiente, setSelloPendiente] = React.useState(false);
+
+  /* Aviso del 2x1 al entrar, solo el dia de la promocion y una vez al dia.
+     La ref existe para el boton atras de Android: sin ella, la primera
+     pulsacion con el aviso abierto cerraba la app en vez de cerrarlo. */
+  const [promoAbierta, setPromoAbierta] = React.useState(false);
+  const promoRef = React.useRef(false);
+  promoRef.current = promoAbierta;
+
+  const cerrarPromo = React.useCallback(() => {
+    setPromoAbierta(false);
+    if (typeof marcarPromoVista === 'function') marcarPromoVista();
+  }, []);
   const [cliente, setCliente] = React.useState((saved && saved.cliente) || null);
   const [toast, setToast] = React.useState(null);
   const toastTimer = React.useRef(null);
@@ -145,13 +157,16 @@ function AppMobile() {
      default; both paths end up calling the same history rewind, so behaviour
      matches either way. Only a true root screen exits the app. */
   const handleBack = React.useCallback(() => {
+    // Lo de encima primero: el aviso tapa la pantalla, y cerrar la app con el
+    // abierto seria lo ultimo que espera quien solo queria quitarlo.
+    if (promoRef.current) { cerrarPromo(); return; }
     if (pilaRef.current.length > 1) { back(1); return; }
     try {
       const cap = window.Capacitor;
       if (cap.Plugins && cap.Plugins.App) cap.Plugins.App.exitApp();
       else cap.nativeCallback('App', 'exitApp', {});
     } catch (e) {}
-  }, []);
+  }, [cerrarPromo]);
 
   React.useEffect(() => {
     let handle, cancelled = false, attempts = 0;
@@ -177,7 +192,12 @@ function AppMobile() {
 
   let content;
   if (!entered) {
-    content = <AppWelcome onEnter={() => go({ entered: true })} />;
+    content = <AppWelcome onEnter={() => {
+      go({ entered: true });
+      // Se evalua al entrar, no al arrancar: asi el aviso cae sobre el menu y no
+      // encima de la pantalla de bienvenida.
+      if (typeof debeMostrarPromo === 'function' && debeMostrarPromo()) setPromoAbierta(true);
+    }} />;
   } else if (tab === 'menu') {
     if (screen === 'detail') {
       content = <AppDetail item={detail} onBack={() => back(1)} onAdd={addAndReturn(1)}
@@ -222,6 +242,8 @@ function AppMobile() {
   return (
     <>
       {content}
+      <PopupPromo abierto={promoAbierta} onCerrar={cerrarPromo}
+        onVerMenu={() => { cerrarPromo(); goTab('menu'); }} />
       {toast && (
         <div style={{
           position: 'fixed', left: '50%', bottom: 96, transform: 'translateX(-50%)', zIndex: 999,

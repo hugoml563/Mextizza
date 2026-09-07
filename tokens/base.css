@@ -24,3 +24,25 @@ button{font-family:var(--font-body)}
 .mx-puntos i:nth-child(2){animation-delay:.16s}
 .mx-puntos i:nth-child(3){animation-delay:.32s}
 @keyframes mxpunto{0%,80%,100%{opacity:.25;transform:translateY(0)}40%{opacity:1;transform:translateY(-3px)}}
+
+/* Cinta de promocion que desfila bajo el encabezado.
+
+   El contenido se repite dos veces y se desplaza medio ancho: al terminar, la
+   segunda mitad cae exactamente donde estaba la primera, asi que el ciclo no
+   tiene costura.
+
+   Se detiene al pasar el cursor o al recibir foco de teclado, para que se pueda
+   leer sin perseguirla.
+
+   Con prefers-reduced-motion se apaga y se centra UNA sola copia. La regla
+   global de mas arriba deja las animaciones en 0.01ms, lo que congelaria la
+   cinta a mitad del recorrido; aqui se le da un estado quieto que si se lee. */
+.mx-cinta{overflow:hidden;position:relative}
+.mx-cinta-pista{display:flex;width:max-content;animation:mxdesfile 30s linear infinite}
+.mx-cinta:hover .mx-cinta-pista,.mx-cinta:focus-within .mx-cinta-pista{animation-play-state:paused}
+@keyframes mxdesfile{from{transform:translateX(0)}to{transform:translateX(-50%)}}
+@media (prefers-reduced-motion:reduce){
+  .mx-cinta-pista{animation:none;transform:none;width:100%;justify-content:center}
+  .mx-cinta-grupo:not(:first-child){display:none}
+  .mx-cinta-grupo>span:not(:first-child){display:none}
+}
