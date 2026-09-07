@@ -297,6 +297,47 @@ Prices ($20–65) are **inferred** from the BOM's input costs times the plan's m
 
 ---
 
+## Test before production
+
+Two branches. `test` is where changes land first; `main` is what customers see.
+
+```
+cambio  ->  rama test  ->  se revisa en el sitio de prueba  ->  merge a main  ->  mextizza.com
+```
+
+**Test site:** `https://mextizzamx-git-test-hugoml563.vercel.app`
+
+It is not public. Vercel asks for a login on everything except the custom
+domain, which is deliberate: an open copy of the site would let Google index a
+second version of the same pages and compete with `mextizza.com`, and a customer
+who found it could place an order against a half-finished build.
+
+To promote what is on test:
+
+```bash
+git checkout main && git merge test && git push origin main
+```
+
+To start new work:
+
+```bash
+git checkout test && git merge main    # partir de lo que ya esta en produccion
+```
+
+### What the test site does NOT isolate
+
+The backend is shared. Apps Script, the spreadsheet and the tokens are the same
+ones production uses, so an order placed on the test site is a **real order**:
+it reaches the Sales Center, it stamps a loyalty card, and it burns a folio.
+
+That makes the test site right for anything the browser decides on its own —
+layout, copy, colours, animation, what shows and when — and wrong for trying out
+changes to prices, promotions or the order flow without expecting real records.
+
+Isolating it would need a second Apps Script deployment pointed at a second
+spreadsheet, plus its own tokens. Worth doing if the backend starts changing
+often; unnecessary while most changes are visual.
+
 ## Index
 
 **Root**
