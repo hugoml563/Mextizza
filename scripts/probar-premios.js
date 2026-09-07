@@ -6,6 +6,18 @@ const path = require('path');
 const RAIZ = path.join(__dirname, '..');
 
 // --- hoja de calculo en memoria -------------------------------------------
+/* Google Sheets NO guarda lo que le mandas tal cual: una cadena que parece
+   fecha ('2026-09-06') la convierte en un valor de fecha, y al leerla de vuelta
+   regresa un Date, no la cadena. Esta prueba lo imita, porque sin eso el arnes
+   era mas amable que la realidad y dejo pasar un error hasta produccion: dos
+   pedidos entregados el mismo dia sumaban dos sellos. */
+function comoSheets(v) {
+  // Medianoche en la zona DE LA HOJA (CDMX = UTC-6), que es como Sheets la crea.
+  // Crearla en la zona de esta maquina haria la prueba dependiente de donde corre.
+  if (typeof v === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(v)) return new Date(v + 'T06:00:00Z');
+  return v;
+}
+
 function Hoja(headers) {
   const filas = [headers.slice()];
   return {
@@ -19,7 +31,7 @@ function Hoja(headers) {
       setValue: (v) => {
         const f = filas[r - 1];
         while (f.length < c) f.push('');
-        f[c - 1] = v;
+        f[c - 1] = comoSheets(v);
       },
       getValues: () => filas.slice(r - 1, r - 1 + (nr || 1)).map((f) => f.slice(c - 1, c - 1 + (nc || 1))),
       setValues: (vs) => vs.forEach((fila, i) => fila.forEach((v, j) => {
@@ -42,6 +54,8 @@ const ctx = {
       getSheetByName: (n) => hojas[n] || null,
       insertSheet: (n) => (hojas[n] = Hoja([])),
       getSheets: () => Object.keys(hojas).map((k) => hojas[k]),
+      // La zona del documento: es el marco en el que Sheets crea sus fechas.
+      getSpreadsheetTimeZone: () => 'America/Mexico_City',
     }),
   },
   Utilities: {
@@ -500,5 +514,28 @@ const rFlujoPick = pedir([{ producto_id: CARA, cantidad: 1 }],
 comparar('recogiendo se salta el en camino', recorrido(rFlujoPick.folio),
   ['recibida', 'confirmada', 'horno', 'lista', 'entregada']);
 comparar('y aun asi sella', tarjetaDe(TEL_F).dias, 2);
+console.log('\nLECTURA DE FECHAS DE LA HOJA');
+/* Sheets convierte '2026-09-06' en un Date. Comparar ese Date contra la cadena
+   daba siempre distinto, y dos pedidos entregados el mismo dia sumaban dos
+   sellos. Se encontro en produccion, no aqui: el arnes guardaba cadenas y era
+   mas amable que la realidad. */
+comparar('un Date de la hoja se lee como fecha',
+  ctx.diaSeguro_(new Date('2026-09-06T06:00:00Z')), '2026-09-06');
+comparar('una cadena se lee igual', ctx.diaSeguro_('2026-09-06'), '2026-09-06');
+comparar('el apostrofe de texto de Sheets no es dato',
+  ctx.diaSeguro_("'2026-09-06"), '2026-09-06');
+comparar('vacio es vacio', ctx.diaSeguro_(''), '');
+comparar('ida y vuelta sin perder nada',
+  ctx.diaSeguro_(comoSheets(ctx.hoyCDMX_(JUE(18)))), ctx.hoyCDMX_(JUE(18)));
+
+console.log('\nDOS ENTREGAS EL MISMO DIA VALEN UN SELLO');
+const TEL_MD = '5555555557';
+const dMD = diaAbierto();
+pedir([{ producto_id: CARA, cantidad: 1 }], { cuando: dMD, tel: TEL_MD });
+comparar('primer pedido entregado sella', tarjetaDe(TEL_MD).dias, 1);
+pedir([{ producto_id: CARA, cantidad: 1 }], { cuando: dMD, tel: TEL_MD });
+comparar('segundo pedido entregado el MISMO dia no suma', tarjetaDe(TEL_MD).dias, 1);
+pedir([{ producto_id: CARA, cantidad: 1 }], { cuando: diaAbierto(), tel: TEL_MD });
+comparar('otro dia si suma', tarjetaDe(TEL_MD).dias, 2);
 console.log('\n  ' + ok + ' pruebas ok, ' + mal + ' mal\n');
 process.exit(mal ? 1 : 0);

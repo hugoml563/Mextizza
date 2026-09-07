@@ -379,6 +379,26 @@ const PREMIOS = {
   pizza:   { dia: 9, producto: 'traviesa' },
 };
 
+/* Lee una fecha de la hoja como 'yyyy-MM-dd', venga como venga.
+
+   Sheets NO guarda lo que le mandas tal cual: a una cadena que parece fecha la
+   convierte en valor de fecha, y al leerla de vuelta entrega un Date. Comparar
+   ese Date contra 'yyyy-MM-dd' con !== siempre daba distinto, asi que dos
+   pedidos entregados el mismo dia sumaban dos sellos en vez de uno.
+
+   El Date se formatea en la zona DE LA HOJA, que es el marco en el que Sheets
+   lo creo: usar otra zona lo correria un dia. Asi el viaje de ida y vuelta no
+   pierde nada, sea cual sea la zona del documento. */
+function diaSeguro_(v) {
+  if (!v) return '';
+  if (Object.prototype.toString.call(v) === '[object Date]') {
+    var tz = SpreadsheetApp.getActiveSpreadsheet().getSpreadsheetTimeZone() || 'America/Mexico_City';
+    return Utilities.formatDate(v, tz, 'yyyy-MM-dd');
+  }
+  // El apostrofe inicial es la marca de 'esto es texto' de Sheets, no un dato.
+  return String(v).replace(/^'/, '').slice(0, 10);
+}
+
 function hoyCDMX_(d) {
   return Utilities.formatDate(d || new Date(), 'America/Mexico_City', 'yyyy-MM-dd');
 }
@@ -572,7 +592,7 @@ function leerTarjeta_(telefono) {
     return {
       fila: r + 1,
       dias: Number(data[r][c.indexOf('dias_ciclo')]) || 0,
-      ultimoDia: String(data[r][c.indexOf('ultimo_dia')] || ''),
+      ultimoDia: diaSeguro_(data[r][c.indexOf('ultimo_dia')]),
       brownieUsado: data[r][c.indexOf('brownie_usado')] === true || data[r][c.indexOf('brownie_usado')] === 'si',
       pizzaUsada: data[r][c.indexOf('pizza_usada')] === true || data[r][c.indexOf('pizza_usada')] === 'si',
       ciclos: Number(data[r][c.indexOf('ciclos')]) || 0,
