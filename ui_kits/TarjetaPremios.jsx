@@ -182,7 +182,10 @@ const PREMIO_PRODUCTOS = { brownie: 'chocolatoso', pizza: 'traviesa' };
 
    Es una sola opcion a la vez porque las promociones no se acumulan. Quien
    decide de verdad es el servidor: aqui solo se pide. */
-function CanjeTarjeta({ tarjeta, lines, valor, onChange, onAgregar, style }) {
+/* agregado: el id del producto que ESTE componente metio al carrito con el
+   boton del premio. Importa para saber que se puede retirar: si el cliente ya
+   traia un brownie porque lo queria comprar, apagar el canje no debe quitarselo. */
+function CanjeTarjeta({ tarjeta, lines, valor, onChange, onAgregar, onQuitar, agregado, style }) {
   if (!tarjeta) return null;
 
   const enCarrito = (id) => (lines || []).some((l) => l.id === id);
@@ -222,7 +225,14 @@ function CanjeTarjeta({ tarjeta, lines, valor, onChange, onAgregar, style }) {
         const activo = valor === p.clave;
         return (
           <button key={p.clave} type="button" aria-pressed={activo}
-            onClick={() => onChange(activo ? null : p.clave)}
+            onClick={() => {
+              if (!activo) return onChange(p.clave);
+              /* Se arrepintio. Si el producto entro por el boton del premio, se
+                 va con el: quedaba colgado en el carrito y pasaba de gratis a
+                 cobrado sin que nadie lo pidiera. */
+              onChange(null);
+              if (agregado === p.id && onQuitar) onQuitar(p.id);
+            }}
             style={{
               display: 'block', width: '100%', textAlign: 'left', cursor: 'pointer',
               marginBottom: 6, padding: '10px 12px', borderRadius: 'var(--radius-sm)',

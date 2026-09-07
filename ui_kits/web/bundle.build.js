@@ -1472,12 +1472,17 @@ const PREMIO_PRODUCTOS = {
 
    Es una sola opcion a la vez porque las promociones no se acumulan. Quien
    decide de verdad es el servidor: aqui solo se pide. */
+/* agregado: el id del producto que ESTE componente metio al carrito con el
+   boton del premio. Importa para saber que se puede retirar: si el cliente ya
+   traia un brownie porque lo queria comprar, apagar el canje no debe quitarselo. */
 function CanjeTarjeta({
   tarjeta,
   lines,
   valor,
   onChange,
   onAgregar,
+  onQuitar,
+  agregado,
   style
 }) {
   if (!tarjeta) return null;
@@ -1533,7 +1538,14 @@ function CanjeTarjeta({
       key: p.clave,
       type: "button",
       "aria-pressed": activo,
-      onClick: () => onChange(activo ? null : p.clave),
+      onClick: () => {
+        if (!activo) return onChange(p.clave);
+        /* Se arrepintio. Si el producto entro por el boton del premio, se
+           va con el: quedaba colgado en el carrito y pasaba de gratis a
+           cobrado sin que nadie lo pidiera. */
+        onChange(null);
+        if (agregado === p.id && onQuitar) onQuitar(p.id);
+      },
       style: {
         display: 'block',
         width: '100%',
@@ -2020,6 +2032,34 @@ function CartDrawer({
 
   // entrega arranca en null: DeliveryForm no ha reportado nada en el primer
   // pintado, y leerlo directo tumbaba la pagina entera.
+  /* Que producto metio al carrito el boton del premio. Solo eso se puede
+     retirar al apagar el canje: si el cliente ya traia un brownie porque lo
+     queria comprar, apagar el premio no debe quitarselo. */
+  const [premioAgregado, setPremioAgregado] = React.useState(null);
+  const agregarPremio = prod => {
+    if (onAgregarPremio) onAgregarPremio(prod);
+    setPremioAgregado(prod.id);
+  };
+
+  /* Se baja UNA unidad, no se borra la linea: si el cliente ya tenia un brownie
+     suyo, ahora hay dos y solo sobra el del premio. */
+  const quitarPremio = id => {
+    const l = (lines || []).filter(x => x.id === id)[0];
+    if (l && onQty) onQty(l.key || l.id, l.qty - 1);
+    setPremioAgregado(null);
+  };
+
+  /* Si el producto del premio sale del carrito por cualquier otra via (lo
+     quitaron a mano en el carrito), el canje se apaga solo: dejarlo prendido
+     mandaria al servidor una peticion muerta y el aviso de descuento mentiria. */
+  React.useEffect(() => {
+    if (!usarPremio) return;
+    const id = PREMIO_PRODUCTOS[usarPremio];
+    if (!(lines || []).some(l => l.id === id)) {
+      setUsarPremio(null);
+      setPremioAgregado(null);
+    }
+  }, [lines, usarPremio]);
   const tel10 = String(entrega && entrega.telefono || '').replace(/\D/g, '').slice(0, 10);
   React.useEffect(() => {
     if (tel10.length !== 10 || typeof mextizzaTarjeta !== 'function') {
@@ -2194,7 +2234,9 @@ function CartDrawer({
     lines: lines,
     valor: usarPremio,
     onChange: setUsarPremio,
-    onAgregar: onAgregarPremio,
+    onAgregar: agregarPremio,
+    onQuitar: quitarPremio,
+    agregado: premioAgregado,
     style: {
       marginTop: 12
     }

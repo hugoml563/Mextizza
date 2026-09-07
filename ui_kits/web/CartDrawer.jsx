@@ -144,6 +144,36 @@ function CartDrawer({ open, lines, onClose, onQty, step, setStep, canal = 'Web',
 
   // entrega arranca en null: DeliveryForm no ha reportado nada en el primer
   // pintado, y leerlo directo tumbaba la pagina entera.
+  /* Que producto metio al carrito el boton del premio. Solo eso se puede
+     retirar al apagar el canje: si el cliente ya traia un brownie porque lo
+     queria comprar, apagar el premio no debe quitarselo. */
+  const [premioAgregado, setPremioAgregado] = React.useState(null);
+
+  const agregarPremio = (prod) => {
+    if (onAgregarPremio) onAgregarPremio(prod);
+    setPremioAgregado(prod.id);
+  };
+
+  /* Se baja UNA unidad, no se borra la linea: si el cliente ya tenia un brownie
+     suyo, ahora hay dos y solo sobra el del premio. */
+  const quitarPremio = (id) => {
+    const l = (lines || []).filter((x) => x.id === id)[0];
+    if (l && onQty) onQty(l.key || l.id, l.qty - 1);
+    setPremioAgregado(null);
+  };
+
+  /* Si el producto del premio sale del carrito por cualquier otra via (lo
+     quitaron a mano en el carrito), el canje se apaga solo: dejarlo prendido
+     mandaria al servidor una peticion muerta y el aviso de descuento mentiria. */
+  React.useEffect(() => {
+    if (!usarPremio) return;
+    const id = PREMIO_PRODUCTOS[usarPremio];
+    if (!(lines || []).some((l) => l.id === id)) {
+      setUsarPremio(null);
+      setPremioAgregado(null);
+    }
+  }, [lines, usarPremio]);
+
   const tel10 = String((entrega && entrega.telefono) || '').replace(/\D/g, '').slice(0, 10);
   React.useEffect(() => {
     if (tel10.length !== 10 || typeof mextizzaTarjeta !== 'function') {
@@ -251,7 +281,8 @@ function CartDrawer({ open, lines, onClose, onQty, step, setStep, canal = 'Web',
               <DeliveryForm compact attempted={attempted} onValidChange={setReady} onDataChange={setEntrega} />
               <Aviso2x1 activo={typeof mextizzaEs2x1 === 'function' && mextizzaEs2x1()} style={{ marginTop: 12 }} />
               <CanjeTarjeta tarjeta={tarjetaPrevia} lines={lines} valor={usarPremio}
-                onChange={setUsarPremio} onAgregar={onAgregarPremio} style={{ marginTop: 12 }} />
+                onChange={setUsarPremio} onAgregar={agregarPremio} onQuitar={quitarPremio}
+                agregado={premioAgregado} style={{ marginTop: 12 }} />
               {tarjetaPrevia && <TarjetaPremios tarjeta={tarjetaPrevia} style={{ marginTop: 12 }} />}
               {error && <StatusNote tone="block" title="Ups" style={{ marginTop: 12 }}>{error}</StatusNote>}
             </>
