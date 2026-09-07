@@ -384,7 +384,20 @@ function AppCart({ lines, onQty, onConfirm, tab, onTab, count, inicialCliente, o
     ? mextizzaDescuentoPrevisto(lines, tarjetaPrevia, usarPremio,
         typeof mextizzaEs2x1 === 'function' && mextizzaEs2x1())
     : null;
-  const subtotal = Math.max(0, bruto - (promo ? promo.descuento : 0));
+  /* Recoger descuenta un reparto que no se hace. Se suma a las promociones en
+     vez de competir con ellas: el 2x1 es un regalo, esto es no cobrar un envio
+     que no hiciste. Solo aplica si hay pizza cobrada, o un agua de $35 saldria
+     en $5. Espejo de crearOrden_ en Code.gs. */
+  const esPickupEntrega = !!entrega && entrega.entrega_tipo === 'pickup';
+  // Unidades de pizza que se cobran: el regalo se lleva una, si es que fue pizza.
+  const unidadesPizza = (lines || []).reduce((n, l) =>
+    n + (typeof mextizzaEsPizza === 'function' && mextizzaEsPizza(l.id) ? l.qty : 0), 0);
+  const regaloEsPizza = !!promo && (promo.motivo === '2x1' || promo.motivo === 'tarjeta:pizza');
+  const hayPizzaCobrada = unidadesPizza - (regaloEsPizza ? 1 : 0) > 0;
+  const descuentoPickup = (esPickupEntrega && hayPizzaCobrada)
+    ? Math.min(MEXTIZZA_PICKUP_DESCUENTO, Math.max(0, bruto - (promo ? promo.descuento : 0)))
+    : 0;
+  const subtotal = Math.max(0, bruto - (promo ? promo.descuento : 0) - descuentoPickup);
   const [enviando, setEnviando] = React.useState(false);
   const [error, setError] = React.useState(null);
 
@@ -414,7 +427,9 @@ function AppCart({ lines, onQty, onConfirm, tab, onTab, count, inicialCliente, o
       const r = await mextizzaCrearOrden({ canal: 'App', lines, entrega, usarPremio });
       // entrega viaja de vuelta para que la app guarde los datos del cliente
       // y prellene el formulario en el siguiente pedido.
-      onConfirm(r.folio, entrega, { premio: r.premio || null, tarjeta: r.tarjeta || null });
+      onConfirm(r.folio, entrega, {
+        premio: r.premio || null, tarjeta: r.tarjeta || null, selloPendiente: !!r.selloPendiente,
+      });
     } catch (err) {
       setError('No se pudo enviar el pedido. Intenta de nuevo, o escríbenos por WhatsApp.');
     } finally {
@@ -455,7 +470,11 @@ function AppCart({ lines, onQty, onConfirm, tab, onTab, count, inicialCliente, o
         <div style={{ flex: 'none', borderTop: 'var(--border-paper)', background: 'var(--surface-page)', padding: '16px 20px' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
             <span style={{ fontFamily: 'var(--font-body)', fontSize: 12.5, color: 'var(--text-muted)' }}>
-              {promo ? (NOMBRE_PROMO[promo.motivo] || 'Promoción') + ' · −$' + promo.descuento : 'Envío incluido en el precio'}
+              {[
+                promo ? (NOMBRE_PROMO[promo.motivo] || 'Promoción') + ' · −$' + promo.descuento : null,
+                descuentoPickup > 0 ? 'Pasas a recogerlo · −$' + descuentoPickup : null,
+                (!promo && !descuentoPickup && esPickupEntrega) ? 'Pasas por él a la cocina' : null,
+              ].filter(Boolean).join('  ·  ') || 'Envío incluido en el precio'}
             </span>
             <span style={{ fontFamily: 'var(--font-body)', fontWeight: 800, fontSize: 20, color: 'var(--text-price)' }}>${subtotal}</span>
           </div>
@@ -469,7 +488,9 @@ function AppCart({ lines, onQty, onConfirm, tab, onTab, count, inicialCliente, o
             }}>
               {motivo === 'cerrado'
                 ? 'La cocina está cerrada ahorita.' + (apertura.texto ? ' Abrimos ' + apertura.texto.toLowerCase() + '.' : '')
-                : 'Faltan datos: dirección dentro del radio y forma de pago.'}
+                : (esPickupEntrega
+                    ? 'Falta elegir la forma de pago.'
+                    : 'Faltan datos: dirección dentro del radio y forma de pago.')}
             </p>
           )}
         </div>
@@ -485,7 +506,7 @@ function AppCart({ lines, onQty, onConfirm, tab, onTab, count, inicialCliente, o
    "en el horno" until the delivery actually leaves. */
 const ESTADO_A_PASO = { recibida: 0, confirmada: 0, horno: 1, lista: 1, camino: 2, entregada: 3 };
 
-function AppTracking({ tab, onTab, count, folio, premio, tarjeta }) {
+function AppTracking({ tab, onTab, count, folio, premio, tarjeta, selloPendiente }) {
   const [orden, setOrden] = React.useState(null);
   const [errorEstado, setErrorEstado] = React.useState(false);
 
@@ -538,7 +559,7 @@ function AppTracking({ tab, onTab, count, folio, premio, tarjeta }) {
       </div>
       <div style={{ flex: 1, overflowY: 'auto', padding: '22px 20px', background: 'var(--surface-card)' }}>
         {premio && <AvisoPremio premio={premio} style={{ marginBottom: 16 }} />}
-        {tarjeta && <TarjetaPremios tarjeta={tarjeta} animarUltimo style={{ marginBottom: 20 }} />}
+        {tarjeta && <TarjetaPremios tarjeta={tarjeta} pendiente={selloPendiente} style={{ marginBottom: 20 }} />}
         {steps.map(([t, d, done], i) => (
           <div key={t} style={{ display: 'flex', gap: 14, paddingBottom: i < steps.length - 1 ? 22 : 0 }}>
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>

@@ -112,20 +112,38 @@ ctx.Date = class extends RealDate {
 };
 
 const TEL = '5512345678';
+
+/* La tarjeta se sella al ENTREGAR, no al pedir, asi que casi toda prueba tiene
+   que llevar el pedido hasta el final del flujo. `pedir` lo hace por omision;
+   con { entregar: false } se deja a medias a proposito. */
+const FLUJO_PASOS = 5; // recibida -> confirmada -> horno -> lista -> camino -> entregada
+function entregar(folio) {
+  for (let i = 0; i < FLUJO_PASOS; i++) ctx.avanzarEstado_({ folio: folio });
+}
+
 function pedir(items, opts) {
   opts = opts || {};
   if (opts.cuando) RELOJ = opts.cuando;
-  return ctx.crearOrden_({
+  const tel = opts.tel || TEL;
+  const r = ctx.crearOrden_({
     canal: 'web',
-    cliente: { telefono: opts.tel || TEL, nombre: 'Prueba' },
+    cliente: { telefono: tel, nombre: 'Prueba' },
     direccion: 'Calle 1', colonia: 'Lomas Lindas', km: 1, pago_metodo: 'Efectivo',
     items: items,
     usarPremio: opts.usarPremio,
+    entrega_tipo: opts.entrega_tipo,
   });
+  if (opts.entregar !== false) entregar(r.folio);
+  // r.tarjeta viene del momento de pedir; se reemplaza por como quedo despues.
+  r.tarjeta = tarjetaDe(tel);
+  return r;
 }
 const totalDe = (folio) => hojas[SHEETS.ordenes].filas
   .filter((f) => f[0] === folio)[0][ORDENES_HEADERS.indexOf('total')];
-const tarjeta = () => ctx.premiosDe_(ctx.leerTarjeta_(TEL));
+const campoDe = (folio, campo) => hojas[SHEETS.ordenes].filas
+  .filter((f) => f[0] === folio)[0][ORDENES_HEADERS.indexOf(campo)];
+const tarjetaDe = (tel) => ctx.premiosDe_(ctx.leerTarjeta_(tel), ctx.premiosReservados_(tel));
+const tarjeta = () => tarjetaDe(TEL);
 
 // Avanza dias de servicio hasta llegar a `meta` dias acumulados.
 let cursor = 12;
@@ -302,7 +320,7 @@ const diaMixto = diaAbierto();
 pedir([{ producto_id: AGUA, cantidad: 3 }, { producto_id: REFRESCO, cantidad: 2 },
        { producto_id: BROWNIE, cantidad: 1 }], { cuando: diaMixto, tel: TEL_AGUA });
 comparar('agua, refrescos y postres tampoco, por muchos que sean',
-  ctx.premiosDe_(ctx.leerTarjeta_(TEL_AGUA)).dias, 0);
+  tarjetaDe(TEL_AGUA).dias, 0);
 
 // El mismo dia, ya con pizza, si cuenta: el pedido de agua no quemo el dia.
 const rPizzaMismoDia = pedir([{ producto_id: CARA, cantidad: 1 }, { producto_id: AGUA, cantidad: 1 }],
@@ -312,17 +330,17 @@ comparar('la pizza del mismo dia si sella', rPizzaMismoDia.tarjeta.dias, 1);
 console.log('\nEL CANJE EXIGE QUE QUEDE UNA PIZZA COBRADA');
 const TEL_C = '5588888888';
 let guardaC = 0;
-while (ctx.premiosDe_(ctx.leerTarjeta_(TEL_C)).dias < PREMIOS.pizza.dia) {
+while (tarjetaDe(TEL_C).dias < PREMIOS.pizza.dia) {
   if (++guardaC > 40) throw new Error('no llegue al dia 9 con TEL_C');
   pedir([{ producto_id: CARA, cantidad: 1 }], { cuando: diaAbierto(), tel: TEL_C });
 }
-comparar('listo en el dia 9', ctx.premiosDe_(ctx.leerTarjeta_(TEL_C)).pizza, true);
+comparar('listo en el dia 9', tarjetaDe(TEL_C).pizza, true);
 
 const rSola = pedir([{ producto_id: PIZZA, cantidad: 1 }],
   { cuando: diaAbierto(), tel: TEL_C, usarPremio: 'pizza' });
 comparar('la Traviesa gratis SOLA no se canjea', rSola.premio, null);
 comparar('y por lo tanto se cobra', totalDe(rSola.folio), CATALOGO.productos[PIZZA].precio);
-comparar('el premio sigue guardado', ctx.premiosDe_(ctx.leerTarjeta_(TEL_C)).pizza, true);
+comparar('el premio sigue guardado', tarjetaDe(TEL_C).pizza, true);
 
 const rConAgua = pedir([{ producto_id: PIZZA, cantidad: 1 }, { producto_id: AGUA, cantidad: 1 }],
   { cuando: diaAbierto(), tel: TEL_C, usarPremio: 'pizza' });
@@ -337,11 +355,11 @@ comparar('y se cobra una sola', totalDe(rDosUnidades.folio), CATALOGO.productos[
 console.log('\nUN BROWNIE SIN RECLAMAR NO SE PIERDE');
 const TEL_B = '5577777777';
 let guardaB = 0;
-while (ctx.premiosDe_(ctx.leerTarjeta_(TEL_B)).dias < PREMIOS.pizza.dia) {
+while (tarjetaDe(TEL_B).dias < PREMIOS.pizza.dia) {
   if (++guardaB > 40) throw new Error('no llegue al dia 9 con TEL_B');
   pedir([{ producto_id: CARA, cantidad: 1 }], { cuando: diaAbierto(), tel: TEL_B });
 }
-const antesB = ctx.premiosDe_(ctx.leerTarjeta_(TEL_B));
+const antesB = tarjetaDe(TEL_B);
 comparar('llega al 9 con el brownie todavia sin usar', [antesB.brownie, antesB.pizza], [true, true]);
 
 // Canjea la pizza SIN haber usado nunca el brownie: la tarjeta se cierra.
@@ -360,16 +378,101 @@ comparar('y ya no vuelve a aparecer', rGasta.tarjeta.brownie, false);
 console.log('\nUN PREMIO SIN RECLAMAR SE CONSERVA');
 const TEL_G = '5566666666';
 let guardaG = 0;
-while (ctx.premiosDe_(ctx.leerTarjeta_(TEL_G)).dias < PREMIOS.brownie.dia) {
+while (tarjetaDe(TEL_G).dias < PREMIOS.brownie.dia) {
   if (++guardaG > 20) throw new Error('no llegue al dia 4 con TEL_G');
   pedir([{ producto_id: CARA, cantidad: 1 }], { cuando: diaAbierto(), tel: TEL_G });
 }
-comparar('brownie disponible al dia 4', ctx.premiosDe_(ctx.leerTarjeta_(TEL_G)).brownie, true);
+comparar('brownie disponible al dia 4', tarjetaDe(TEL_G).brownie, true);
 // Tres pedidos mas sin canjear nada.
 for (let k = 0; k < 3; k++) pedir([{ producto_id: CARA, cantidad: 1 }], { cuando: diaAbierto(), tel: TEL_G });
-const gTras = ctx.premiosDe_(ctx.leerTarjeta_(TEL_G));
+const gTras = tarjetaDe(TEL_G);
 comparar('sigue ahi varios pedidos despues', gTras.brownie, true);
 comparar('y los dias siguieron sumando', gTras.dias, PREMIOS.brownie.dia + 3);
+
+console.log('\nSOLO SELLA LO QUE SE ENTREGA');
+const TEL_E = '5555555551';
+// Un pedido que se queda a medias no sella.
+const rMedias = pedir([{ producto_id: CARA, cantidad: 1 }],
+  { cuando: diaAbierto(), tel: TEL_E, entregar: false });
+comparar('pedido recien creado NO sella todavia', tarjetaDe(TEL_E).dias, 0);
+comparar('queda marcado como pendiente', campoDe(rMedias.folio, 'sello'), 'pendiente');
+comparar('y el cliente lo sabe', rMedias.selloPendiente, true);
+
+// Al entregarlo, sella.
+entregar(rMedias.folio);
+comparar('al entregarlo si sella', tarjetaDe(TEL_E).dias, 1);
+comparar('y ya no puede volver a contar', campoDe(rMedias.folio, 'sello'), 'contado');
+
+// Un pedido cancelado nunca sella.
+const TEL_X = '5555555552';
+const rCancel = pedir([{ producto_id: CARA, cantidad: 1 }],
+  { cuando: diaAbierto(), tel: TEL_X, entregar: false });
+ctx.cancelarOrden_({ folio: rCancel.folio, motivo: 'prueba' });
+comparar('un pedido cancelado no sella', tarjetaDe(TEL_X).dias, 0);
+comparar('y queda anulado', campoDe(rCancel.folio, 'sello'), 'no');
+
+// Y ni siquiera se puede arrastrar a entregada: 'cancelada' no esta en el flujo.
+let noAvanza = false;
+try { entregar(rCancel.folio); } catch (e) { noAvanza = /ultimo estado|último estado/.test(String(e)); }
+comparar('un pedido cancelado ya no se puede avanzar', noAvanza, true);
+comparar('y sigue sin sellar', tarjetaDe(TEL_X).dias, 0);
+
+console.log('\nEL PREMIO QUEDA APARTADO MIENTRAS EL PEDIDO VA EN CAMINO');
+const TEL_R = '5555555553';
+let guardaR = 0;
+while (tarjetaDe(TEL_R).dias < PREMIOS.pizza.dia) {
+  if (++guardaR > 40) throw new Error('no llegue al dia 9 con TEL_R');
+  pedir([{ producto_id: CARA, cantidad: 1 }], { cuando: diaAbierto(), tel: TEL_R });
+}
+comparar('tiene su pizza gratis', tarjetaDe(TEL_R).pizza, true);
+
+// Primer pedido con el premio, SIN entregar.
+const rUno = pedir([{ producto_id: PIZZA, cantidad: 1 }, { producto_id: CARA, cantidad: 1 }],
+  { cuando: diaAbierto(), tel: TEL_R, usarPremio: 'pizza', entregar: false });
+comparar('se aplica el premio', rUno.premio && rUno.premio.tipo, 'tarjeta:pizza');
+comparar('y queda apartado, no disponible', tarjetaDe(TEL_R).pizza, false);
+
+// Segundo pedido antes de entregar el primero: ya no hay premio que dar.
+const rDos = pedir([{ producto_id: PIZZA, cantidad: 1 }, { producto_id: CARA, cantidad: 1 }],
+  { cuando: diaAbierto(), tel: TEL_R, usarPremio: 'pizza', entregar: false });
+comparar('no se puede canjear dos veces', rDos.premio, null);
+comparar('y el segundo se cobra completo', totalDe(rDos.folio),
+  CATALOGO.productos[PIZZA].precio + CATALOGO.productos[CARA].precio);
+
+// Si el primero se cancela, el premio se suelta.
+ctx.cancelarOrden_({ folio: rUno.folio, motivo: 'prueba' });
+comparar('cancelar libera el premio', tarjetaDe(TEL_R).pizza, true);
+
+console.log('\nRECOGER EN LA COCINA');
+const TEL_P = '5555555554';
+const dP = diaAbierto();
+const rDom = pedir([{ producto_id: CARA, cantidad: 1 }], { cuando: dP, tel: TEL_P });
+comparar('a domicilio se cobra completo', totalDe(rDom.folio), CATALOGO.productos[CARA].precio);
+comparar('y se marca como domicilio', campoDe(rDom.folio, 'entrega_tipo'), 'domicilio');
+
+const rPick = pedir([{ producto_id: CARA, cantidad: 1 }],
+  { cuando: diaAbierto(), tel: TEL_P, entrega_tipo: 'pickup' });
+comparar('recogiendo se descuentan $30',
+  totalDe(rPick.folio), CATALOGO.productos[CARA].precio - 30);
+comparar('se marca como pickup', campoDe(rPick.folio, 'entrega_tipo'), 'pickup');
+comparar('el descuento queda registrado', campoDe(rPick.folio, 'descuento'), 30);
+comparar('no se guarda direccion de entrega', campoDe(rPick.folio, 'direccion'), '');
+comparar('el subtotal conserva el precio de lista',
+  campoDe(rPick.folio, 'subtotal'), CATALOGO.productos[CARA].precio);
+comparar('recoger tambien sella', tarjetaDe(TEL_P).dias, 2);
+
+// Sin pizza cobrada no hay descuento: un agua de $35 no puede salir en $5.
+const rAguaPick = pedir([{ producto_id: AGUA, cantidad: 1 }],
+  { cuando: diaAbierto(), tel: TEL_P, entrega_tipo: 'pickup' });
+comparar('un pedido sin pizza no lleva descuento por recoger',
+  totalDe(rAguaPick.folio), CATALOGO.productos[AGUA].precio);
+
+// El descuento se suma a las promociones, no compite con ellas.
+const TEL_V = '5555555555';
+const rViernes = pedir([{ producto_id: CARA, cantidad: 1 }, { producto_id: BARATA, cantidad: 1 }],
+  { cuando: VIE(20), tel: TEL_V, entrega_tipo: 'pickup' });
+comparar('viernes recogiendo: 2x1 y ademas los $30',
+  totalDe(rViernes.folio), CATALOGO.productos[CARA].precio - 30);
 
 console.log('\n  ' + ok + ' pruebas ok, ' + mal + ' mal\n');
 process.exit(mal ? 1 : 0);

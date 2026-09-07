@@ -125,6 +125,15 @@ function verificarPremios() {
       '    Code.gs:            brownie al dia ' + mb[1] + ', pizza al dia ' + mp[1],
     ].join('\n'));
   }
+  // El descuento por recoger tambien vive en dos capas.
+  const dUi = Number((fs.readFileSync(path.join(RAIZ, 'ui_kits', 'menu-data.js'), 'utf8')
+    .match(/const MEXTIZZA_PICKUP_DESCUENTO = (\d+);/) || [])[1]);
+  const dGs = Number((gs.match(/const PICKUP_DESCUENTO = (\d+);/) || [])[1]);
+  if (!dUi || !dGs || dUi !== dGs) {
+    throw new Error('El descuento por recoger no coincide: menu-data.js=' + dUi +
+      ' Code.gs=' + dGs + '. Actualiza los dos antes de construir.');
+  }
+  console.log('  pickup: descuento de $' + dGs + ' igual en las dos capas');
   console.log('  premios: TarjetaPremios.jsx y Code.gs coinciden (brownie dia ' +
     mb[1] + ', ' + mp[2] + ' dia ' + mp[1] + ')');
 }

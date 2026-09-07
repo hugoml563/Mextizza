@@ -1106,6 +1106,39 @@ function DeliveryForm({
   const [horario, setHorario] = React.useState('Lo antes posible (≤40 min)');
   const [pago, setPago] = React.useState(null);
   const [notas, setNotas] = React.useState('');
+
+  /* Recoger o que se lo llevemos. Va PRIMERO porque decide que campos tienen
+     sentido: a quien pasa por su pizza no se le pide direccion ni se le evalua
+     la zona de reparto. */
+  const [modo, setModo] = React.useState('domicilio');
+  const pickup = modo === 'pickup';
+
+  /* La direccion de la cocina se pide al servidor, no viaja en el codigo: el
+     repositorio es publico y es un domicilio particular. Se guarda en el
+     navegador para no repetir la llamada, que contra Apps Script tarda ~2 s. */
+  const [dirPickup, setDirPickup] = React.useState(() => {
+    try {
+      return window.localStorage.getItem('mextizza:pickup') || '';
+    } catch (e) {
+      return '';
+    }
+  });
+  React.useEffect(() => {
+    if (!pickup || dirPickup || typeof mextizzaPickup !== 'function') return;
+    let vivo = true;
+    mextizzaPickup().then(r => {
+      if (!vivo || !r.direccion) return;
+      setDirPickup(r.direccion);
+      try {
+        window.localStorage.setItem('mextizza:pickup', r.direccion);
+      } catch (e) {}
+    })
+    // Si falla, abajo se ofrece pedirla por WhatsApp: mejor eso que un hueco.
+    .catch(() => {});
+    return () => {
+      vivo = false;
+    };
+  }, [pickup, dirPickup]);
   const digits = tel.replace(/\D/g, '');
   const telOk = digits.length === 10;
   const zona = colonia ? zonaEvaluar(colonia) : null;
@@ -1124,7 +1157,10 @@ function DeliveryForm({
     abierto: true,
     texto: ""
   };
-  const valid = !!nombre.trim() && telOk && !!calle.trim() && zonaOk && !!pago && apertura.abierto;
+
+  // Recogiendo no hay direccion que validar ni zona que evaluar.
+  const datosEntrega = pickup || !!calle.trim() && zonaOk;
+  const valid = !!nombre.trim() && telOk && datosEntrega && !!pago && apertura.abierto;
   React.useEffect(() => {
     onValidChange && onValidChange(valid);
   }, [valid]);
@@ -1132,14 +1168,15 @@ function DeliveryForm({
     onDataChange && onDataChange({
       nombre,
       telefono: digits,
-      calle,
-      colonia,
-      km: zona ? zona.km : null,
       horario,
       pago,
-      notas
+      notas,
+      entrega_tipo: modo,
+      calle: pickup ? '' : calle,
+      colonia: pickup ? '' : colonia,
+      km: pickup ? null : zona ? zona.km : null
     });
-  }, [nombre, digits, calle, colonia, horario, pago, notas]);
+  }, [nombre, digits, calle, colonia, horario, pago, notas, modo]);
   const gap = compact ? 12 : 14;
   const tone = zona ? zona.estado === 'dentro' ? 'ok' : zona.estado === 'limite' ? 'warn' : 'block' : 'ok';
   return /*#__PURE__*/React.createElement("div", null, !apertura.abierto && /*#__PURE__*/React.createElement(StatusNote, {
@@ -1148,7 +1185,24 @@ function DeliveryForm({
     style: {
       marginBottom: 14
     }
-  }, "Abrimos ", apertura.texto.toLowerCase(), ". Si quieres dejarlo apuntado desde ahorita, escr\xEDbenos por WhatsApp."), /*#__PURE__*/React.createElement(Field, {
+  }, "Abrimos ", apertura.texto.toLowerCase(), ". Si quieres dejarlo apuntado desde ahorita, escr\xEDbenos por WhatsApp."), /*#__PURE__*/React.createElement(RadioGroup, {
+    label: "\xBFC\xF3mo lo recibes?",
+    required: true,
+    options: ['A domicilio', 'Paso a recogerlo'],
+    value: pickup ? 'Paso a recogerlo' : 'A domicilio',
+    onChange: v => setModo(v === 'Paso a recogerlo' ? 'pickup' : 'domicilio'),
+    columns: 2,
+    hint: pickup ? 'Te descontamos $' + MEXTIZZA_PICKUP_DESCUENTO + ' por recogerlo tú.' : 'El envío ya está incluido en el precio.',
+    style: {
+      marginBottom: gap + 2
+    }
+  }), pickup && /*#__PURE__*/React.createElement(StatusNote, {
+    tone: "ok",
+    title: "Pasas por \xE9l a nuestra cocina",
+    style: {
+      marginBottom: gap + 2
+    }
+  }, dirPickup ? dirPickup : 'Te mandamos la dirección exacta por WhatsApp en cuanto confirmemos tu pedido.'), /*#__PURE__*/React.createElement(Field, {
     label: "Nombre",
     required: true,
     placeholder: "Tu nombre",
@@ -1167,7 +1221,7 @@ function DeliveryForm({
     style: {
       marginTop: gap
     }
-  }), /*#__PURE__*/React.createElement(Field, {
+  }), !pickup && /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement(Field, {
     label: "Calle y n\xFAmero",
     required: true,
     placeholder: "Av. Lomas Lindas 120, int. 4",
@@ -1188,7 +1242,7 @@ function DeliveryForm({
     style: {
       marginTop: gap
     }
-  }), zona ? /*#__PURE__*/React.createElement(StatusNote, {
+  })), pickup ? null : zona ? /*#__PURE__*/React.createElement(StatusNote, {
     tone: tone,
     title: zona.titulo,
     style: {
@@ -1226,7 +1280,7 @@ function DeliveryForm({
     onChange: setPago,
     columns: compact ? 1 : 3,
     invalid: attempted && !pago,
-    hint: attempted && !pago ? 'Elige una forma de pago para continuar.' : 'Se cobra al entregar. El envío ya está incluido en el precio.',
+    hint: attempted && !pago ? 'Elige una forma de pago para continuar.' : pickup ? 'Se cobra al entregarte el pedido en la cocina.' : 'Se cobra al entregar. El envío ya está incluido en el precio.',
     style: {
       marginTop: gap + 4
     }
@@ -1291,7 +1345,8 @@ function Casilla({
   premio,
   listo
 }) {
-  const sellada = estado !== 'vacia';
+  const pendiente = estado === 'pendiente';
+  const sellada = estado !== 'vacia' && !pendiente;
   const esPremio = !!premio;
   const acento = 'var(--rosa-mexicano)';
   return /*#__PURE__*/React.createElement("div", {
@@ -1306,7 +1361,7 @@ function Casilla({
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
-      border: sellada ? '2px solid ' + (esPremio ? acento : 'var(--negro-carbon)') : '2px dashed ' + (esPremio ? acento : 'var(--hueso-linea)'),
+      border: sellada ? '2px solid ' + (esPremio ? acento : 'var(--negro-carbon)') : pendiente ? '2px dashed var(--negro-carbon)' : '2px dashed ' + (esPremio ? acento : 'var(--hueso-linea)'),
       background: sellada ? esPremio ? 'var(--rosa-tinte)' : 'var(--hueso-hondo)' : 'transparent',
       // Doble anillo: la casilla de premio se ve distinta aun sin leer nada.
       boxShadow: esPremio ? 'inset 0 0 0 3px var(--surface-card)' : 'none',
@@ -1325,7 +1380,16 @@ function Casilla({
       transform: 'rotate(' + (n * 37 % 11 - 5) + 'deg)',
       display: 'block'
     }
-  }, n), !sellada && esPremio && /*#__PURE__*/React.createElement("span", {
+  }, n), pendiente && /*#__PURE__*/React.createElement("span", {
+    className: "mx-premio-listo",
+    style: {
+      fontFamily: 'var(--font-label)',
+      fontSize: 13,
+      letterSpacing: 0.5,
+      color: 'var(--negro-carbon)',
+      opacity: 0.55
+    }
+  }, n), !sellada && !pendiente && esPremio && /*#__PURE__*/React.createElement("span", {
     style: {
       fontFamily: 'var(--font-label)',
       fontSize: 12,
@@ -1364,9 +1428,13 @@ function Casilla({
      { dias, brownie, pizza, faltanBrownie, faltanPizza, ciclos }
    animarUltimo: sella el dia recien ganado con el golpe. Se usa al confirmar un
    pedido; en el carrito la tarjeta se pinta quieta. */
+/* pendiente: este pedido sellara un dia CUANDO SE ENTREGUE. Se dibuja la
+   casilla que viene, en punteado, en vez de darla por ganada: el sello se otorga
+   al entregar, y un pedido cancelado no cuenta. */
 function TarjetaPremios({
   tarjeta,
   animarUltimo = false,
+  pendiente = false,
   titulo,
   style
 }) {
@@ -1386,12 +1454,54 @@ function TarjetaPremios({
       key: n,
       n: n,
       premio: premios[n],
-      estado: !sellada ? 'vacia' : animarUltimo && n === llenas ? 'nueva' : 'sellada',
+      estado: sellada ? animarUltimo && n === llenas ? 'nueva' : 'sellada' : pendiente && n === llenas + 1 ? 'pendiente' : 'vacia',
       listo: n === CASILLA_BROWNIE && tarjeta.brownie || n === CASILLA_PIZZA && tarjeta.pizza
     }));
   }
 
   // Un solo renglon, el que importa ahora mismo.
+  if (pendiente) {
+    return /*#__PURE__*/React.createElement(FramedPanel, {
+      variant: "object",
+      style: {
+        position: 'relative',
+        ...style
+      }
+    }, /*#__PURE__*/React.createElement(TapeStripe, {
+      position: "top",
+      height: 4
+    }), /*#__PURE__*/React.createElement("div", {
+      style: {
+        padding: '4px 2px 2px'
+      }
+    }, /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontFamily: 'var(--font-label)',
+        fontSize: 10.5,
+        letterSpacing: 1.4,
+        textTransform: 'uppercase',
+        color: 'var(--text-muted)',
+        marginBottom: 12
+      }
+    }, titulo || 'Tu tarjeta'), /*#__PURE__*/React.createElement("div", {
+      style: {
+        display: 'grid',
+        gridTemplateColumns: 'repeat(3, 1fr)',
+        gap: 12,
+        maxWidth: 236,
+        margin: '0 auto'
+      }
+    }, casillas), /*#__PURE__*/React.createElement("p", {
+      style: {
+        fontFamily: 'var(--font-body)',
+        fontSize: 13,
+        lineHeight: 1.45,
+        color: 'var(--text-body)',
+        textAlign: 'center',
+        margin: '16px 0 0'
+      }
+    }, "Tu d\xEDa ", Math.min(dias + 1, DIAS_TARJETA), " se sella cuando te entreguemos este pedido.")));
+  }
   let mensaje;
   if (tarjeta.pizza) mensaje = 'Tienes una Traviesa gratis esperándote.';else if (tarjeta.brownie) mensaje = 'Tienes un brownie gratis esperándote.';else if (tarjeta.faltanBrownie > 0) {
     mensaje = tarjeta.faltanBrownie === 1 ? 'Un día más y el brownie es tuyo.' : 'Faltan ' + tarjeta.faltanBrownie + ' días para tu brownie.';
@@ -1995,6 +2105,7 @@ function CartDrawer({
   const [usarPremio, setUsarPremio] = React.useState(null);
   const [tarjeta, setTarjeta] = React.useState(null);
   const [premio, setPremio] = React.useState(null);
+  const [selloPendiente, setSelloPendiente] = React.useState(false);
   const [error, setError] = React.useState(null);
   // El folio vive en el padre para que sobreviva a cerrar el carrito y a recargar.
   const folio = folioActivo;
@@ -2084,7 +2195,17 @@ function CartDrawer({
   /* Lo que el servidor va a descontar. Se muestra porque agregar algo gratis
      subiendo el total es la peor forma de dar un premio. */
   const promo = typeof mextizzaDescuentoPrevisto === 'function' ? mextizzaDescuentoPrevisto(lines, tarjetaPrevia, usarPremio, typeof mextizzaEs2x1 === 'function' && mextizzaEs2x1()) : null;
-  const subtotal = Math.max(0, bruto - (promo ? promo.descuento : 0));
+  /* Recoger descuenta un reparto que no se hace. Se suma a las promociones en
+     vez de competir con ellas: el 2x1 es un regalo, esto es no cobrar un envio
+     que no hiciste. Solo aplica si hay pizza cobrada, o un agua de $35 saldria
+     en $5. Espejo de crearOrden_ en Code.gs. */
+  const esPickupEntrega = !!entrega && entrega.entrega_tipo === 'pickup';
+  // Unidades de pizza que se cobran: el regalo se lleva una, si es que fue pizza.
+  const unidadesPizza = (lines || []).reduce((n, l) => n + (typeof mextizzaEsPizza === 'function' && mextizzaEsPizza(l.id) ? l.qty : 0), 0);
+  const regaloEsPizza = !!promo && (promo.motivo === '2x1' || promo.motivo === 'tarjeta:pizza');
+  const hayPizzaCobrada = unidadesPizza - (regaloEsPizza ? 1 : 0) > 0;
+  const descuentoPickup = esPickupEntrega && hayPizzaCobrada ? Math.min(MEXTIZZA_PICKUP_DESCUENTO, Math.max(0, bruto - (promo ? promo.descuento : 0))) : 0;
+  const subtotal = Math.max(0, bruto - (promo ? promo.descuento : 0) - descuentoPickup);
   const confirmar = async () => {
     if (step === 'cart') return setStep('checkout');
 
@@ -2112,6 +2233,7 @@ function CartDrawer({
       });
       setTarjeta(r.tarjeta || null);
       setPremio(r.premio || null);
+      setSelloPendiente(!!r.selloPendiente);
       // El padre guarda el folio y vacia el carrito: antes las lineas se quedaban
       // ahi despues de enviar y el siguiente pedido arrancaba con el anterior dentro.
       onOrdenCreada && onOrdenCreada(r.folio);
@@ -2301,7 +2423,7 @@ function CartDrawer({
     }
   }), tarjeta && /*#__PURE__*/React.createElement(TarjetaPremios, {
     tarjeta: tarjeta,
-    animarUltimo: true,
+    pendiente: selloPendiente,
     style: {
       marginTop: 12
     }
@@ -2330,7 +2452,16 @@ function CartDrawer({
       color: 'var(--rosa-mexicano-texto)',
       marginBottom: 6
     }
-  }, /*#__PURE__*/React.createElement("span", null, NOMBRE_PROMO[promo.motivo] || 'Promoción'), /*#__PURE__*/React.createElement("span", null, "\u2212$", promo.descuento)), /*#__PURE__*/React.createElement("div", {
+  }, /*#__PURE__*/React.createElement("span", null, NOMBRE_PROMO[promo.motivo] || 'Promoción'), /*#__PURE__*/React.createElement("span", null, "\u2212$", promo.descuento)), descuentoPickup > 0 && /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: 'flex',
+      justifyContent: 'space-between',
+      fontFamily: 'var(--font-body)',
+      fontSize: 13,
+      color: 'var(--rosa-mexicano-texto)',
+      marginBottom: 6
+    }
+  }, /*#__PURE__*/React.createElement("span", null, "Pasas a recogerlo"), /*#__PURE__*/React.createElement("span", null, "\u2212$", descuentoPickup)), /*#__PURE__*/React.createElement("div", {
     style: {
       display: 'flex',
       justifyContent: 'space-between',
@@ -2345,13 +2476,13 @@ function CartDrawer({
       letterSpacing: 1,
       textTransform: 'uppercase'
     }
-  }, "Total ", /*#__PURE__*/React.createElement("span", {
+  }, "Total", /*#__PURE__*/React.createElement("span", {
     style: {
       textTransform: 'none',
       letterSpacing: 0,
       color: 'var(--text-muted)'
     }
-  }, "\xB7 env\xEDo incluido")), /*#__PURE__*/React.createElement("span", {
+  }, esPickupEntrega ? ' · pasas por él' : ' · envío incluido')), /*#__PURE__*/React.createElement("span", {
     style: {
       fontFamily: 'var(--font-body)',
       fontWeight: 800,
@@ -2374,7 +2505,7 @@ function CartDrawer({
       marginTop: 9,
       color: motivo === 'cerrado' ? 'var(--rosa-mexicano-texto)' : 'var(--text-muted)'
     }
-  }, motivo === 'cerrado' ? 'La cocina está cerrada ahorita.' + (apertura.texto ? ' Abrimos ' + apertura.texto.toLowerCase() + '.' : '') : 'Faltan datos: dirección dentro del radio y forma de pago.'))));
+  }, motivo === 'cerrado' ? 'La cocina está cerrada ahorita.' + (apertura.texto ? ' Abrimos ' + apertura.texto.toLowerCase() + '.' : '') : esPickupEntrega ? 'Falta elegir la forma de pago.' : 'Faltan datos: dirección dentro del radio y forma de pago.'))));
 }
 Object.assign(window, {
   CartDrawer

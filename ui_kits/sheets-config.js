@@ -87,6 +87,8 @@ if (!window.__mextizzaSheetsConfigLoaded) {
       direccion: entrega.calle,
       colonia: entrega.colonia,
       km: entrega.km,
+      // 'pickup' o 'domicilio'. El servidor decide el descuento; aqui solo se dice.
+      entrega_tipo: entrega.entrega_tipo,
       pago_metodo: entrega.pago === 'Tarjeta' ? 'Tarjeta en línea' : entrega.pago,
       notas: entrega.notas,
       items,
@@ -114,7 +116,12 @@ if (!window.__mextizzaSheetsConfigLoaded) {
   /* Estado de la tarjeta de un telefono, mas si en este momento corre el 2x1.
      El horario del 2x1 lo decide el servidor y no el reloj del telefono: si el
      cliente tiene mal la hora, la promesa y el cobro discreparian. */
+  /* Direccion para recoger en la cocina. Vive en las propiedades del script de
+     Apps Script, no en este archivo: el repositorio es publico y es un domicilio
+     particular. */
+  const mextizzaPickup = () => mextizzaApiGet('pickup', {});
+
   const mextizzaTarjeta = (telefono) => mextizzaApiGet('tarjeta', { telefono: telefono || '' });
 
-  Object.assign(window, { mextizzaTarjeta, mextizzaCrearOrden, mextizzaAvanzarEstado, mextizzaCancelarOrden, mextizzaEstadoOrden, mextizzaEstadoPorTelefono, mextizzaCancelarPorCliente, mextizzaListarAbiertas, mextizzaListarHoy, mextizzaSolicitarCatering, mextizzaTokenAdmin, mextizzaGuardarTokenAdmin, mextizzaOlvidarTokenAdmin });
+  Object.assign(window, { mextizzaPickup, mextizzaTarjeta, mextizzaCrearOrden, mextizzaAvanzarEstado, mextizzaCancelarOrden, mextizzaEstadoOrden, mextizzaEstadoPorTelefono, mextizzaCancelarPorCliente, mextizzaListarAbiertas, mextizzaListarHoy, mextizzaSolicitarCatering, mextizzaTokenAdmin, mextizzaGuardarTokenAdmin, mextizzaOlvidarTokenAdmin });
 }

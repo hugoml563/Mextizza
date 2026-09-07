@@ -61,6 +61,7 @@ function AppMobile() {
      consultar al servidor, que es quien la sabe de verdad. */
   const [premio, setPremio] = React.useState(null);
   const [tarjeta, setTarjeta] = React.useState(null);
+  const [selloPendiente, setSelloPendiente] = React.useState(false);
   const [cliente, setCliente] = React.useState((saved && saved.cliente) || null);
   const [toast, setToast] = React.useState(null);
   const toastTimer = React.useRef(null);
@@ -196,6 +197,7 @@ function AppMobile() {
         // Como quedo la tarjeta y que se regalo: se pinta en seguimiento.
         setPremio((extra && extra.premio) || null);
         setTarjeta((extra && extra.tarjeta) || null);
+        setSelloPendiente(!!(extra && extra.selloPendiente));
         setFolio(nuevoFolio);
         // Solo los campos reutilizables del próximo pedido: nada de método de
         // pago ni notas, que son decisiones de cada pedido, no del cliente.
@@ -205,7 +207,7 @@ function AppMobile() {
         go({ tab: 'seguir', screen: 'list' });
       }} />;
   } else if (tab === 'seguir') {
-    content = <AppTracking tab={tab} onTab={goTab} count={count} folio={folio} premio={premio} tarjeta={tarjeta} />;
+    content = <AppTracking tab={tab} onTab={goTab} count={count} folio={folio} premio={premio} tarjeta={tarjeta} selloPendiente={selloPendiente} />;
   } else {
     content = <AppPerfil tab={tab} onTab={goTab} count={count}
       cliente={cliente} folio={folio}

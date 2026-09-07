@@ -104,7 +104,12 @@ window.__resources = Object.assign(window.__resources || {}, {
 <sc-if value="{{ o.aTiempo }}" hint-placeholder-val="{{ true }}"><span style="font-size:12px;font-weight:700;color:#6b6b6b">{{ o.espera }}</span></sc-if>
 <sc-if value="{{ o.tarde }}" hint-placeholder-val="{{ false }}"><span style="font-size:12px;font-weight:700;color:#E4007C;animation:mxpulse 1.4s ease-in-out infinite">{{ o.espera }}</span></sc-if>
 </div>
-<div style="font-size:14.5px;font-weight:700;margin-top:7px">{{ o.cliente }} · <span style="color:#6b6b6b;font-weight:400">{{ o.destino }}</span></div>
+<div style="font-size:14.5px;font-weight:700;margin-top:7px">{{ o.cliente }} ·
+  <!-- Recoger se marca en color: leerlo como una direccion mas hace que salga
+       un repartidor a un pedido que el cliente viene a buscar. -->
+  <span sc-if="o.pickup" style="color:#E4007C;font-weight:700;letter-spacing:.4px">{{ o.destino }}</span>
+  <span sc-if="!o.pickup" style="color:#6b6b6b;font-weight:400">{{ o.destino }}</span>
+</div>
 <sc-if value="{{ o.tieneNotas }}" hint-placeholder-val="{{ true }}"><div style="margin-top:7px;padding:7px 10px;background:#F7EBD8;border-left:3px solid #C1502E;font-size:12.5px;line-height:1.45"><b style="font-size:10px;letter-spacing:1px;text-transform:uppercase;color:#C1502E">Notas</b><br>{{ o.notas }}</div></sc-if>
 <div style="margin-top:8px;display:flex;flex-direction:column;gap:3px">
 <sc-for list="{{ o.lineas }}" as="l" hint-placeholder-count="2">
@@ -323,7 +328,7 @@ class Component extends DCLogic {
       .map(({ o, i }) => {
         const tarde = o.min >= umbral && activos.includes(o.estado);
         return {
-          folio: o.folio, cliente: o.cliente, canal: o.canal, tipo: o.tipo, destino: o.destino,
+          folio: o.folio, cliente: o.cliente, canal: o.canal, tipo: o.tipo, destino: o.destino, pickup: !!o.pickup,
           notas: o.notas || '', tieneNotas: !!(o.notas && String(o.notas).trim()),
           esRecibida: o.estado === 'recibida', esConfirmada: o.estado === 'confirmada', esHorno: o.estado === 'horno',
           esLista: o.estado === 'lista', esCamino: o.estado === 'camino', esEntregada: o.estado === 'entregada', esCancelada: o.estado === 'cancelada',

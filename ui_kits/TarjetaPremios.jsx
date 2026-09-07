@@ -43,7 +43,8 @@ function inyectarCSS() {
 
 /* Una casilla. `estado`: 'vacia' | 'sellada' | 'nueva'. */
 function Casilla({ n, estado, premio, listo }) {
-  const sellada = estado !== 'vacia';
+  const pendiente = estado === 'pendiente';
+  const sellada = estado !== 'vacia' && !pendiente;
   const esPremio = !!premio;
   const acento = 'var(--rosa-mexicano)';
 
@@ -54,6 +55,7 @@ function Casilla({ n, estado, premio, listo }) {
         display: 'flex', alignItems: 'center', justifyContent: 'center',
         border: sellada
           ? '2px solid ' + (esPremio ? acento : 'var(--negro-carbon)')
+          : pendiente ? '2px dashed var(--negro-carbon)'
           : '2px dashed ' + (esPremio ? acento : 'var(--hueso-linea)'),
         background: sellada ? (esPremio ? 'var(--rosa-tinte)' : 'var(--hueso-hondo)') : 'transparent',
         // Doble anillo: la casilla de premio se ve distinta aun sin leer nada.
@@ -72,7 +74,13 @@ function Casilla({ n, estado, premio, listo }) {
               display: 'block',
             }}>{n}</span>
         )}
-        {!sellada && esPremio && (
+        {pendiente && (
+          <span className="mx-premio-listo" style={{
+            fontFamily: 'var(--font-label)', fontSize: 13, letterSpacing: 0.5,
+            color: 'var(--negro-carbon)', opacity: 0.55,
+          }}>{n}</span>
+        )}
+        {!sellada && !pendiente && esPremio && (
           <span style={{
             fontFamily: 'var(--font-label)', fontSize: 12, letterSpacing: 0.5,
             color: acento, opacity: 0.75,
@@ -100,7 +108,10 @@ function Casilla({ n, estado, premio, listo }) {
      { dias, brownie, pizza, faltanBrownie, faltanPizza, ciclos }
    animarUltimo: sella el dia recien ganado con el golpe. Se usa al confirmar un
    pedido; en el carrito la tarjeta se pinta quieta. */
-function TarjetaPremios({ tarjeta, animarUltimo = false, titulo, style }) {
+/* pendiente: este pedido sellara un dia CUANDO SE ENTREGUE. Se dibuja la
+   casilla que viene, en punteado, en vez de darla por ganada: el sello se otorga
+   al entregar, y un pedido cancelado no cuenta. */
+function TarjetaPremios({ tarjeta, animarUltimo = false, pendiente = false, titulo, style }) {
   React.useEffect(inyectarCSS, []);
   if (!tarjeta) return null;
 
@@ -114,12 +125,36 @@ function TarjetaPremios({ tarjeta, animarUltimo = false, titulo, style }) {
     const sellada = n <= llenas;
     casillas.push(
       <Casilla key={n} n={n} premio={premios[n]}
-        estado={!sellada ? 'vacia' : (animarUltimo && n === llenas ? 'nueva' : 'sellada')}
+        estado={sellada
+          ? (animarUltimo && n === llenas ? 'nueva' : 'sellada')
+          : (pendiente && n === llenas + 1 ? 'pendiente' : 'vacia')}
         listo={(n === CASILLA_BROWNIE && tarjeta.brownie) || (n === CASILLA_PIZZA && tarjeta.pizza)} />
     );
   }
 
   // Un solo renglon, el que importa ahora mismo.
+  if (pendiente) {
+    return (
+      <FramedPanel variant="object" style={{ position: 'relative', ...style }}>
+        <TapeStripe position="top" height={4} />
+        <div style={{ padding: '4px 2px 2px' }}>
+          <div style={{
+            fontFamily: 'var(--font-label)', fontSize: 10.5, letterSpacing: 1.4,
+            textTransform: 'uppercase', color: 'var(--text-muted)', marginBottom: 12,
+          }}>{titulo || 'Tu tarjeta'}</div>
+          <div style={{
+            display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)',
+            gap: 12, maxWidth: 236, margin: '0 auto',
+          }}>{casillas}</div>
+          <p style={{
+            fontFamily: 'var(--font-body)', fontSize: 13, lineHeight: 1.45,
+            color: 'var(--text-body)', textAlign: 'center', margin: '16px 0 0',
+          }}>Tu día {Math.min(dias + 1, DIAS_TARJETA)} se sella cuando te entreguemos este pedido.</p>
+        </div>
+      </FramedPanel>
+    );
+  }
+
   let mensaje;
   if (tarjeta.pizza) mensaje = 'Tienes una Traviesa gratis esperándote.';
   else if (tarjeta.brownie) mensaje = 'Tienes un brownie gratis esperándote.';

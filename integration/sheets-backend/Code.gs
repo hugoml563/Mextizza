@@ -45,7 +45,7 @@ const TS_POR_ESTADO = {
   entregada: 't_entregada'
 };
 
-const ORDENES_HEADERS = ['folio', 'canal', 'estado', 'cliente_telefono', 'cliente_nombre', 'direccion', 'colonia', 'km', 'pago_metodo', 'pago_estado', 'subtotal', 'total', 't_recibida', 't_confirmada', 't_horno', 't_lista', 't_camino', 't_entregada', 'reparto', 'notas', 'motivo_cancelacion'];
+const ORDENES_HEADERS = ['folio', 'canal', 'estado', 'cliente_telefono', 'cliente_nombre', 'direccion', 'colonia', 'km', 'pago_metodo', 'pago_estado', 'subtotal', 'total', 't_recibida', 't_confirmada', 't_horno', 't_lista', 't_camino', 't_entregada', 'reparto', 'notas', 'motivo_cancelacion', 'entrega_tipo', 'descuento', 'sello', 'premio'];
 const ORDEN_ITEMS_HEADERS = ['linea_id', 'folio', 'producto_id', 'producto_nombre', 'cantidad', 'precio_unit', 'complementos_total', 'importe', 'promocion'];
 const ITEM_COMPLEMENTOS_HEADERS = ['linea_id', 'complemento_id', 'complemento_nombre', 'precio'];
 const PRODUCTOS_HEADERS = ['id', 'nombre', 'descripcion', 'categoria', 'precio', 'activo', 'foto'];
@@ -94,6 +94,18 @@ function configurarHojas() {
   });
   const def = ss.getSheetByName('Sheet1') || ss.getSheetByName('Hoja 1');
   if (def && def.getLastRow() === 0 && ss.getSheets().length > 6) ss.deleteSheet(def);
+}
+
+/** Corre esto UNA vez, con tu direccion, para habilitar el recoger en cocina.
+ *  Se guarda en las propiedades del script y NO en el codigo: este archivo
+ *  vive en un repositorio publico y la direccion es un domicilio particular. */
+function configurarPickup() {
+  const DIRECCION = 'PEGA AQUI TU DIRECCION, CORRE LA FUNCION, Y BORRA ESTA LINEA';
+  if (DIRECCION.indexOf('PEGA AQUI') === 0) {
+    throw new Error('Edita la constante DIRECCION dentro de configurarPickup() antes de correrla.');
+  }
+  PropertiesService.getScriptProperties().setProperty('DIRECCION_PICKUP', DIRECCION);
+  Logger.log('Direccion de recoleccion guardada. Ya puedes borrarla de esta funcion.');
 }
 
 /** Corre esto UNA vez para generar el token PÚBLICO (el que va en la web y la app). */
@@ -264,10 +276,18 @@ function doGet(e) {
     /* La tarjeta la consultan la web y la app para pintar el progreso. Va con
        token publico: es el propio cliente preguntando por su telefono, la misma
        exposicion que estado_por_telefono, que ya existia. */
+    /* Datos para recoger en la cocina. La direccion vive en las propiedades del
+       script, no en el codigo: el repositorio es publico y es un domicilio
+       particular. Va con token publico porque el cliente la necesita para
+       decidir, antes de tener un folio. */
+    if (e.parameter.action === 'pickup') {
+      return jsonOut_({ ok: true, direccion: direccionPickup_(), descuento: PICKUP_DESCUENTO });
+    }
     if (e.parameter.action === 'tarjeta') {
       return jsonOut_({
         ok: true,
-        tarjeta: premiosDe_(leerTarjeta_(e.parameter.telefono)),
+        tarjeta: premiosDe_(leerTarjeta_(e.parameter.telefono),
+          premiosReservados_(e.parameter.telefono)),
         dosPorUno: es2x1_(),
       });
     }
@@ -368,6 +388,19 @@ function es2x1_(d) {
    Esta distincion sostiene toda la mecanica de premios: el sello se gana con
    una pizza COBRADA. Sin eso, nueve pedidos de agua de $35 valen una pizza
    gratis y el programa de lealtad se vuelve una forma de perder dinero. */
+/* Recoger en la cocina. El descuento sustituye un reparto que no se hizo, asi
+   que es fijo por pedido y no por pizza: el viaje ahorrado es uno solo.
+
+   La DIRECCION no se escribe aqui. Este archivo vive en un repositorio publico,
+   y es un domicilio particular: quedaria indexado y en el historial de git para
+   siempre. Se guarda con configurarPickup() en las propiedades del script, del
+   mismo modo que los tokens, y se sirve por el API. */
+const PICKUP_DESCUENTO = 30;
+
+function direccionPickup_() {
+  return PropertiesService.getScriptProperties().getProperty('DIRECCION_PICKUP') || '';
+}
+
 function esPizza_(linea) {
   return linea.cat !== 'Para cerrar';
 }
@@ -471,24 +504,50 @@ function crearOrden_(body) {
     });
   });
 
+  /* Recoger en la cocina: se descuenta un reparto que no se va a hacer. Se pide
+     que haya una pizza cobrada, o un pedido de un agua de $35 saldria en $5. */
+  const pickup = body.entrega_tipo === 'pickup';
+  const hayPizza = tienePizzaPagada_(lineas);
+  const descuento = (pickup && hayPizza) ? Math.min(PICKUP_DESCUENTO, subtotal) : 0;
+  const total = subtotal - descuento;
+
   const ordenesSh = sheet_(SHEETS.ordenes);
   const row = {
     folio: folio, canal: body.canal, estado: estado,
     cliente_telefono: textoSeguro_(telefono),
     cliente_nombre: textoSeguro_(body.cliente && body.cliente.nombre),
-    direccion: textoSeguro_(body.direccion), colonia: textoSeguro_(body.colonia),
-    km: body.km, pago_metodo: textoSeguro_(body.pago_metodo), pago_estado: 'pendiente',
-    subtotal: subtotal, total: subtotal, reparto: 0,
+    // En pickup no hay direccion que guardar: la del cliente no hace falta.
+    direccion: pickup ? '' : textoSeguro_(body.direccion),
+    colonia: pickup ? '' : textoSeguro_(body.colonia),
+    km: pickup ? '' : body.km,
+    pago_metodo: textoSeguro_(body.pago_metodo), pago_estado: 'pendiente',
+    subtotal: subtotal, total: total, reparto: 0,
     notas: textoSeguro_(body.notas), motivo_cancelacion: '',
-    t_recibida: now, t_confirmada: '', t_horno: '', t_lista: '', t_camino: '', t_entregada: ''
+    t_recibida: now, t_confirmada: '', t_horno: '', t_lista: '', t_camino: '', t_entregada: '',
+    entrega_tipo: pickup ? 'pickup' : 'domicilio',
+    descuento: descuento,
+    /* 'pendiente' significa: este pedido sellara la tarjeta cuando se entregue.
+       Hasta entonces no se toca nada del cliente. */
+    sello: hayPizza ? 'pendiente' : 'no',
+    premio: premio ? premio.tipo : ''
   };
   ordenesSh.appendRow(ORDENES_HEADERS.map(function (h) { return row[h]; }));
 
-  upsertCliente_(body.cliente, body.direccion, body.colonia);
-  // El sello se gana con una pizza cobrada, no con cualquier pedido.
-  const tarjeta = registrarDia_(telefono, premio, now, tienePizzaPagada_(lineas));
+  upsertCliente_(body.cliente, pickup ? '' : body.direccion, pickup ? '' : body.colonia);
 
-  return { folio: folio, premio: premio, tarjeta: tarjeta };
+  /* La tarjeta NO se mueve aqui. Se devuelve como esta, mas el aviso de que este
+     pedido sella al entregarse: prometer el sello antes de entregar es lo que
+     hacia que un pedido cancelado contara. */
+  const tarjeta = premiosDe_(leerTarjeta_(telefono), premiosReservados_(telefono));
+
+  return {
+    folio: folio, premio: premio, tarjeta: tarjeta,
+    selloPendiente: hayPizza,
+    entrega_tipo: row.entrega_tipo,
+    descuento: descuento,
+    total: total,
+    direccionPickup: pickup ? direccionPickup_() : ''
+  };
 }
 
 /* Lee la tarjeta de un telefono. Devuelve el estado ANTES del pedido en curso,
@@ -515,13 +574,37 @@ function leerTarjeta_(telefono) {
 }
 
 /* Que premios tiene disponibles hoy, segun los dias acumulados. */
-function premiosDe_(t) {
+/* Premios que ya estan comprometidos por un pedido en curso. La tarjeta se
+   descuenta hasta que el pedido se ENTREGA, asi que entre pedir y entregar el
+   premio sigue viendose disponible: sin esto, dos pedidos seguidos antes de que
+   llegue el primero se llevan dos pizzas gratis. */
+function premiosReservados_(telefono) {
+  const r = { brownie: false, pizza: false };
+  if (!telefono) return r;
+  const sh = sheet_(SHEETS.ordenes);
+  const data = sh.getDataRange().getValues();
+  const cTel = ORDENES_HEADERS.indexOf('cliente_telefono');
+  const cSello = ORDENES_HEADERS.indexOf('sello');
+  const cPremio = ORDENES_HEADERS.indexOf('premio');
+  for (let i = 1; i < data.length; i++) {
+    if (String(data[i][cTel]) !== String(telefono)) continue;
+    if (data[i][cSello] !== 'pendiente') continue;
+    const pr = String(data[i][cPremio] || '');
+    if (pr === 'tarjeta:brownie') r.brownie = true;
+    if (pr === 'tarjeta:pizza') r.pizza = true;
+  }
+  return r;
+}
+
+function premiosDe_(t, reservados) {
+  const res = reservados || { brownie: false, pizza: false };
   return {
     dias: t.dias,
     // Un brownie guardado viene de una tarjeta anterior que se cerro sin
     // reclamarlo. Vale aunque la tarjeta nueva apenas vaya empezando.
-    brownie: t.brownieGuardado || (t.dias >= PREMIOS.brownie.dia && !t.brownieUsado),
-    pizza: t.dias >= PREMIOS.pizza.dia && !t.pizzaUsada,
+    // `res` son los premios ya comprometidos por un pedido que va en camino.
+    brownie: !res.brownie && (t.brownieGuardado || (t.dias >= PREMIOS.brownie.dia && !t.brownieUsado)),
+    pizza: !res.pizza && (t.dias >= PREMIOS.pizza.dia && !t.pizzaUsada),
     faltanBrownie: Math.max(0, PREMIOS.brownie.dia - t.dias),
     faltanPizza: Math.max(0, PREMIOS.pizza.dia - t.dias),
     ciclos: t.ciclos
@@ -531,7 +614,10 @@ function premiosDe_(t) {
 /* Decide que se regala. Las promociones NO se acumulan: se aplica la que mas le
    conviene al cliente, y se dice cual fue. */
 function aplicarPromos_(lineas, telefono, usarPremio, ahora) {
-  const disp = premiosDe_(leerTarjeta_(telefono));
+  /* Con las reservas restadas: un premio comprometido por un pedido que aun no
+     se entrega no se puede volver a pedir. Sin esto, dos pedidos seguidos antes
+     de que llegue el primero se llevaban dos pizzas gratis. */
+  const disp = premiosDe_(leerTarjeta_(telefono), premiosReservados_(telefono));
   const opciones = [];
 
   // 2x1 del viernes: gratis la mas barata del par, una por pedido. Postres y
@@ -597,7 +683,16 @@ function indiceDe_(lineas, productoId) {
 /* Cuenta el dia y aplica el canje. Dias DISTINTOS: si ya hubo pedido hoy, no
    suma. Al canjear la pizza el ciclo resta 9 en vez de irse a cero, para no
    castigar a quien acumulo de mas antes de canjear. */
-function registrarDia_(telefono, premio, ahora, ganaSello) {
+/* Liquida la tarjeta de un pedido: suma el sello y gasta el premio.
+
+   Corre al ENTREGAR, no al pedir. Un pedido que se cancela o que nunca avanza
+   no vale: antes sellaba en cuanto entraba, asi que una cancelacion dejaba el
+   sello puesto y el premio gastado. Entre pedir y entregar el premio queda
+   apartado por premiosReservados_, para que no se pida dos veces.
+
+   premioTipo llega como texto desde la columna `premio` del pedido
+   ('tarjeta:brownie', 'tarjeta:pizza', '2x1' o vacio). */
+function liquidarPedido_(telefono, premioTipo, ahora, ganaSello) {
   if (!telefono) return null;
   const sh = sheet_(SHEETS.clientes);
   const t = leerTarjeta_(telefono);
@@ -610,18 +705,18 @@ function registrarDia_(telefono, premio, ahora, ganaSello) {
   let ciclos = t.ciclos;
   let brownieGuardado = t.brownieGuardado;
 
-  /* El sello se gana con una pizza cobrada, y uno por dia. ultimoDia solo se
+  /* Un sello por dia, contado el dia en que se ENTREGA. ultimoDia solo se
      mueve cuando de verdad se gano: si no, un pedido de agua en la manana
      marcaria el dia y la pizza de la noche ya no contaria. */
   const nuevoDia = ganaSello && t.ultimoDia !== hoy;
   if (nuevoDia) dias += 1;
 
-  if (premio && premio.tipo === 'tarjeta:brownie') {
+  if (premioTipo === 'tarjeta:brownie') {
     // Se gasta primero el brownie heredado, y si no hay, el de esta tarjeta.
     if (brownieGuardado) brownieGuardado = false;
     else brownieUsado = true;
   }
-  if (premio && premio.tipo === 'tarjeta:pizza') {
+  if (premioTipo === 'tarjeta:pizza') {
     /* La tarjeta se cierra. Un brownie que quedo sin reclamar NO se pierde:
        pasa a la siguiente. Ya se promete que los dias extra se conservan, y
        seria incoherente que el premio si se evaporara. */
@@ -669,6 +764,16 @@ function avanzarEstado_(body) {
   sh.getRange(index, ORDENES_HEADERS.indexOf('estado') + 1).setValue(nuevo);
   const tsCol = TS_POR_ESTADO[nuevo];
   if (tsCol) sh.getRange(index, ORDENES_HEADERS.indexOf(tsCol) + 1).setValue(new Date());
+  /* Aqui, y solo aqui, se sella la tarjeta. Un pedido cancelado o que se quedo
+     a medias no cuenta, que es justo lo que se pedia. */
+  if (nuevo === 'entregada' && row[ORDENES_HEADERS.indexOf('sello')] === 'pendiente') {
+    liquidarPedido_(
+      row[ORDENES_HEADERS.indexOf('cliente_telefono')],
+      String(row[ORDENES_HEADERS.indexOf('premio')] || ''),
+      new Date(), true);
+    sh.getRange(index, ORDENES_HEADERS.indexOf('sello') + 1).setValue('contado');
+  }
+
   if (nuevo === 'entregada') {
     const pagoMetodo = row[ORDENES_HEADERS.indexOf('pago_metodo')];
     if (pagoMetodo === 'Efectivo' || pagoMetodo === 'Terminal') {
@@ -684,6 +789,10 @@ function cancelarOrden_(body) {
   const { index } = findOrdenRow_(sh, body.folio);
   sh.getRange(index, ORDENES_HEADERS.indexOf('estado') + 1).setValue('cancelada');
   sh.getRange(index, ORDENES_HEADERS.indexOf('motivo_cancelacion') + 1).setValue(textoSeguro_(body.motivo));
+  /* El sello queda anulado y el premio se libera solo: como la tarjeta nunca se
+     toco al pedir, no hay nada que devolver — basta con que este pedido deje de
+     estar 'pendiente' para que premiosReservados_ lo suelte. */
+  sh.getRange(index, ORDENES_HEADERS.indexOf('sello') + 1).setValue('no');
   return { folio: body.folio, estado: 'cancelada' };
 }
 
@@ -780,7 +889,14 @@ function armarOrdenes_(ordenes) {
     const minTranscurridos = o.t_recibida ? Math.floor((Date.now() - new Date(o.t_recibida).getTime()) / 60000) : 0;
     return {
       folio: o.folio, canal: o.canal, estado: o.estado,
-      cliente: o.cliente_nombre, destino: o.direccion + (o.colonia ? ' · ' + o.colonia : ''),
+      cliente: o.cliente_nombre,
+      /* En un pedido para recoger no hay direccion. Si el destino se quedara en
+         blanco, en la cocina se veria como un pedido a domicilio incompleto y
+         se saldria un repartidor a ningun lado. */
+      pickup: o.entrega_tipo === 'pickup',
+      destino: o.entrega_tipo === 'pickup'
+        ? 'PASA A RECOGERLO'
+        : o.direccion + (o.colonia ? ' · ' + o.colonia : ''),
       pago: o.pago_metodo, pagado: o.pago_estado === 'pagado',
       total: o.total, min: minTranscurridos, notas: o.notas || '', lineas
     };

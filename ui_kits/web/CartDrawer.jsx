@@ -113,6 +113,7 @@ function CartDrawer({ open, lines, onClose, onQty, step, setStep, canal = 'Web',
   const [usarPremio, setUsarPremio] = React.useState(null);
   const [tarjeta, setTarjeta] = React.useState(null);
   const [premio, setPremio] = React.useState(null);
+  const [selloPendiente, setSelloPendiente] = React.useState(false);
   const [error, setError] = React.useState(null);
   // El folio vive en el padre para que sobreviva a cerrar el carrito y a recargar.
   const folio = folioActivo;
@@ -197,7 +198,20 @@ function CartDrawer({ open, lines, onClose, onQty, step, setStep, canal = 'Web',
     ? mextizzaDescuentoPrevisto(lines, tarjetaPrevia, usarPremio,
         typeof mextizzaEs2x1 === 'function' && mextizzaEs2x1())
     : null;
-  const subtotal = Math.max(0, bruto - (promo ? promo.descuento : 0));
+  /* Recoger descuenta un reparto que no se hace. Se suma a las promociones en
+     vez de competir con ellas: el 2x1 es un regalo, esto es no cobrar un envio
+     que no hiciste. Solo aplica si hay pizza cobrada, o un agua de $35 saldria
+     en $5. Espejo de crearOrden_ en Code.gs. */
+  const esPickupEntrega = !!entrega && entrega.entrega_tipo === 'pickup';
+  // Unidades de pizza que se cobran: el regalo se lleva una, si es que fue pizza.
+  const unidadesPizza = (lines || []).reduce((n, l) =>
+    n + (typeof mextizzaEsPizza === 'function' && mextizzaEsPizza(l.id) ? l.qty : 0), 0);
+  const regaloEsPizza = !!promo && (promo.motivo === '2x1' || promo.motivo === 'tarjeta:pizza');
+  const hayPizzaCobrada = unidadesPizza - (regaloEsPizza ? 1 : 0) > 0;
+  const descuentoPickup = (esPickupEntrega && hayPizzaCobrada)
+    ? Math.min(MEXTIZZA_PICKUP_DESCUENTO, Math.max(0, bruto - (promo ? promo.descuento : 0)))
+    : 0;
+  const subtotal = Math.max(0, bruto - (promo ? promo.descuento : 0) - descuentoPickup);
 
   const confirmar = async () => {
     if (step === 'cart') return setStep('checkout');
@@ -219,6 +233,7 @@ function CartDrawer({ open, lines, onClose, onQty, step, setStep, canal = 'Web',
       const r = await mextizzaCrearOrden({ canal, lines, entrega, usarPremio });
       setTarjeta(r.tarjeta || null);
       setPremio(r.premio || null);
+      setSelloPendiente(!!r.selloPendiente);
       // El padre guarda el folio y vacia el carrito: antes las lineas se quedaban
       // ahi despues de enviar y el siguiente pedido arrancaba con el anterior dentro.
       onOrdenCreada && onOrdenCreada(r.folio);
@@ -307,7 +322,7 @@ function CartDrawer({ open, lines, onClose, onQty, step, setStep, canal = 'Web',
                 <SeguimientoPedido folio={folio} />
               </FramedPanel>
               {premio && <AvisoPremio premio={premio} style={{ marginTop: 12 }} />}
-              {tarjeta && <TarjetaPremios tarjeta={tarjeta} animarUltimo style={{ marginTop: 12 }} />}
+              {tarjeta && <TarjetaPremios tarjeta={tarjeta} pendiente={selloPendiente} style={{ marginTop: 12 }} />}
             </>
           )}
         </div>
@@ -324,8 +339,16 @@ function CartDrawer({ open, lines, onClose, onQty, step, setStep, canal = 'Web',
                 <span>{NOMBRE_PROMO[promo.motivo] || 'Promoción'}</span><span>−${promo.descuento}</span>
               </div>
             )}
+            {descuentoPickup > 0 && (
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontFamily: 'var(--font-body)', fontSize: 13, color: 'var(--rosa-mexicano-texto)', marginBottom: 6 }}>
+                <span>Pasas a recogerlo</span><span>−${descuentoPickup}</span>
+              </div>
+            )}
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginTop: 8, marginBottom: 16 }}>
-              <span style={{ fontFamily: 'var(--font-label)', fontSize: 11, letterSpacing: 1, textTransform: 'uppercase' }}>Total <span style={{ textTransform: 'none', letterSpacing: 0, color: 'var(--text-muted)' }}>· envío incluido</span></span>
+              <span style={{ fontFamily: 'var(--font-label)', fontSize: 11, letterSpacing: 1, textTransform: 'uppercase' }}>Total
+                {/* Recogiendo no hay envio que incluir. */}
+                <span style={{ textTransform: 'none', letterSpacing: 0, color: 'var(--text-muted)' }}>
+                  {esPickupEntrega ? ' · pasas por él' : ' · envío incluido'}</span></span>
               <span style={{ fontFamily: 'var(--font-body)', fontWeight: 800, fontSize: 22, color: 'var(--text-price)' }}>${subtotal}</span>
             </div>
             <Button tone="primary" size="lg" block iconAfter={enviando ? undefined : 'chevronRight'}
@@ -339,7 +362,9 @@ function CartDrawer({ open, lines, onClose, onQty, step, setStep, canal = 'Web',
               }}>
                 {motivo === 'cerrado'
                   ? 'La cocina está cerrada ahorita.' + (apertura.texto ? ' Abrimos ' + apertura.texto.toLowerCase() + '.' : '')
-                  : 'Faltan datos: dirección dentro del radio y forma de pago.'}
+                  : (esPickupEntrega
+                    ? 'Falta elegir la forma de pago.'
+                    : 'Faltan datos: dirección dentro del radio y forma de pago.')}
               </p>
             )}
           </div>

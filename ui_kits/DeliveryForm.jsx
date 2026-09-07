@@ -19,6 +19,32 @@ function DeliveryForm({ compact = false, attempted = false, onValidChange, onDat
   const [pago, setPago] = React.useState(null);
   const [notas, setNotas] = React.useState('');
 
+  /* Recoger o que se lo llevemos. Va PRIMERO porque decide que campos tienen
+     sentido: a quien pasa por su pizza no se le pide direccion ni se le evalua
+     la zona de reparto. */
+  const [modo, setModo] = React.useState('domicilio');
+  const pickup = modo === 'pickup';
+
+  /* La direccion de la cocina se pide al servidor, no viaja en el codigo: el
+     repositorio es publico y es un domicilio particular. Se guarda en el
+     navegador para no repetir la llamada, que contra Apps Script tarda ~2 s. */
+  const [dirPickup, setDirPickup] = React.useState(() => {
+    try { return window.localStorage.getItem('mextizza:pickup') || ''; } catch (e) { return ''; }
+  });
+  React.useEffect(() => {
+    if (!pickup || dirPickup || typeof mextizzaPickup !== 'function') return;
+    let vivo = true;
+    mextizzaPickup()
+      .then((r) => {
+        if (!vivo || !r.direccion) return;
+        setDirPickup(r.direccion);
+        try { window.localStorage.setItem('mextizza:pickup', r.direccion); } catch (e) {}
+      })
+      // Si falla, abajo se ofrece pedirla por WhatsApp: mejor eso que un hueco.
+      .catch(() => {});
+    return () => { vivo = false; };
+  }, [pickup, dirPickup]);
+
   const digits = tel.replace(/\D/g, '');
   const telOk = digits.length === 10;
   const zona = colonia ? zonaEvaluar(colonia) : null;
@@ -37,12 +63,20 @@ function DeliveryForm({ compact = false, attempted = false, onValidChange, onDat
     ? mextizzaEstaAbierto(ahora)
     : { abierto: true, texto: "" };
 
-  const valid = !!nombre.trim() && telOk && !!calle.trim() && zonaOk && !!pago && apertura.abierto;
+  // Recogiendo no hay direccion que validar ni zona que evaluar.
+  const datosEntrega = pickup || (!!calle.trim() && zonaOk);
+  const valid = !!nombre.trim() && telOk && datosEntrega && !!pago && apertura.abierto;
 
   React.useEffect(() => { onValidChange && onValidChange(valid); }, [valid]);
   React.useEffect(() => {
-    onDataChange && onDataChange({ nombre, telefono: digits, calle, colonia, km: zona ? zona.km : null, horario, pago, notas });
-  }, [nombre, digits, calle, colonia, horario, pago, notas]);
+    onDataChange && onDataChange({
+      nombre, telefono: digits, horario, pago, notas,
+      entrega_tipo: modo,
+      calle: pickup ? '' : calle,
+      colonia: pickup ? '' : colonia,
+      km: pickup ? null : (zona ? zona.km : null),
+    });
+  }, [nombre, digits, calle, colonia, horario, pago, notas, modo]);
 
   const gap = compact ? 12 : 14;
   const tone = zona ? (zona.estado === 'dentro' ? 'ok' : zona.estado === 'limite' ? 'warn' : 'block') : 'ok';
@@ -54,6 +88,25 @@ function DeliveryForm({ compact = false, attempted = false, onValidChange, onDat
           Abrimos {apertura.texto.toLowerCase()}. Si quieres dejarlo apuntado desde ahorita, escríbenos por WhatsApp.
         </StatusNote>
       )}
+      {/* Primero como lo recibe: decide que se le pregunta despues. */}
+      <RadioGroup label="¿Cómo lo recibes?" required
+        options={['A domicilio', 'Paso a recogerlo']}
+        value={pickup ? 'Paso a recogerlo' : 'A domicilio'}
+        onChange={(v) => setModo(v === 'Paso a recogerlo' ? 'pickup' : 'domicilio')}
+        columns={2}
+        hint={pickup
+          ? 'Te descontamos $' + MEXTIZZA_PICKUP_DESCUENTO + ' por recogerlo tú.'
+          : 'El envío ya está incluido en el precio.'}
+        style={{ marginBottom: gap + 2 }} />
+
+      {pickup && (
+        <StatusNote tone="ok" title="Pasas por él a nuestra cocina" style={{ marginBottom: gap + 2 }}>
+          {dirPickup
+            ? dirPickup
+            : 'Te mandamos la dirección exacta por WhatsApp en cuanto confirmemos tu pedido.'}
+        </StatusNote>
+      )}
+
       <Field label="Nombre" required placeholder="Tu nombre" value={nombre}
         onChange={e => setNombre(e.target.value)}
         invalid={attempted && !nombre.trim()} />
@@ -64,18 +117,24 @@ function DeliveryForm({ compact = false, attempted = false, onValidChange, onDat
         hint={attempted && !telOk ? 'Necesitamos 10 dígitos para confirmarte por WhatsApp.' : 'Te confirmamos el pedido por WhatsApp a este número.'}
         style={{ marginTop: gap }} />
 
-      <Field label="Calle y número" required placeholder="Av. Lomas Lindas 120, int. 4" value={calle}
-        onChange={e => setCalle(e.target.value)}
-        invalid={attempted && !calle.trim()}
-        style={{ marginTop: gap }} />
+      {/* A quien pasa por su pizza no se le pide direccion ni se le evalua la
+          zona de reparto: no hay nada que repartir. */}
+      {!pickup && (
+        <>
+          <Field label="Calle y número" required placeholder="Av. Lomas Lindas 120, int. 4" value={calle}
+            onChange={e => setCalle(e.target.value)}
+            invalid={attempted && !calle.trim()}
+            style={{ marginTop: gap }} />
 
-      <Field label="Colonia" as="select" required value={colonia}
-        onChange={e => setColonia(e.target.value)}
-        invalid={attempted && !zonaOk}
-        options={['', ...MEXTIZZA_ZONE.colonias.map(c => c.name)]}
-        style={{ marginTop: gap }} />
+          <Field label="Colonia" as="select" required value={colonia}
+            onChange={e => setColonia(e.target.value)}
+            invalid={attempted && !zonaOk}
+            options={['', ...MEXTIZZA_ZONE.colonias.map(c => c.name)]}
+            style={{ marginTop: gap }} />
+        </>
+      )}
 
-      {zona ? (
+      {pickup ? null : zona ? (
         <StatusNote tone={tone} title={zona.titulo} style={{ marginTop: 12 }}>
           {zona.detalle}
         </StatusNote>
@@ -99,7 +158,9 @@ function DeliveryForm({ compact = false, attempted = false, onValidChange, onDat
         <RadioGroup label="Forma de pago" required options={PAGOS} value={pago} onChange={setPago}
           columns={compact ? 1 : 3}
           invalid={attempted && !pago}
-          hint={attempted && !pago ? 'Elige una forma de pago para continuar.' : 'Se cobra al entregar. El envío ya está incluido en el precio.'}
+                    hint={attempted && !pago
+            ? 'Elige una forma de pago para continuar.'
+            : (pickup ? 'Se cobra al entregarte el pedido en la cocina.' : 'Se cobra al entregar. El envío ya está incluido en el precio.')}
           style={{ marginTop: gap + 4 }} />
       </div>
 

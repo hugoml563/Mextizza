@@ -137,6 +137,13 @@ function mextizzaEs2x1(ahora) {
    Espejo de esPizza_ en Code.gs, que decide quien gana sello y quien puede
    canjear. Aqui solo sirve para no OFRECER lo que el servidor va a rechazar:
    quien manda sigue siendo el servidor. */
+/* Descuento por recoger en la cocina. Sustituye un reparto que no se hizo, asi
+   que es fijo por pedido y no por pizza: el viaje ahorrado es uno solo.
+   Espejo de PICKUP_DESCUENTO en Code.gs; build-js.js comprueba que coincidan.
+   La DIRECCION no vive aqui ni en ningun archivo: el repositorio es publico y es
+   un domicilio particular. Se pide al servidor. */
+const MEXTIZZA_PICKUP_DESCUENTO = 30;
+
 function mextizzaEsPizza(id) {
   const grupo = MEXTIZZA_MENU.find(g => g.items.some(i => i.id === id));
   return !!grupo && grupo.cat !== 'Para cerrar';
@@ -154,4 +161,4 @@ const MEXTIZZA_SOCIAL = {
   instagram: 'https://www.instagram.com/mextizzamx/',
   facebook: 'https://www.facebook.com/profile.php?id=61592120047383'
 };
-Object.assign(window, { MEXTIZZA_MENU, MEXTIZZA_ADDONS, MEXTIZZA_FACTS, mextizzaWhatsappLink, mextizzaEstaAbierto, mextizzaEs2x1, mextizzaProducto, mextizzaEsPizza, mextizzaAceptaComplementos, MEXTIZZA_SOCIAL });
+Object.assign(window, { MEXTIZZA_MENU, MEXTIZZA_ADDONS, MEXTIZZA_FACTS, mextizzaWhatsappLink, mextizzaEstaAbierto, mextizzaEs2x1, mextizzaProducto, mextizzaEsPizza, MEXTIZZA_PICKUP_DESCUENTO, mextizzaAceptaComplementos, MEXTIZZA_SOCIAL });
