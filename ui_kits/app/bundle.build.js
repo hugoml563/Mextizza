@@ -183,18 +183,14 @@ function CintaPromo({
     style: {
       display: 'inline-flex',
       alignItems: 'center',
-      gap: 14,
-      padding: '0 26px',
       whiteSpace: 'nowrap',
       fontFamily: 'var(--font-body)',
-      fontSize: 13.5,
       letterSpacing: 0.2,
       color: 'var(--dorado-masa)'
     }
   }, /*#__PURE__*/React.createElement("b", {
     style: {
       fontFamily: 'var(--font-display)',
-      fontSize: 17,
       letterSpacing: 0.5,
       color: 'var(--dorado-masa)',
       lineHeight: 1
@@ -205,34 +201,28 @@ function CintaPromo({
       opacity: 0.5
     }
   }, "\xB7"))));
-  return /*#__PURE__*/React.createElement("div", {
-    className: "mx-cinta",
-    style: {
-      background: 'var(--negro-carbon)',
-      padding: '10px 0',
-      borderBottom: '2px solid var(--dorado-masa)',
-      ...style
-    }
-  }, /*#__PURE__*/React.createElement("div", {
-    className: "mx-cinta-pista"
-  }, grupo(false), grupo(true)), vistaPrevia && !activo && /*#__PURE__*/React.createElement("span", {
-    style: {
-      position: 'absolute',
-      top: 0,
-      right: 0,
-      bottom: 0,
-      display: 'flex',
-      alignItems: 'center',
-      padding: '0 12px',
-      background: 'var(--rosa-mexicano)',
-      color: '#fff',
-      fontFamily: 'var(--font-label)',
-      fontSize: 9.5,
-      letterSpacing: 1.2,
-      textTransform: 'uppercase',
-      whiteSpace: 'nowrap'
-    }
-  }, "Vista previa \xB7 hoy no hay 2x1"));
+  return (
+    /*#__PURE__*/
+    /* El relleno y los tamanos viven en tokens/base.css, no aqui: en linea
+       ganaban siempre y dejaban muerto el ajuste para telefono. */
+    React.createElement("div", {
+      className: "mx-cinta",
+      style: {
+        background: 'var(--negro-carbon)',
+        borderBottom: '2px solid var(--dorado-masa)',
+        ...style
+      }
+    }, /*#__PURE__*/React.createElement("div", {
+      className: "mx-cinta-pista"
+    }, grupo(false), grupo(true)), vistaPrevia && !activo &&
+    /*#__PURE__*/
+    /* En pantalla ancha va sobrepuesta a la derecha; en telefono pasa a su
+       propio renglon, porque encimada tapaba justo el mensaje que se quiere
+       revisar. El posicionamiento vive en base.css. */
+    React.createElement("span", {
+      className: "mx-cinta-vista"
+    }, "Vista previa \xB7 hoy no hay 2x1"))
+  );
 }
 
 /* ------------------------------------------------------------------ app ---

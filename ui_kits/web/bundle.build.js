@@ -92,13 +92,18 @@ const webShell = {
     padding: '0 24px'
   }
 };
+
+/* `cinta` es el anuncio de promocion. Va DENTRO del encabezado para que quede
+   pegado arriba junto con el, y despues de la cinta de colores — que se ancla
+   al borde inferior de su propio contenedor, no del encabezado entero. */
 function WebHeader({
   count,
   onCart,
   onNav,
   view,
   folio,
-  onSeguir
+  onSeguir,
+  cinta
 }) {
   return /*#__PURE__*/React.createElement("header", {
     style: {
@@ -109,6 +114,10 @@ function WebHeader({
       top: 0,
       zIndex: 5,
       borderBottom: 'var(--border-paper)'
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      position: 'relative'
     }
   }, /*#__PURE__*/React.createElement("div", {
     className: "web-header-inner",
@@ -204,7 +213,7 @@ function WebHeader({
   }), /*#__PURE__*/React.createElement("span", null, count ? count : 'Pedido')))), /*#__PURE__*/React.createElement(TapeStripe, {
     position: "bottom",
     height: 4
-  }));
+  })), cinta);
 }
 function WebHero({
   onNav
@@ -1230,18 +1239,14 @@ function CintaPromo({
     style: {
       display: 'inline-flex',
       alignItems: 'center',
-      gap: 14,
-      padding: '0 26px',
       whiteSpace: 'nowrap',
       fontFamily: 'var(--font-body)',
-      fontSize: 13.5,
       letterSpacing: 0.2,
       color: 'var(--dorado-masa)'
     }
   }, /*#__PURE__*/React.createElement("b", {
     style: {
       fontFamily: 'var(--font-display)',
-      fontSize: 17,
       letterSpacing: 0.5,
       color: 'var(--dorado-masa)',
       lineHeight: 1
@@ -1252,34 +1257,28 @@ function CintaPromo({
       opacity: 0.5
     }
   }, "\xB7"))));
-  return /*#__PURE__*/React.createElement("div", {
-    className: "mx-cinta",
-    style: {
-      background: 'var(--negro-carbon)',
-      padding: '10px 0',
-      borderBottom: '2px solid var(--dorado-masa)',
-      ...style
-    }
-  }, /*#__PURE__*/React.createElement("div", {
-    className: "mx-cinta-pista"
-  }, grupo(false), grupo(true)), vistaPrevia && !activo && /*#__PURE__*/React.createElement("span", {
-    style: {
-      position: 'absolute',
-      top: 0,
-      right: 0,
-      bottom: 0,
-      display: 'flex',
-      alignItems: 'center',
-      padding: '0 12px',
-      background: 'var(--rosa-mexicano)',
-      color: '#fff',
-      fontFamily: 'var(--font-label)',
-      fontSize: 9.5,
-      letterSpacing: 1.2,
-      textTransform: 'uppercase',
-      whiteSpace: 'nowrap'
-    }
-  }, "Vista previa \xB7 hoy no hay 2x1"));
+  return (
+    /*#__PURE__*/
+    /* El relleno y los tamanos viven en tokens/base.css, no aqui: en linea
+       ganaban siempre y dejaban muerto el ajuste para telefono. */
+    React.createElement("div", {
+      className: "mx-cinta",
+      style: {
+        background: 'var(--negro-carbon)',
+        borderBottom: '2px solid var(--dorado-masa)',
+        ...style
+      }
+    }, /*#__PURE__*/React.createElement("div", {
+      className: "mx-cinta-pista"
+    }, grupo(false), grupo(true)), vistaPrevia && !activo &&
+    /*#__PURE__*/
+    /* En pantalla ancha va sobrepuesta a la derecha; en telefono pasa a su
+       propio renglon, porque encimada tapaba justo el mensaje que se quiere
+       revisar. El posicionamiento vive en base.css. */
+    React.createElement("span", {
+      className: "mx-cinta-vista"
+    }, "Vista previa \xB7 hoy no hay 2x1"))
+  );
 }
 
 /* ------------------------------------------------------------------ app ---
@@ -3220,14 +3219,37 @@ function Site() {
     ...l,
     qty: n
   } : l));
+  /* La altura del encabezado se mide, no se supone. Estaba fija en 90 px, que ya
+     fallaba en movil —ahi mide 72— y habria fallado mas al anclarle la cinta de
+     promocion, que lo hace crecer: la seccion aterrizaba tapada. */
+  const altoEncabezado = () => {
+    const h = document.querySelector('header');
+    return h ? Math.round(h.getBoundingClientRect().height) : 90;
+  };
   const nav = k => {
     setView(k);
     const el = document.getElementById(k);
     window.scrollTo({
-      top: el ? el.offsetTop - 90 : 0,
+      top: el ? Math.max(0, el.offsetTop - altoEncabezado() - 8) : 0,
       behavior: 'smooth'
     });
   };
+
+  /* El navegador necesita saberlo tambien: sin scroll-padding, al saltar a un
+     ancla o al llegar con Tab a un control cerca del borde, el encabezado pegado
+     lo tapa. Se remide cuando el encabezado cambia de tamaño. */
+  React.useEffect(() => {
+    const h = document.querySelector('header');
+    if (!h) return;
+    const aplicar = () => {
+      document.documentElement.style.scrollPaddingTop = altoEncabezado() + 8 + 'px';
+    };
+    aplicar();
+    if (typeof ResizeObserver !== 'function') return;
+    const ro = new ResizeObserver(aplicar);
+    ro.observe(h);
+    return () => ro.disconnect();
+  }, []);
   const count = lines.reduce((s, l) => s + l.qty, 0);
   React.useEffect(() => {
     const els = document.querySelectorAll('.reveal');
@@ -3270,9 +3292,13 @@ function Site() {
       setOpen(true);
       setStep(folio ? 'done' : 'buscar');
     }
-  }), /*#__PURE__*/React.createElement(CintaPromo, {
-    activo: typeof mextizzaEs2x1 === 'function' && mextizzaEs2x1(),
-    vistaPrevia: typeof mextizzaVistaPrevia === 'function' && mextizzaVistaPrevia('2x1')
+    /* Dentro del encabezado, para que quede a la vista mientras se navega: es
+       lo primero que ve quien llega y ahi todavia puede decidir pedir dos
+       pizzas. En el checkout el aviso llega tarde. */,
+    cinta: /*#__PURE__*/React.createElement(CintaPromo, {
+      activo: typeof mextizzaEs2x1 === 'function' && mextizzaEs2x1(),
+      vistaPrevia: typeof mextizzaVistaPrevia === 'function' && mextizzaVistaPrevia('2x1')
+    })
   }), /*#__PURE__*/React.createElement(WebHero, {
     onNav: nav
   }), /*#__PURE__*/React.createElement(WebMenu, {

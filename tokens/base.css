@@ -38,6 +38,24 @@ button{font-family:var(--font-body)}
    global de mas arriba deja las animaciones en 0.01ms, lo que congelaria la
    cinta a mitad del recorrido; aqui se le da un estado quieto que si se lee. */
 .mx-cinta{overflow:hidden;position:relative}
+/* Pegada arriba junto al encabezado, la cinta cobra alto de pantalla en cada
+   scroll. En telefono se adelgaza para no comerse la vista. */
+/* Escritorio. Los tamanos viven aqui y no en el componente: en linea ganaban
+   siempre y dejaban muerto el ajuste de abajo. */
+.mx-cinta{padding:10px 0}
+.mx-cinta-grupo>span{font-size:13.5px;padding:0 26px;gap:14px}
+.mx-cinta-grupo>span>b{font-size:17px}
+/* Marca de vista previa. Sobrepuesta a la derecha cuando cabe. */
+.mx-cinta-vista{position:absolute;top:0;right:0;bottom:0;display:flex;align-items:center;
+  padding:0 12px;background:var(--rosa-mexicano);color:#fff;font-family:var(--font-label);
+  font-size:9.5px;letter-spacing:1.2px;text-transform:uppercase;white-space:nowrap}
+@media (max-width:640px){
+  .mx-cinta{padding:6px 0}
+  /* Encimada tapaba el mensaje entero en un telefono: pasa a su propio renglon. */
+  .mx-cinta-vista{position:static;justify-content:center;padding:4px 12px;margin-top:6px}
+  .mx-cinta-grupo>span{font-size:12px;padding:0 16px;gap:9px}
+  .mx-cinta-grupo>span>b{font-size:14px}
+}
 .mx-cinta-pista{display:flex;width:max-content;animation:mxdesfile 30s linear infinite}
 .mx-cinta:hover .mx-cinta-pista,.mx-cinta:focus-within .mx-cinta-pista{animation-play-state:paused}
 @keyframes mxdesfile{from{transform:translateX(0)}to{transform:translateX(-50%)}}

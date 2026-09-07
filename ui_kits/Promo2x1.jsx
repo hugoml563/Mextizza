@@ -41,13 +41,12 @@ function CintaPromo({ activo, vistaPrevia, style }) {
       {[0, 1, 2, 3].map((i) => (
         <span key={i} aria-hidden={oculto || i > 0 ? 'true' : undefined}
           style={{
-            display: 'inline-flex', alignItems: 'center', gap: 14,
-            padding: '0 26px', whiteSpace: 'nowrap',
-            fontFamily: 'var(--font-body)', fontSize: 13.5, letterSpacing: 0.2,
+            display: 'inline-flex', alignItems: 'center', whiteSpace: 'nowrap',
+            fontFamily: 'var(--font-body)', letterSpacing: 0.2,
             color: 'var(--dorado-masa)',
           }}>
           <b style={{
-            fontFamily: 'var(--font-display)', fontSize: 17, letterSpacing: 0.5,
+            fontFamily: 'var(--font-display)', letterSpacing: 0.5,
             color: 'var(--dorado-masa)', lineHeight: 1,
           }}>2x1</b>
           {MENSAJE_2X1}
@@ -58,8 +57,10 @@ function CintaPromo({ activo, vistaPrevia, style }) {
   );
 
   return (
+    /* El relleno y los tamanos viven en tokens/base.css, no aqui: en linea
+       ganaban siempre y dejaban muerto el ajuste para telefono. */
     <div className="mx-cinta" style={{
-      background: 'var(--negro-carbon)', padding: '10px 0',
+      background: 'var(--negro-carbon)',
       borderBottom: '2px solid var(--dorado-masa)', ...style,
     }}>
       <div className="mx-cinta-pista">
@@ -69,12 +70,10 @@ function CintaPromo({ activo, vistaPrevia, style }) {
       {/* Solo en vista previa. Si alguien cae aqui por accidente un dia que no
           es de promocion, tiene que quedarle claro que no hay 2x1 hoy. */}
       {vistaPrevia && !activo && (
-        <span style={{
-          position: 'absolute', top: 0, right: 0, bottom: 0, display: 'flex', alignItems: 'center',
-          padding: '0 12px', background: 'var(--rosa-mexicano)', color: '#fff',
-          fontFamily: 'var(--font-label)', fontSize: 9.5, letterSpacing: 1.2,
-          textTransform: 'uppercase', whiteSpace: 'nowrap',
-        }}>Vista previa · hoy no hay 2x1</span>
+        /* En pantalla ancha va sobrepuesta a la derecha; en telefono pasa a su
+           propio renglon, porque encimada tapaba justo el mensaje que se quiere
+           revisar. El posicionamiento vive en base.css. */
+        <span className="mx-cinta-vista">Vista previa · hoy no hay 2x1</span>
       )}
     </div>
   );

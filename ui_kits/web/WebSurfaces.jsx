@@ -24,12 +24,16 @@ const webShell = {
   page: { maxWidth: 1080, margin: '0 auto', padding: '0 24px' }
 };
 
-function WebHeader({ count, onCart, onNav, view, folio, onSeguir }) {
+/* `cinta` es el anuncio de promocion. Va DENTRO del encabezado para que quede
+   pegado arriba junto con el, y despues de la cinta de colores — que se ancla
+   al borde inferior de su propio contenedor, no del encabezado entero. */
+function WebHeader({ count, onCart, onNav, view, folio, onSeguir, cinta }) {
   return (
     <header style={{
       background: 'rgba(245,240,232,0.82)', backdropFilter: 'blur(10px) saturate(140%)', WebkitBackdropFilter: 'blur(10px) saturate(140%)',
       position: 'sticky', top: 0, zIndex: 5, borderBottom: 'var(--border-paper)'
     }}>
+      <div style={{ position: 'relative' }}>
       <div className="web-header-inner" style={{ ...webShell.page, display: 'flex', alignItems: 'center', justifyContent: 'space-between', height: 92 }}>
         <a href="#" onClick={e => { e.preventDefault(); onNav('home'); }} style={{ borderBottom: 'none' }}>
           <Lockup variant="pala" size={27} align="left" base="../../" />
@@ -65,6 +69,8 @@ function WebHeader({ count, onCart, onNav, view, folio, onSeguir }) {
         </nav>
       </div>
       <TapeStripe position="bottom" height={4} />
+      </div>
+      {cinta}
     </header>
   );
 }
