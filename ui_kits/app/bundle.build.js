@@ -58,9 +58,12 @@ function mapsUrl(direccion) {
   return 'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(direccion);
 }
 function DireccionRecoger({
-  activo,
+  activo: activoProp,
   style
 }) {
+  // Con el servicio apagado no se pinta ni se pide, ni para pedidos viejos que
+  // sigan marcados como pickup.
+  const activo = activoProp && typeof MEXTIZZA_PICKUP_ACTIVO !== 'undefined' && MEXTIZZA_PICKUP_ACTIVO;
   const [dir, setDir] = React.useState(() => {
     try {
       return window.localStorage.getItem(MEXTIZZA_PICKUP_CACHE) || '';
@@ -158,7 +161,9 @@ function DeliveryForm({
      sentido: a quien pasa por su pizza no se le pide direccion ni se le evalua
      la zona de reparto. */
   const [modo, setModo] = React.useState('domicilio');
-  const pickup = modo === 'pickup';
+  // Con el servicio apagado no hay modo que elegir: todo va a domicilio.
+  const servicioPickup = typeof MEXTIZZA_PICKUP_ACTIVO !== 'undefined' && MEXTIZZA_PICKUP_ACTIVO;
+  const pickup = servicioPickup && modo === 'pickup';
   const digits = tel.replace(/\D/g, '');
   const telOk = digits.length === 10;
   const zona = colonia ? zonaEvaluar(colonia) : null;
@@ -205,7 +210,7 @@ function DeliveryForm({
     style: {
       marginBottom: 14
     }
-  }, "Abrimos ", apertura.texto.toLowerCase(), ". Si quieres dejarlo apuntado desde ahorita, escr\xEDbenos por WhatsApp."), /*#__PURE__*/React.createElement(RadioGroup, {
+  }, "Abrimos ", apertura.texto.toLowerCase(), ". Si quieres dejarlo apuntado desde ahorita, escr\xEDbenos por WhatsApp."), servicioPickup && /*#__PURE__*/React.createElement(RadioGroup, {
     label: "\xBFC\xF3mo lo recibes?",
     required: true,
     options: ['A domicilio', 'Paso a recogerlo'],
@@ -1861,7 +1866,7 @@ function AppCart({
      vez de competir con ellas: el 2x1 es un regalo, esto es no cobrar un envio
      que no hiciste. Solo aplica si hay pizza cobrada, o un agua de $35 saldria
      en $5. Espejo de crearOrden_ en Code.gs. */
-  const esPickupEntrega = !!entrega && entrega.entrega_tipo === 'pickup';
+  const esPickupEntrega = !!entrega && entrega.entrega_tipo === 'pickup' && typeof MEXTIZZA_PICKUP_ACTIVO !== 'undefined' && MEXTIZZA_PICKUP_ACTIVO;
   // Unidades de pizza que se cobran: el regalo se lleva una, si es que fue pizza.
   const unidadesPizza = (lines || []).reduce((n, l) => n + (typeof mextizzaEsPizza === 'function' && mextizzaEsPizza(l.id) ? l.qty : 0), 0);
   const regaloEsPizza = !!promo && (promo.motivo === '2x1' || promo.motivo === 'tarjeta:pizza');

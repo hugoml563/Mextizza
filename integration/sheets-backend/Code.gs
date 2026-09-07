@@ -290,7 +290,9 @@ function doGet(e) {
        particular. Va con token publico porque el cliente la necesita para
        decidir, antes de tener un folio. */
     if (e.parameter.action === 'pickup') {
-      return jsonOut_({ ok: true, direccion: direccionPickup_(), descuento: PICKUP_DESCUENTO });
+      // Con el servicio apagado no se entrega la direccion a nadie.
+      if (!PICKUP_ACTIVO) return jsonOut_({ ok: true, direccion: '', descuento: 0, activo: false });
+      return jsonOut_({ ok: true, direccion: direccionPickup_(), descuento: PICKUP_DESCUENTO, activo: true });
     }
     if (e.parameter.action === 'tarjeta') {
       return jsonOut_({
@@ -424,6 +426,13 @@ function es2x1_(d) {
    y es un domicilio particular: quedaria indexado y en el historial de git para
    siempre. Se guarda con configurarPickup() en las propiedades del script, del
    mismo modo que los tokens, y se sirve por el API. */
+/* INTERRUPTOR DEL SERVICIO DE RECOGER. Espejo de MEXTIZZA_PICKUP_ACTIVO en
+   menu-data.js; el build compara los dos. En false el servidor rechaza los
+   pedidos para recoger y no entrega la direccion, aunque alguien la pida a
+   mano: apagarlo solo en el navegador dejaria el descuento al alcance de
+   cualquiera que arme la peticion. Nada se borro; se reactiva con true. */
+const PICKUP_ACTIVO = false;
+
 const PICKUP_DESCUENTO = 30;
 
 function direccionPickup_() {
@@ -535,7 +544,13 @@ function crearOrden_(body) {
 
   /* Recoger en la cocina: se descuenta un reparto que no se va a hacer. Se pide
      que haya una pizza cobrada, o un pedido de un agua de $35 saldria en $5. */
-  const pickup = body.entrega_tipo === 'pickup';
+  const pickup = PICKUP_ACTIVO && body.entrega_tipo === 'pickup';
+  if (!PICKUP_ACTIVO && body.entrega_tipo === 'pickup') {
+    /* Se rechaza en vez de tratarlo como domicilio: un pedido para recoger no
+       trae direccion, y convertirlo dejaria a la cocina con un reparto sin
+       destino. Le puede pasar a quien tenga la app vieja instalada. */
+    throw new Error('Por ahora solo entregamos a domicilio. Vuelve a intentarlo eligiendo entrega a domicilio.');
+  }
   const hayPizza = tienePizzaPagada_(lineas);
   const descuento = (pickup && hayPizza) ? Math.min(PICKUP_DESCUENTO, subtotal) : 0;
   const total = subtotal - descuento;

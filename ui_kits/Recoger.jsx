@@ -19,7 +19,11 @@ function mapsUrl(direccion) {
   return 'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(direccion);
 }
 
-function DireccionRecoger({ activo, style }) {
+function DireccionRecoger({ activo: activoProp, style }) {
+  // Con el servicio apagado no se pinta ni se pide, ni para pedidos viejos que
+  // sigan marcados como pickup.
+  const activo = activoProp &&
+    typeof MEXTIZZA_PICKUP_ACTIVO !== 'undefined' && MEXTIZZA_PICKUP_ACTIVO;
   const [dir, setDir] = React.useState(() => {
     try { return window.localStorage.getItem(MEXTIZZA_PICKUP_CACHE) || ''; } catch (e) { return ''; }
   });

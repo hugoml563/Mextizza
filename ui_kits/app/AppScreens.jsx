@@ -388,7 +388,8 @@ function AppCart({ lines, onQty, onConfirm, tab, onTab, count, inicialCliente, o
      vez de competir con ellas: el 2x1 es un regalo, esto es no cobrar un envio
      que no hiciste. Solo aplica si hay pizza cobrada, o un agua de $35 saldria
      en $5. Espejo de crearOrden_ en Code.gs. */
-  const esPickupEntrega = !!entrega && entrega.entrega_tipo === 'pickup';
+  const esPickupEntrega = !!entrega && entrega.entrega_tipo === 'pickup' &&
+    typeof MEXTIZZA_PICKUP_ACTIVO !== 'undefined' && MEXTIZZA_PICKUP_ACTIVO;
   // Unidades de pizza que se cobran: el regalo se lleva una, si es que fue pizza.
   const unidadesPizza = (lines || []).reduce((n, l) =>
     n + (typeof mextizzaEsPizza === 'function' && mextizzaEsPizza(l.id) ? l.qty : 0), 0);

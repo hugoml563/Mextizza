@@ -135,7 +135,23 @@ function verificarPremios() {
     throw new Error('El descuento por recoger no coincide: menu-data.js=' + dUi +
       ' Code.gs=' + dGs + '. Actualiza los dos antes de construir.');
   }
-  console.log('  pickup: descuento de $' + dGs + ' igual en las dos capas');
+  // El interruptor del servicio tambien vive en dos capas. Si se separan, el
+  // checkout ofrece recoger y el servidor rechaza el pedido, o al reves: la
+  // opcion desaparece pero el descuento sigue al alcance de quien lo pida a mano.
+  const menu = fs.readFileSync(path.join(RAIZ, 'ui_kits', 'menu-data.js'), 'utf8');
+  const aUi = (menu.match(/const MEXTIZZA_PICKUP_ACTIVO = (true|false);/) || [])[1];
+  const aGs = (gs.match(/const PICKUP_ACTIVO = (true|false);/) || [])[1];
+  if (!aUi || !aGs) throw new Error('no encontre el interruptor de pickup en alguna de las dos capas');
+  if (aUi !== aGs) {
+    throw new Error([
+      'El servicio de recoger no dice lo mismo en las dos capas.',
+      '    menu-data.js: ' + aUi,
+      '    Code.gs:      ' + aGs,
+      '  Los dos tienen que decir lo mismo antes de construir.',
+    ].join('\n'));
+  }
+  console.log('  pickup: servicio ' + (aGs === 'true' ? 'ACTIVO' : 'apagado') +
+    ' en las dos capas, descuento de $' + dGs);
   console.log('  premios: TarjetaPremios.jsx y Code.gs coinciden (brownie dia ' +
     mb[1] + ', ' + mp[2] + ' dia ' + mp[1] + ')');
 }

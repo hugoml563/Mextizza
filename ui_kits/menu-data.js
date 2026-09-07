@@ -142,6 +142,18 @@ function mextizzaEs2x1(ahora) {
    Espejo de PICKUP_DESCUENTO en Code.gs; build-js.js comprueba que coincidan.
    La DIRECCION no vive aqui ni en ningun archivo: el repositorio es publico y es
    un domicilio particular. Se pide al servidor. */
+/* INTERRUPTOR DEL SERVICIO DE RECOGER EN LA COCINA.
+
+   En false, la opcion no aparece en ningun lado: ni el selector del checkout,
+   ni el descuento, ni la direccion. Nada se borro — el servicio completo sigue
+   aqui y se reactiva poniendo true en este archivo Y en Code.gs (PICKUP_ACTIVO).
+   El build compara los dos y se detiene si no coinciden.
+
+   Apagarlo solo en el navegador no bastaria: cualquiera podria seguir mandando
+   entrega_tipo 'pickup' a mano y llevarse el descuento. Por eso el servidor
+   tiene su propio interruptor y rechaza esos pedidos. */
+const MEXTIZZA_PICKUP_ACTIVO = false;
+
 const MEXTIZZA_PICKUP_DESCUENTO = 30;
 
 function mextizzaEsPizza(id) {
@@ -161,4 +173,4 @@ const MEXTIZZA_SOCIAL = {
   instagram: 'https://www.instagram.com/mextizzamx/',
   facebook: 'https://www.facebook.com/profile.php?id=61592120047383'
 };
-Object.assign(window, { MEXTIZZA_MENU, MEXTIZZA_ADDONS, MEXTIZZA_FACTS, mextizzaWhatsappLink, mextizzaEstaAbierto, mextizzaEs2x1, mextizzaProducto, mextizzaEsPizza, MEXTIZZA_PICKUP_DESCUENTO, mextizzaAceptaComplementos, MEXTIZZA_SOCIAL });
+Object.assign(window, { MEXTIZZA_MENU, MEXTIZZA_ADDONS, MEXTIZZA_FACTS, mextizzaWhatsappLink, mextizzaEstaAbierto, mextizzaEs2x1, mextizzaProducto, mextizzaEsPizza, MEXTIZZA_PICKUP_DESCUENTO, MEXTIZZA_PICKUP_ACTIVO, mextizzaAceptaComplementos, MEXTIZZA_SOCIAL });

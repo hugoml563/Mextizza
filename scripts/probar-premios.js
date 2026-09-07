@@ -82,7 +82,15 @@ const ctx = {
   ContentService: { createTextOutput: (t) => ({ setMimeType: () => t }), MimeType: { JSON: 'json' } },
 };
 vm.createContext(ctx);
-vm.runInContext(fs.readFileSync(path.join(RAIZ, 'integration/sheets-backend/Code.gs'), 'utf8'), ctx);
+/* El servicio de recoger esta apagado en produccion (PICKUP_ACTIVO = false),
+   pero el codigo sigue completo para cuando se reactive. La suite principal lo
+   enciende para que no se pudra sin que nadie se entere; mas abajo hay una
+   seccion aparte que comprueba el comportamiento con el interruptor apagado,
+   que es como corre hoy. */
+const FUENTE = fs.readFileSync(path.join(RAIZ, 'integration/sheets-backend/Code.gs'), 'utf8');
+const conPickup = (activo) => FUENTE.replace(
+  /const PICKUP_ACTIVO = (?:true|false);/, 'const PICKUP_ACTIVO = ' + activo + ';');
+vm.runInContext(conPickup(true), ctx);
 
 /* Code.gs declara sus constantes con const, que no quedan como propiedades del
    contexto (las funciones si). Se leen evaluando dentro del sandbox. */
@@ -537,5 +545,66 @@ pedir([{ producto_id: CARA, cantidad: 1 }], { cuando: dMD, tel: TEL_MD });
 comparar('segundo pedido entregado el MISMO dia no suma', tarjetaDe(TEL_MD).dias, 1);
 pedir([{ producto_id: CARA, cantidad: 1 }], { cuando: diaAbierto(), tel: TEL_MD });
 comparar('otro dia si suma', tarjetaDe(TEL_MD).dias, 2);
+console.log('\nCON EL SERVICIO DE RECOGER APAGADO (COMO CORRE HOY)');
+/* Todo lo anterior corrio con el servicio encendido, para que el codigo dormido
+   no se pudra. Aqui se monta un servidor aparte con el interruptor como esta de
+   verdad en produccion, y se comprueba que apagarlo no dejo ninguna rendija. */
+const hojasOff = {};
+const propsOff = {};
+const ctxOff = {
+  console,
+  SpreadsheetApp: {
+    getActiveSpreadsheet: () => ({
+      getSheetByName: (n) => hojasOff[n] || null,
+      insertSheet: (n) => (hojasOff[n] = Hoja([])),
+      getSheets: () => Object.keys(hojasOff).map((k) => hojasOff[k]),
+      getSpreadsheetTimeZone: () => 'America/Mexico_City',
+    }),
+  },
+  Utilities: ctx.Utilities,
+  LockService: ctx.LockService,
+  PropertiesService: {
+    getScriptProperties: () => ({
+      getProperty: (k) => propsOff[k] || null,
+      setProperty: (k, v) => { propsOff[k] = String(v); },
+    }),
+  },
+  Logger: { log: () => {} },
+  ContentService: ctx.ContentService,
+  Date: ctx.Date,
+};
+vm.createContext(ctxOff);
+vm.runInContext(conPickup(false), ctxOff);
+Object.keys(SHEETS).forEach((k) => { hojasOff[SHEETS[k]] = Hoja([]); });
+ctxOff.configurarHojas();
+propsOff.FOLIO = '900';
+propsOff.DIRECCION_PICKUP = 'Una direccion privada que no se debe entregar';
+propsOff.TOKEN = 'token-de-prueba';  // doGet valida antes de contestar
+
+const pedirOff = (items, tipo) => ctxOff.crearOrden_({
+  canal: 'web', cliente: { telefono: '5599999999', nombre: 'Prueba' },
+  direccion: 'Calle 1', colonia: 'Lomas Lindas', km: 1, pago_metodo: 'Efectivo',
+  items: items, entrega_tipo: tipo,
+});
+
+RELOJ = diaAbierto();
+
+// Un pedido a domicilio sigue funcionando igual que siempre.
+const okDom = pedirOff([{ producto_id: CARA, cantidad: 1 }], 'domicilio');
+comparar('a domicilio sigue funcionando', okDom.total, CATALOGO.productos[CARA].precio);
+comparar('y no lleva descuento', okDom.descuento, 0);
+
+// Pedir recoger a mano se rechaza: sin esto el descuento quedaba al alcance de
+// cualquiera que armara la peticion, aunque el boton ya no exista.
+let rechazado = '';
+try { pedirOff([{ producto_id: CARA, cantidad: 1 }], 'pickup'); }
+catch (e) { rechazado = String(e); }
+comparar('un pedido para recoger se rechaza', /solo entregamos a domicilio/.test(rechazado), true);
+
+// Y la direccion no se entrega a nadie, ni pidiendola directo.
+const resp = JSON.parse(ctxOff.doGet({ parameter: { action: 'pickup', token: 'token-de-prueba' } }));
+comparar('la direccion no se entrega con el servicio apagado',
+  [resp.direccion, resp.descuento, resp.activo], ['', 0, false]);
+
 console.log('\n  ' + ok + ' pruebas ok, ' + mal + ' mal\n');
 process.exit(mal ? 1 : 0);

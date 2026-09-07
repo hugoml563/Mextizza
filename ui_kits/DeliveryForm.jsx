@@ -23,7 +23,9 @@ function DeliveryForm({ compact = false, attempted = false, onValidChange, onDat
      sentido: a quien pasa por su pizza no se le pide direccion ni se le evalua
      la zona de reparto. */
   const [modo, setModo] = React.useState('domicilio');
-  const pickup = modo === 'pickup';
+  // Con el servicio apagado no hay modo que elegir: todo va a domicilio.
+  const servicioPickup = typeof MEXTIZZA_PICKUP_ACTIVO !== 'undefined' && MEXTIZZA_PICKUP_ACTIVO;
+  const pickup = servicioPickup && modo === 'pickup';
 
 
   const digits = tel.replace(/\D/g, '');
@@ -69,7 +71,9 @@ function DeliveryForm({ compact = false, attempted = false, onValidChange, onDat
           Abrimos {apertura.texto.toLowerCase()}. Si quieres dejarlo apuntado desde ahorita, escríbenos por WhatsApp.
         </StatusNote>
       )}
-      {/* Primero como lo recibe: decide que se le pregunta despues. */}
+      {/* Primero como lo recibe: decide que se le pregunta despues. Con el
+          servicio de recoger apagado no hay nada que elegir. */}
+      {servicioPickup && (
       <RadioGroup label="¿Cómo lo recibes?" required
         options={['A domicilio', 'Paso a recogerlo']}
         value={pickup ? 'Paso a recogerlo' : 'A domicilio'}
@@ -79,6 +83,7 @@ function DeliveryForm({ compact = false, attempted = false, onValidChange, onDat
           ? 'Te descontamos $' + MEXTIZZA_PICKUP_DESCUENTO + ' por recogerlo tú.'
           : 'El envío ya está incluido en el precio.'}
         style={{ marginBottom: gap + 2 }} />
+      )}
 
       {/* Aqui solo la colonia, que ya es publica: es el centro del radio de
           reparto que el sitio anuncia. La direccion exacta es un domicilio
