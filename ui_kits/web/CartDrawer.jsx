@@ -3,7 +3,10 @@ const { Wordmark, TapeStripe, FramedPanel, Button, Badge, Field, QtyStepper, Men
 /* Mismos estados que la app (Code.gs FLUJO) mapeados a los 4 pasos que ve el
    cliente. "lista" no tiene paso propio: sigue leyendose como en el horno
    hasta que el reparto sale. */
+/* A domicilio, 'lista' todavia es parte del horno: lo que el cliente espera es
+   que salga. Recogiendo, 'lista' ES el aviso de que puede ir por ella. */
 const WEB_ESTADO_A_PASO = { recibida: 0, confirmada: 0, horno: 1, lista: 1, camino: 2, entregada: 3 };
+const WEB_ESTADO_A_PASO_PICKUP = { recibida: 0, confirmada: 0, horno: 1, lista: 2, entregada: 3 };
 
 function SeguimientoPedido({ folio }) {
   const [orden, setOrden] = React.useState(null);
@@ -26,8 +29,17 @@ function SeguimientoPedido({ folio }) {
   }, [folio]);
 
   const cancelada = orden && orden.estado === "cancelada";
-  const paso = orden ? (WEB_ESTADO_A_PASO[orden.estado] != null ? WEB_ESTADO_A_PASO[orden.estado] : 0) : -1;
-  const pasos = [
+  const mapaPaso = (orden && orden.pickup) ? WEB_ESTADO_A_PASO_PICKUP : WEB_ESTADO_A_PASO;
+  const paso = orden ? (mapaPaso[orden.estado] != null ? mapaPaso[orden.estado] : 0) : -1;
+  /* Quien pasa a recoger no ve un "en camino": su pizza espera en la cocina.
+     Mostrarle ese paso era prometerle algo que nunca iba a ocurrir. */
+  const esPickup = !!(orden && orden.pickup);
+  const pasos = esPickup ? [
+    ["Confirmado", "Recibimos tu pedido"],
+    ["En el horno", "Horno de piedra"],
+    ["Lista para recoger", "Pasa por ella"],
+    ["Entregado", ""]
+  ] : [
     ["Confirmado", "Recibimos tu pedido"],
     ["En el horno", "Horno de piedra"],
     ["En camino", "Va para alla"],
@@ -35,7 +47,8 @@ function SeguimientoPedido({ folio }) {
   ];
   const titulo = orden ? ({
     recibida: "Pedido recibido", confirmada: "Confirmado", horno: "En el horno",
-    lista: "Lista para salir", camino: "En camino", entregada: "Entregado",
+    lista: esPickup ? "Lista para recoger" : "Lista para salir",
+    camino: "En camino", entregada: "Entregado",
     cancelada: "Cancelado"
   }[orden.estado] || "En proceso") : "Consultando...";
 

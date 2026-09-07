@@ -37,6 +37,15 @@ const SHEETS = {
 };
 
 const ESTADOS_ACTIVOS = ['recibida', 'confirmada', 'horno', 'lista', 'camino'];
+
+/* El recorrido de un pedido. Quien pasa a recoger no tiene un 'en camino': su
+   pizza se queda lista en la cocina hasta que llega por ella. Meterle ese paso
+   obligaba a la cocina a marcar que salio algo que nunca sale. */
+const FLUJO_DOMICILIO = ['recibida', 'confirmada', 'horno', 'lista', 'camino', 'entregada'];
+const FLUJO_PICKUP = ['recibida', 'confirmada', 'horno', 'lista', 'entregada'];
+function flujoDe_(entregaTipo) {
+  return entregaTipo === 'pickup' ? FLUJO_PICKUP : FLUJO_DOMICILIO;
+}
 const TS_POR_ESTADO = {
   confirmada: 't_confirmada',
   horno: 't_horno',
@@ -753,10 +762,11 @@ function upsertCliente_(cliente, direccion, colonia) {
 
 /** body: { token, folio } — avanza al siguiente estado del flujo. */
 function avanzarEstado_(body) {
-  const FLUJO = ['recibida', 'confirmada', 'horno', 'lista', 'camino', 'entregada'];
+
   const sh = sheet_(SHEETS.ordenes);
   const { row, index } = findOrdenRow_(sh, body.folio);
   const estadoActual = row[ORDENES_HEADERS.indexOf('estado')];
+  const FLUJO = flujoDe_(row[ORDENES_HEADERS.indexOf('entrega_tipo')]);
   const k = FLUJO.indexOf(estadoActual);
   if (k === -1 || k >= FLUJO.length - 1) throw new Error('La orden ya está en el último estado');
   const nuevo = FLUJO[k + 1];
@@ -838,7 +848,9 @@ function formaEstado_(o) {
     t_lista: o.t_lista,
     t_camino: o.t_camino,
     t_entregada: o.t_entregada,
-    motivo_cancelacion: o.motivo_cancelacion || ""
+    motivo_cancelacion: o.motivo_cancelacion || "",
+    // Para que el seguimiento no ofrezca un 'en camino' que nunca va a pasar.
+    pickup: o.entrega_tipo === 'pickup'
   };
 }
 
@@ -894,8 +906,10 @@ function armarOrdenes_(ordenes) {
          blanco, en la cocina se veria como un pedido a domicilio incompleto y
          se saldria un repartidor a ningun lado. */
       pickup: o.entrega_tipo === 'pickup',
+      // En pickup no hay destino: lo dice el distintivo de arriba, no un texto
+      // que se leeria como una direccion incompleta.
       destino: o.entrega_tipo === 'pickup'
-        ? 'PASA A RECOGERLO'
+        ? ''
         : o.direccion + (o.colonia ? ' · ' + o.colonia : ''),
       pago: o.pago_metodo, pagado: o.pago_estado === 'pagado',
       total: o.total, min: minTranscurridos, notas: o.notas || '', lineas

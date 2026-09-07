@@ -504,7 +504,10 @@ function AppCart({ lines, onQty, onConfirm, tab, onTab, count, inicialCliente, o
 /* Backend order states, in flow order (Code.gs FLUJO), mapped onto the four
    steps the customer sees. 'lista' has no separate step — it still reads as
    "en el horno" until the delivery actually leaves. */
+/* A domicilio, 'lista' sigue siendo parte del horno: falta que salga.
+   Recogiendo, 'lista' ES el aviso de que ya puede ir por ella. */
 const ESTADO_A_PASO = { recibida: 0, confirmada: 0, horno: 1, lista: 1, camino: 2, entregada: 3 };
+const ESTADO_A_PASO_PICKUP = { recibida: 0, confirmada: 0, horno: 1, lista: 2, entregada: 3 };
 
 function AppTracking({ tab, onTab, count, folio, premio, tarjeta, selloPendiente }) {
   const [orden, setOrden] = React.useState(null);
@@ -529,8 +532,16 @@ function AppTracking({ tab, onTab, count, folio, premio, tarjeta, selloPendiente
   }, [folio]);
 
   const cancelada = orden && orden.estado === 'cancelada';
-  const pasoActual = orden ? (ESTADO_A_PASO[orden.estado] != null ? ESTADO_A_PASO[orden.estado] : 0) : 1;
-  const baseSteps = [['Confirmado', 'Recibimos tu pedido'], ['En el horno', 'Gozney XL · ≤10 min'], ['En camino', 'Mandadito asignado'], ['Entregado', '']];
+  const esPickup = !!(orden && orden.pickup);
+  const mapaPaso = esPickup ? ESTADO_A_PASO_PICKUP : ESTADO_A_PASO;
+  const pasoActual = orden ? (mapaPaso[orden.estado] != null ? mapaPaso[orden.estado] : 0) : 1;
+  // Quien pasa a recoger no tiene un 'en camino' que esperar.
+  const baseSteps = [
+    ['Confirmado', 'Recibimos tu pedido'],
+    ['En el horno', 'Gozney XL · ≤10 min'],
+    esPickup ? ['Lista para recoger', 'Pasa por ella'] : ['En camino', 'Mandadito asignado'],
+    ['Entregado', ''],
+  ];
   const steps = baseSteps.map(([t, d], i) => [t, d, orden ? (!cancelada && i <= pasoActual) : i <= 1]);
   return (
     <Phone>
@@ -543,7 +554,8 @@ function AppTracking({ tab, onTab, count, folio, premio, tarjeta, selloPendiente
           <h1 style={{ fontFamily: 'var(--font-display)', fontSize: 32, marginTop: 12 }}>
             {orden ? ({
               recibida: 'Pedido recibido', confirmada: 'Confirmado', horno: 'En el horno',
-              lista: 'Lista para salir', camino: 'En camino', entregada: 'Entregado',
+              lista: esPickup ? 'Lista para recoger' : 'Lista para salir',
+              camino: 'En camino', entregada: 'Entregado',
               cancelada: 'Cancelado'
             }[orden.estado] || 'En proceso') : (folio ? 'Consultando…' : 'Llega 20:10')}
           </h1>
@@ -552,6 +564,8 @@ function AppTracking({ tab, onTab, count, folio, premio, tarjeta, selloPendiente
               ? (orden.motivo_cancelacion || 'El pedido fue cancelado.')
               : errorEstado
                 ? 'Sin conexión para actualizar el estado.'
+                // El radio de reparto no le dice nada a quien va por su pizza.
+                : esPickup ? 'Se actualiza solo · te avisamos cuando esté lista'
                 : (folio ? 'Se actualiza solo · radio de 3 km' : 'Estimado ≤40 min · radio de 3 km')}
           </p>
         </div>

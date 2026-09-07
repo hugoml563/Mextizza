@@ -116,9 +116,14 @@ const TEL = '5512345678';
 /* La tarjeta se sella al ENTREGAR, no al pedir, asi que casi toda prueba tiene
    que llevar el pedido hasta el final del flujo. `pedir` lo hace por omision;
    con { entregar: false } se deja a medias a proposito. */
-const FLUJO_PASOS = 5; // recibida -> confirmada -> horno -> lista -> camino -> entregada
+/* Avanza hasta entregar. No es un numero fijo de pasos: recoger en la cocina
+   se salta el 'en camino', asi que el recorrido es mas corto. */
 function entregar(folio) {
-  for (let i = 0; i < FLUJO_PASOS; i++) ctx.avanzarEstado_({ folio: folio });
+  for (let i = 0; i < 8; i++) {
+    const r = ctx.avanzarEstado_({ folio: folio });
+    if (r.estado === 'entregada') return;
+  }
+  throw new Error('no llegue a entregada con ' + folio);
 }
 
 function pedir(items, opts) {
@@ -474,5 +479,26 @@ const rViernes = pedir([{ producto_id: CARA, cantidad: 1 }, { producto_id: BARAT
 comparar('viernes recogiendo: 2x1 y ademas los $30',
   totalDe(rViernes.folio), CATALOGO.productos[CARA].precio - 30);
 
+console.log('\nEL RECORRIDO DEPENDE DE COMO SE ENTREGA');
+function recorrido(folio) {
+  const pasos = [campoDe(folio, 'estado')];
+  for (let i = 0; i < 8; i++) {
+    const r = ctx.avanzarEstado_({ folio: folio });
+    pasos.push(r.estado);
+    if (r.estado === 'entregada') break;
+  }
+  return pasos;
+}
+const TEL_F = '5555555556';
+const rFlujoDom = pedir([{ producto_id: CARA, cantidad: 1 }],
+  { cuando: diaAbierto(), tel: TEL_F, entregar: false });
+comparar('a domicilio pasa por en camino', recorrido(rFlujoDom.folio),
+  ['recibida', 'confirmada', 'horno', 'lista', 'camino', 'entregada']);
+
+const rFlujoPick = pedir([{ producto_id: CARA, cantidad: 1 }],
+  { cuando: diaAbierto(), tel: TEL_F, entrega_tipo: 'pickup', entregar: false });
+comparar('recogiendo se salta el en camino', recorrido(rFlujoPick.folio),
+  ['recibida', 'confirmada', 'horno', 'lista', 'entregada']);
+comparar('y aun asi sella', tarjetaDe(TEL_F).dias, 2);
 console.log('\n  ' + ok + ' pruebas ok, ' + mal + ' mal\n');
 process.exit(mal ? 1 : 0);

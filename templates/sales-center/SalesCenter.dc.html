@@ -100,15 +100,14 @@ window.__resources = Object.assign(window.__resources || {}, {
 <sc-if value="{{ o.esApp }}" hint-placeholder-val="{{ false }}"><span style="padding:3px 9px;border-radius:99px;background:#E4007C;color:#FFFFFF;font-size:10.5px;font-weight:700;letter-spacing:1.2px;text-transform:uppercase">App</span></sc-if>
 <sc-if value="{{ o.esWhats }}" hint-placeholder-val="{{ false }}"><span style="padding:3px 9px;border-radius:99px;background:#2E7D5B;color:#FFFFFF;font-size:10.5px;font-weight:700;letter-spacing:1.2px;text-transform:uppercase">WhatsApp</span></sc-if>
 <sc-if value="{{ o.esMostradorCanal }}" hint-placeholder-val="{{ false }}"><span style="padding:3px 9px;border-radius:99px;background:#4A4A4A;color:#FFFFFF;font-size:10.5px;font-weight:700;letter-spacing:1.2px;text-transform:uppercase">Mostrador</span></sc-if>
-<span style="padding:3px 9px;border-radius:99px;border:2px solid #1A1A1A;font-size:10.5px;font-weight:700;letter-spacing:1.2px;text-transform:uppercase">{{ o.tipo }}</span>
+<sc-if value="{{ o.pickup }}" hint-placeholder-val="{{ false }}"><span style="padding:3px 9px;border-radius:99px;background:#D9A65C;border:2px solid #1A1A1A;font-size:10.5px;font-weight:700;letter-spacing:1.2px;text-transform:uppercase">{{ o.tipo }}</span></sc-if>
+<sc-if value="{{ !o.pickup }}" hint-placeholder-val="{{ true }}"><span style="padding:3px 9px;border-radius:99px;border:2px solid #1A1A1A;font-size:10.5px;font-weight:700;letter-spacing:1.2px;text-transform:uppercase">{{ o.tipo }}</span></sc-if>
 <sc-if value="{{ o.aTiempo }}" hint-placeholder-val="{{ true }}"><span style="font-size:12px;font-weight:700;color:#6b6b6b">{{ o.espera }}</span></sc-if>
 <sc-if value="{{ o.tarde }}" hint-placeholder-val="{{ false }}"><span style="font-size:12px;font-weight:700;color:#E4007C;animation:mxpulse 1.4s ease-in-out infinite">{{ o.espera }}</span></sc-if>
 </div>
-<div style="font-size:14.5px;font-weight:700;margin-top:7px">{{ o.cliente }} ·
-  <!-- Recoger se marca en color: leerlo como una direccion mas hace que salga
-       un repartidor a un pedido que el cliente viene a buscar. -->
-  <span sc-if="o.pickup" style="color:#E4007C;font-weight:700;letter-spacing:.4px">{{ o.destino }}</span>
-  <span sc-if="!o.pickup" style="color:#6b6b6b;font-weight:400">{{ o.destino }}</span>
+<div style="font-size:14.5px;font-weight:700;margin-top:7px">{{ o.cliente }}
+  <!-- En pickup no hay direccion: el punto y el destino sobrarian. -->
+  <sc-if value="{{ !o.pickup }}" hint-placeholder-val="{{ true }}"><span style="color:#6b6b6b;font-weight:400">· {{ o.destino }}</span></sc-if>
 </div>
 <sc-if value="{{ o.tieneNotas }}" hint-placeholder-val="{{ true }}"><div style="margin-top:7px;padding:7px 10px;background:#F7EBD8;border-left:3px solid #C1502E;font-size:12.5px;line-height:1.45"><b style="font-size:10px;letter-spacing:1px;text-transform:uppercase;color:#C1502E">Notas</b><br>{{ o.notas }}</div></sc-if>
 <div style="margin-top:8px;display:flex;flex-direction:column;gap:3px">
@@ -180,12 +179,17 @@ window.__resources = Object.assign(window.__resources || {}, {
 </div>
 </x-dc>
 <script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:1194,&quot;height&quot;:834},&quot;verCorte&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;Tablero&quot;},&quot;umbralAlerta&quot;:{&quot;editor&quot;:&quot;int&quot;,&quot;default&quot;:20,&quot;min&quot;:5,&quot;max&quot;:60,&quot;step&quot;:5,&quot;unit&quot;:&quot;min&quot;,&quot;tsType&quot;:&quot;number&quot;,&quot;section&quot;:&quot;Tablero&quot;},&quot;fecha&quot;:{&quot;editor&quot;:&quot;text&quot;,&quot;default&quot;:&quot;Martes 25 de agosto&quot;,&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Tablero&quot;}}">
+/* Espejo de FLUJO_DOMICILIO y FLUJO_PICKUP en Code.gs. Quien pasa a recoger no
+   tiene un 'en camino': su pizza espera en la cocina hasta que llega por ella,
+   y obligar a marcar que salio algo que nunca sale confunde el corte. */
 const FLUJO = ['recibida','confirmada','horno','lista','camino','entregada'];
+const FLUJO_PICKUP = ['recibida','confirmada','horno','lista','entregada'];
+const flujoDe = o => (o && o.pickup ? FLUJO_PICKUP : FLUJO);
 const META = {
   recibida:  { label:'Recibidas',  color:'#E4007C', cta:'Confirmar' },
   confirmada:{ label:'Confirmadas',color:'#CD0070', cta:'A horno' },
   horno:     { label:'En horno',   color:'#C1502E', cta:'Lista' },
-  lista:     { label:'Listas',     color:'#D9A65C', cta:'Salió' },
+  lista:     { label:'Listas',     color:'#D9A65C', cta:'Salió', ctaPickup:'Entregada' },
   camino:    { label:'En camino',  color:'#4A4A4A', cta:'Entregada' },
   entregada: { label:'Entregadas', color:'#2E7D5B', cta:'Cerrado' },
   cancelada: { label:'Canceladas', color:'#9a9a9a', cta:'—' }
@@ -229,7 +233,13 @@ class Component extends DCLogic {
     }
     try {
       const { ordenes } = await mextizzaListarHoy();
-      this.setState({ ordenes: ordenes.map(o => ({ ...o, tipo: 'Reparto' })), error: null });
+      /* Este distintivo decia 'Reparto' en TODAS las ordenes porque estaba
+         escrito a mano: nunca vino del servidor. Ahora dice lo unico que
+         cambia la operacion — si sale un repartidor o si el cliente viene. */
+      this.setState({
+        ordenes: ordenes.map(o => ({ ...o, tipo: o.pickup ? 'Recoge' : 'Reparto' })),
+        error: null,
+      });
     } catch (err) {
       const noAutorizado = /No autorizado|Token inválido/i.test(err.message);
       this.setState({
@@ -267,7 +277,7 @@ class Component extends DCLogic {
     const o = this.state.ordenes[i];
     if (!o) return;
     if (this._enVuelo && this._enVuelo[o.folio]) return; // ya va uno en camino
-    const FLUJO = ['recibida','confirmada','horno','lista','camino','entregada'];
+    const FLUJO = flujoDe(o);
     const k = FLUJO.indexOf(o.estado);
     if (k === -1 || k >= FLUJO.length - 1) return;
 
@@ -340,7 +350,9 @@ class Component extends DCLogic {
           pago: o.pago,
           pagado: !!o.pagado,
           porCobrar: !o.pagado,
-          siguiente: META[o.estado].cta,
+          // En un pedido para recoger, despues de 'Listas' lo que sigue es
+          // entregarla en la ventanilla, no que salga un repartidor.
+          siguiente: (o.pickup && META[o.estado].ctaPickup) || META[o.estado].cta,
           enVuelo: !!(this._enVuelo && this._enVuelo[o.folio]),
           quieto: !(this._enVuelo && this._enVuelo[o.folio]),
           avanzar: () => this.avanzar(i),
