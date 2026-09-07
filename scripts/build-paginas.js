@@ -47,7 +47,10 @@ const pizzas = MEXTIZZA_MENU.flatMap((g) => g.items).filter((i) => /^Pizza /.tes
 const rotativa = MEXTIZZA_MENU.find((g) => /del mes/i.test(g.title));
 const wa = (msg) => 'https://wa.me/' + MEXTIZZA_FACTS.whatsapp + '?text=' + encodeURIComponent(msg);
 
-function documento({ slug, title, description, jsonld, cuerpo }) {
+/* `imagen` deja que una pagina comparta su propia foto. Sin esto, mandar la
+   pizza del mes por WhatsApp mostraba la tarjeta generica del logo, que no
+   antoja nada. */
+function documento({ slug, title, description, jsonld, cuerpo, imagen }) {
   const url = SITIO + '/' + slug + '/';
   return `<!doctype html>
 <html lang="es">
@@ -65,7 +68,7 @@ function documento({ slug, title, description, jsonld, cuerpo }) {
 <meta property="og:url" content="${url}">
 <meta property="og:title" content="${esc(title)}">
 <meta property="og:description" content="${esc(description)}">
-<meta property="og:image" content="${SITIO}/assets/social/mextizza-og-1200x630.jpg">
+<meta property="og:image" content="${SITIO}${imagen || '/assets/social/mextizza-og-1200x630.jpg'}">
 <meta name="twitter:card" content="summary_large_image">
 <script type="application/ld+json">${JSON.stringify(jsonld)}</script>
 <style>
@@ -252,11 +255,17 @@ const p3 = documento({
     description: dm ? dm.desc : '',
     offers: { '@type': 'Offer', price: dm ? dm.price : 0, priceCurrency: 'MXN' },
     url: SITIO + '/pizza-del-mes/',
+    // Google la puede mostrar en resultados enriquecidos.
+    image: SITIO + '/assets/photos/pizza-cochinita.webp',
   },
+  imagen: '/assets/social/pizza-cochinita-og-1200x630.jpg',
   cuerpo: `
 <p class="dato">Cambia cada mes</p>
 <h1>${dm ? esc(dm.name) : 'La pizza del mes'}</h1>
 ${dm ? `<p><b>$${dm.price}.</b> ${esc(dm.desc)}</p>` : ''}
+<img src="/assets/photos/pizza-cochinita.webp" width="880" height="1100" loading="lazy" decoding="async"
+  alt="Pizza Cochinita: cochinita pibil, frijoles refritos y cebolla morada sobre masa de 48 horas"
+  style="width:100%;max-width:420px;height:auto;border-radius:10px;display:block;margin:26px 0">
 
 <h2>Por qué rota</h2>
 <p>Mextizza viene de mestiza: técnica italiana, ingredientes de aquí. Esa idea no se

@@ -17,7 +17,7 @@ const MEXTIZZA_MENU = [
     { id: 'traviesa', name: 'Pizza Traviesa', desc: 'Peperoni con un toque de miel picante… dulce, picante y un poco atrevida.', price: 199, photo: '../../assets/photos/pizza-traviesa.webp' }
   ]},
   { cat: 'Rotativa', title: 'Pizza especial del mes', note: 'Una sola pizza rota cada mes. Ésta es la de ahora.', items: [
-    { id: 'cochinita', name: 'Pizza Cochinita', desc: 'Lo que le da nombre a la casa: cochinita pibil, frijoles refritos y cebolla morada.', price: 229, flag: 'Del mes' }
+    { id: 'cochinita', name: 'Pizza Cochinita', desc: 'Lo que le da nombre a la casa: cochinita pibil, frijoles refritos y cebolla morada.', price: 229, flag: 'Del mes' , photo: '../../assets/photos/pizza-cochinita.webp'}
   ]},
   { cat: 'Para cerrar', title: 'Postres y bebidas', items: [
     { id: 'chocolatoso', name: 'Brownie', desc: '', price: 40, photo: '../../assets/photos/brownie.webp' },
