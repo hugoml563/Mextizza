@@ -26,6 +26,7 @@ const PAQUETES = [
     fuentes: [
       'ui_kits/web/WebSurfaces.jsx',
       'ui_kits/Puntos.jsx',
+      'ui_kits/Recoger.jsx',
       'ui_kits/DeliveryForm.jsx',
       'ui_kits/TarjetaPremios.jsx',
       'ui_kits/web/CartDrawer.jsx',
@@ -37,6 +38,7 @@ const PAQUETES = [
     salida: 'ui_kits/app/bundle.build.js',
     fuentes: [
       'ui_kits/Puntos.jsx',
+      'ui_kits/Recoger.jsx',
       'ui_kits/DeliveryForm.jsx',
       'ui_kits/TarjetaPremios.jsx',
       'ui_kits/app/AppScreens.jsx',

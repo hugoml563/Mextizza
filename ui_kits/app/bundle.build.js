@@ -33,6 +33,93 @@ Object.assign(window, {
 });
 })();
 
+/* ui_kits/Recoger.jsx */
+(function () {
+const {
+  StatusNote,
+  Icon
+} = window.MextizzaDesignSystem_8a35ee;
+
+/* Direccion de la cocina para quien pasa a recoger.
+
+   Aparece DESPUES de confirmar el pedido, no en el checkout. Es un domicilio
+   particular: mostrarla a cualquiera que le pique al boton la volvia visible sin
+   haber pedido nada. En el checkout basta con decir la colonia, que ya es
+   publica porque es el centro del radio de reparto.
+
+   La direccion no viaja en el codigo — el repositorio es publico. Se pide al
+   servidor y se guarda en el navegador para no repetir la llamada, que contra
+   Apps Script tarda un par de segundos. */
+
+const MEXTIZZA_PICKUP_CACHE = 'mextizza:pickup';
+function mapsUrl(direccion) {
+  // Formato documentado y estable de Google Maps. Funciona en el navegador y
+  // abre la app de Maps en el telefono.
+  return 'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(direccion);
+}
+function DireccionRecoger({
+  activo,
+  style
+}) {
+  const [dir, setDir] = React.useState(() => {
+    try {
+      return window.localStorage.getItem(MEXTIZZA_PICKUP_CACHE) || '';
+    } catch (e) {
+      return '';
+    }
+  });
+  React.useEffect(() => {
+    if (!activo || dir || typeof mextizzaPickup !== 'function') return;
+    let vivo = true;
+    mextizzaPickup().then(r => {
+      if (!vivo || !r.direccion) return;
+      setDir(r.direccion);
+      try {
+        window.localStorage.setItem(MEXTIZZA_PICKUP_CACHE, r.direccion);
+      } catch (e) {}
+    })
+    // Si falla, abajo se ofrece pedirla por WhatsApp: mejor eso que un hueco.
+    .catch(() => {});
+    return () => {
+      vivo = false;
+    };
+  }, [activo, dir]);
+  if (!activo) return null;
+  return /*#__PURE__*/React.createElement(StatusNote, {
+    tone: "ok",
+    title: "Pasa por tu pedido a nuestra cocina",
+    style: style
+  }, dir ? /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontWeight: 700,
+      marginBottom: 8
+    }
+  }, dir), /*#__PURE__*/React.createElement("a", {
+    href: mapsUrl(dir),
+    target: "_blank",
+    rel: "noopener noreferrer",
+    style: {
+      display: 'inline-flex',
+      alignItems: 'center',
+      gap: 7,
+      fontFamily: 'var(--font-label)',
+      fontSize: 11,
+      letterSpacing: 1,
+      textTransform: 'uppercase',
+      color: 'var(--rosa-mexicano-texto)',
+      textDecoration: 'underline',
+      textUnderlineOffset: 3
+    }
+  }, /*#__PURE__*/React.createElement(Icon, {
+    name: "pin",
+    size: 14
+  }), "Abrir en Google Maps")) : 'Cargando la dirección…');
+}
+Object.assign(window, {
+  DireccionRecoger
+});
+})();
+
 /* ui_kits/DeliveryForm.jsx */
 (function () {
 const {
@@ -72,33 +159,6 @@ function DeliveryForm({
      la zona de reparto. */
   const [modo, setModo] = React.useState('domicilio');
   const pickup = modo === 'pickup';
-
-  /* La direccion de la cocina se pide al servidor, no viaja en el codigo: el
-     repositorio es publico y es un domicilio particular. Se guarda en el
-     navegador para no repetir la llamada, que contra Apps Script tarda ~2 s. */
-  const [dirPickup, setDirPickup] = React.useState(() => {
-    try {
-      return window.localStorage.getItem('mextizza:pickup') || '';
-    } catch (e) {
-      return '';
-    }
-  });
-  React.useEffect(() => {
-    if (!pickup || dirPickup || typeof mextizzaPickup !== 'function') return;
-    let vivo = true;
-    mextizzaPickup().then(r => {
-      if (!vivo || !r.direccion) return;
-      setDirPickup(r.direccion);
-      try {
-        window.localStorage.setItem('mextizza:pickup', r.direccion);
-      } catch (e) {}
-    })
-    // Si falla, abajo se ofrece pedirla por WhatsApp: mejor eso que un hueco.
-    .catch(() => {});
-    return () => {
-      vivo = false;
-    };
-  }, [pickup, dirPickup]);
   const digits = tel.replace(/\D/g, '');
   const telOk = digits.length === 10;
   const zona = colonia ? zonaEvaluar(colonia) : null;
@@ -158,11 +218,11 @@ function DeliveryForm({
     }
   }), pickup && /*#__PURE__*/React.createElement(StatusNote, {
     tone: "ok",
-    title: "Pasas por \xE9l a nuestra cocina",
+    title: "Recoges en nuestra cocina",
     style: {
       marginBottom: gap + 2
     }
-  }, dirPickup ? dirPickup : 'Te mandamos la dirección exacta por WhatsApp en cuanto confirmemos tu pedido.'), /*#__PURE__*/React.createElement(Field, {
+  }, "Estamos en ", MEXTIZZA_ZONE.centro.nombre, ". Te damos la direcci\xF3n exacta, con mapa, en cuanto confirmes tu pedido."), /*#__PURE__*/React.createElement(Field, {
     label: "Nombre",
     required: true,
     placeholder: "Tu nombre",
@@ -2108,7 +2168,12 @@ function AppTracking({
       padding: '22px 20px',
       background: 'var(--surface-card)'
     }
-  }, premio && /*#__PURE__*/React.createElement(AvisoPremio, {
+  }, /*#__PURE__*/React.createElement(DireccionRecoger, {
+    activo: esPickup,
+    style: {
+      marginBottom: 16
+    }
+  }), premio && /*#__PURE__*/React.createElement(AvisoPremio, {
     premio: premio,
     style: {
       marginBottom: 16

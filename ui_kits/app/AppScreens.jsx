@@ -572,6 +572,7 @@ function AppTracking({ tab, onTab, count, folio, premio, tarjeta, selloPendiente
         <TapeStripe position="bottom" height={3} />
       </div>
       <div style={{ flex: 1, overflowY: 'auto', padding: '22px 20px', background: 'var(--surface-card)' }}>
+        <DireccionRecoger activo={esPickup} style={{ marginBottom: 16 }} />
         {premio && <AvisoPremio premio={premio} style={{ marginBottom: 16 }} />}
         {tarjeta && <TarjetaPremios tarjeta={tarjeta} pendiente={selloPendiente} style={{ marginBottom: 20 }} />}
         {steps.map(([t, d, done], i) => (

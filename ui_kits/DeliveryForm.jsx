@@ -25,25 +25,6 @@ function DeliveryForm({ compact = false, attempted = false, onValidChange, onDat
   const [modo, setModo] = React.useState('domicilio');
   const pickup = modo === 'pickup';
 
-  /* La direccion de la cocina se pide al servidor, no viaja en el codigo: el
-     repositorio es publico y es un domicilio particular. Se guarda en el
-     navegador para no repetir la llamada, que contra Apps Script tarda ~2 s. */
-  const [dirPickup, setDirPickup] = React.useState(() => {
-    try { return window.localStorage.getItem('mextizza:pickup') || ''; } catch (e) { return ''; }
-  });
-  React.useEffect(() => {
-    if (!pickup || dirPickup || typeof mextizzaPickup !== 'function') return;
-    let vivo = true;
-    mextizzaPickup()
-      .then((r) => {
-        if (!vivo || !r.direccion) return;
-        setDirPickup(r.direccion);
-        try { window.localStorage.setItem('mextizza:pickup', r.direccion); } catch (e) {}
-      })
-      // Si falla, abajo se ofrece pedirla por WhatsApp: mejor eso que un hueco.
-      .catch(() => {});
-    return () => { vivo = false; };
-  }, [pickup, dirPickup]);
 
   const digits = tel.replace(/\D/g, '');
   const telOk = digits.length === 10;
@@ -99,11 +80,13 @@ function DeliveryForm({ compact = false, attempted = false, onValidChange, onDat
           : 'El envío ya está incluido en el precio.'}
         style={{ marginBottom: gap + 2 }} />
 
+      {/* Aqui solo la colonia, que ya es publica: es el centro del radio de
+          reparto que el sitio anuncia. La direccion exacta es un domicilio
+          particular y aparece al confirmar el pedido, no antes. */}
       {pickup && (
-        <StatusNote tone="ok" title="Pasas por él a nuestra cocina" style={{ marginBottom: gap + 2 }}>
-          {dirPickup
-            ? dirPickup
-            : 'Te mandamos la dirección exacta por WhatsApp en cuanto confirmemos tu pedido.'}
+        <StatusNote tone="ok" title="Recoges en nuestra cocina" style={{ marginBottom: gap + 2 }}>
+          Estamos en {MEXTIZZA_ZONE.centro.nombre}. Te damos la dirección exacta,
+          con mapa, en cuanto confirmes tu pedido.
         </StatusNote>
       )}
 

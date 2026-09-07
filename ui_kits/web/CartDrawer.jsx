@@ -54,6 +54,7 @@ function SeguimientoPedido({ folio }) {
 
   return (
     <div>
+      <DireccionRecoger activo={esPickup} style={{ marginBottom: 16 }} />
       <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 12, flexWrap: "wrap" }}>
         <div style={{ fontFamily: "var(--font-display)", fontSize: 22 }}>{titulo}</div>
         <Badge tone={cancelada ? "rosa" : "dark"}>Pedido {folio}</Badge>
