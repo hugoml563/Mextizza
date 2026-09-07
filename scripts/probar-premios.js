@@ -606,5 +606,28 @@ const resp = JSON.parse(ctxOff.doGet({ parameter: { action: 'pickup', token: 'to
 comparar('la direccion no se entrega con el servicio apagado',
   [resp.direccion, resp.descuento, resp.activo], ['', 0, false]);
 
+console.log('\nEL FOLIO NO DELATA EL VOLUMEN DE VENTAS');
+/* Antes el folio empezaba con el consecutivo (MX-0063-...), asi que cualquier
+   cliente sabia cuantos pedidos llevamos. Ahora solo se ve el aleatorio y el
+   consecutivo vive en su propia columna. */
+const TEL_FO = '5555555558';
+const folios = [];
+for (let i = 0; i < 30; i++) {
+  const r = pedir([{ producto_id: CARA, cantidad: 1 }],
+    { cuando: diaAbierto(), tel: TEL_FO, entregar: false });
+  folios.push(r.folio);
+}
+comparar('el folio no lleva el consecutivo',
+  folios.filter((f) => /^MX-[A-Z2-9]{6}$/.test(f)).length, folios.length);
+comparar('ningun folio se repite', new Set(folios).size, folios.length);
+comparar('no se puede adivinar el siguiente desde el anterior',
+  folios[0].slice(3) === folios[1].slice(3), false);
+
+// El consecutivo sigue ahi, en su columna, y avanza de uno en uno.
+const consecutivos = folios.map((f) => campoDe(f, 'consecutivo'));
+comparar('el consecutivo avanza de uno en uno',
+  consecutivos.every((c, i) => i === 0 || c === consecutivos[i - 1] + 1), true);
+comparar('y no viaja al cliente',
+  'consecutivo' in ctx.formaEstado_({ folio: 'x', estado: 'recibida' }), false);
 console.log('\n  ' + ok + ' pruebas ok, ' + mal + ' mal\n');
 process.exit(mal ? 1 : 0);

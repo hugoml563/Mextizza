@@ -54,7 +54,7 @@ const TS_POR_ESTADO = {
   entregada: 't_entregada'
 };
 
-const ORDENES_HEADERS = ['folio', 'canal', 'estado', 'cliente_telefono', 'cliente_nombre', 'direccion', 'colonia', 'km', 'pago_metodo', 'pago_estado', 'subtotal', 'total', 't_recibida', 't_confirmada', 't_horno', 't_lista', 't_camino', 't_entregada', 'reparto', 'notas', 'motivo_cancelacion', 'entrega_tipo', 'descuento', 'sello', 'premio'];
+const ORDENES_HEADERS = ['folio', 'canal', 'estado', 'cliente_telefono', 'cliente_nombre', 'direccion', 'colonia', 'km', 'pago_metodo', 'pago_estado', 'subtotal', 'total', 't_recibida', 't_confirmada', 't_horno', 't_lista', 't_camino', 't_entregada', 'reparto', 'notas', 'motivo_cancelacion', 'entrega_tipo', 'descuento', 'sello', 'premio', 'consecutivo'];
 const ORDEN_ITEMS_HEADERS = ['linea_id', 'folio', 'producto_id', 'producto_nombre', 'cantidad', 'precio_unit', 'complementos_total', 'importe', 'promocion'];
 const ITEM_COMPLEMENTOS_HEADERS = ['linea_id', 'complemento_id', 'complemento_nombre', 'precio'];
 const PRODUCTOS_HEADERS = ['id', 'nombre', 'descripcion', 'categoria', 'precio', 'activo', 'foto'];
@@ -218,20 +218,41 @@ function rowsAsObjects_(sh) {
 function sufijoAleatorio_() {
   var abc = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
   var out = "";
-  for (var i = 0; i < 5; i++) {
+  /* Seis, no cinco. Al quitar el consecutivo del folio, el sufijo dejo de ser
+     solo un candado y paso a cargar tambien la unicidad. Con cinco y 5,000
+     pedidos habia ~31% de que dos folios coincidieran; con seis baja a ~1%, y
+     la comprobacion de nextFolio_ cierra ese resto. */
+  for (var i = 0; i < 6; i++) {
     out += abc.charAt(Math.floor(Math.random() * abc.length));
   }
   return out;
 }
 
+/* El folio visible es solo el aleatorio.
+
+   Antes empezaba con el consecutivo (MX-0063-...), y eso delataba el volumen:
+   cualquiera que pidiera una pizza veia su numero y sabia cuantos pedidos
+   llevamos. El consecutivo sigue existiendo, en su propia columna, porque para
+   el corte del dia si es util.
+
+   Sin el prefijo, el sufijo carga toda la unicidad, no solo el candado. Por eso
+   se comprueba contra los folios ya usados: dos pedidos con el mismo folio
+   romperian el seguimiento del cliente. */
 function nextFolio_() {
   var sh = sheet_(SHEETS.ordenes);
-  var n = sh.getLastRow(); // incluye encabezado, arranca en MX-0001 con la primera orden
-  /* El numero sigue siendo secuencial para que sea util en la operacion, pero
-   * lleva un sufijo aleatorio: el endpoint `estado` es publico por diseño, y sin
-   * el sufijo cualquiera podia recorrer MX-0001, MX-0002... y leer el estado y el
-   * total de todos los pedidos. */
-  return "MX-" + String(n).padStart(4, "0") + "-" + sufijoAleatorio_();
+  var n = sh.getLastRow(); // incluye encabezado: el primer pedido es el 1
+
+  var usados = {};
+  if (n > 1) {
+    var col = sh.getRange(2, 1, n - 1, 1).getValues();
+    for (var i = 0; i < col.length; i++) usados[String(col[i][0])] = true;
+  }
+
+  for (var intento = 0; intento < 50; intento++) {
+    var folio = 'MX-' + sufijoAleatorio_();
+    if (!usados[folio]) return { folio: folio, consecutivo: n };
+  }
+  throw new Error('No pude generar un folio libre despues de 50 intentos');
 }
 
 /** Punto de entrada para escrituras: crear orden, avanzar estado, cancelar. */
@@ -523,7 +544,8 @@ function crearOrden_(body) {
 
   const premio = aplicarPromos_(lineas, telefono, body.usarPremio, now);
 
-  const folio = nextFolio_();
+  const nf = nextFolio_();
+  const folio = nf.folio;
   const estado = body.estadoInicial === 'confirmada' ? 'confirmada' : 'recibida';
   const itemsSh = sheet_(SHEETS.ordenItems);
   const addonsSh = sheet_(SHEETS.itemComplementos);
@@ -573,7 +595,9 @@ function crearOrden_(body) {
     /* 'pendiente' significa: este pedido sellara la tarjeta cuando se entregue.
        Hasta entonces no se toca nada del cliente. */
     sello: hayPizza ? 'pendiente' : 'no',
-    premio: premio ? premio.tipo : ''
+    premio: premio ? premio.tipo : '',
+    // El numero de pedido, para el corte. No viaja al cliente.
+    consecutivo: nf.consecutivo
   };
   ordenesSh.appendRow(ORDENES_HEADERS.map(function (h) { return row[h]; }));
 
@@ -936,6 +960,9 @@ function armarOrdenes_(ordenes) {
     const minTranscurridos = o.t_recibida ? Math.floor((Date.now() - new Date(o.t_recibida).getTime()) / 60000) : 0;
     return {
       folio: o.folio, canal: o.canal, estado: o.estado,
+      // El numero de pedido solo se ve aqui, que es la vista interna: en el
+      // folio delataba cuantos pedidos lleva el negocio.
+      consecutivo: o.consecutivo || '',
       cliente: o.cliente_nombre,
       /* En un pedido para recoger no hay direccion. Si el destino se quedara en
          blanco, en la cocina se veria como un pedido a domicilio incompleto y

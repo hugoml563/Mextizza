@@ -96,6 +96,9 @@ window.__resources = Object.assign(window.__resources || {}, {
 <div style="flex:1;min-width:0">
 <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
 <span style="font-family:'Bungee',cursive;font-size:17px">{{ o.folio }}</span>
+<!-- El numero de pedido. Solo aqui: en el folio le decia a cada cliente
+     cuantos pedidos lleva el negocio. -->
+<sc-if value="{{ o.consecutivo }}" hint-placeholder-val="{{ 63 }}"><span style="font-size:11px;color:#9a9a9a;font-weight:700">#{{ o.consecutivo }}</span></sc-if>
 <sc-if value="{{ o.esWeb }}" hint-placeholder-val="{{ true }}"><span style="padding:3px 9px;border-radius:99px;background:#C1502E;color:#FFFFFF;font-size:10.5px;font-weight:700;letter-spacing:1.2px;text-transform:uppercase">Web</span></sc-if>
 <sc-if value="{{ o.esApp }}" hint-placeholder-val="{{ false }}"><span style="padding:3px 9px;border-radius:99px;background:#E4007C;color:#FFFFFF;font-size:10.5px;font-weight:700;letter-spacing:1.2px;text-transform:uppercase">App</span></sc-if>
 <sc-if value="{{ o.esWhats }}" hint-placeholder-val="{{ false }}"><span style="padding:3px 9px;border-radius:99px;background:#2E7D5B;color:#FFFFFF;font-size:10.5px;font-weight:700;letter-spacing:1.2px;text-transform:uppercase">WhatsApp</span></sc-if>
@@ -338,7 +341,7 @@ class Component extends DCLogic {
       .map(({ o, i }) => {
         const tarde = o.min >= umbral && activos.includes(o.estado);
         return {
-          folio: o.folio, cliente: o.cliente, canal: o.canal, tipo: o.tipo, destino: o.destino, pickup: !!o.pickup,
+          folio: o.folio, consecutivo: o.consecutivo, cliente: o.cliente, canal: o.canal, tipo: o.tipo, destino: o.destino, pickup: !!o.pickup,
           notas: o.notas || '', tieneNotas: !!(o.notas && String(o.notas).trim()),
           esRecibida: o.estado === 'recibida', esConfirmada: o.estado === 'confirmada', esHorno: o.estado === 'horno',
           esLista: o.estado === 'lista', esCamino: o.estado === 'camino', esEntregada: o.estado === 'entregada', esCancelada: o.estado === 'cancelada',
