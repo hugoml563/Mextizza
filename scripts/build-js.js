@@ -150,6 +150,26 @@ function verificarPremios() {
       '  Los dos tienen que decir lo mismo antes de construir.',
     ].join('\n'));
   }
+  /* El dia y la hora del 2x1 tambien viven en dos capas. Si se separan, el sitio
+     anuncia la promocion un dia y la caja la aplica otro — y el cliente que pidio
+     dos pizzas confiando en el letrero paga las dos. */
+  const m2 = menu.match(/const MEXTIZZA_2X1 = \{ dia: (\d+), desde: (\d+),/);
+  const gD = (gs.match(/const DIA_2X1 = (\d+);/) || [])[1];
+  const gH = (gs.match(/const HORA_2X1 = (\d+);/) || [])[1];
+  if (!m2 || !gD || !gH) {
+    throw new Error('no encontre la configuracion del 2x1 en alguna de las dos capas');
+  }
+  if (m2[1] !== gD || m2[2] !== gH) {
+    throw new Error([
+      'El 2x1 no coincide entre las dos capas.',
+      '    menu-data.js: dia=' + m2[1] + ' desde=' + m2[2],
+      '    Code.gs:      dia=' + gD + ' desde=' + gH,
+      '  Actualiza los dos antes de construir.',
+    ].join('\n'));
+  }
+  const DIAS_SEMANA = ['domingo', 'lunes', 'martes', 'miercoles', 'jueves', 'viernes', 'sabado'];
+  console.log('  2x1: ' + DIAS_SEMANA[Number(gD)] + ' desde las ' + gH + ':00, igual en las dos capas');
+
   console.log('  pickup: servicio ' + (aGs === 'true' ? 'ACTIVO' : 'apagado') +
     ' en las dos capas, descuento de $' + dGs);
   console.log('  premios: TarjetaPremios.jsx y Code.gs coinciden (brownie dia ' +

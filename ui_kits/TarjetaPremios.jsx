@@ -349,9 +349,15 @@ function CanjeTarjeta({ tarjeta, lines, valor, onChange, onAgregar, onQuitar, ag
    cobrar de menos, nunca prometer un descuento que no llega.
 
    Devuelve { descuento, motivo } o null. */
+/* El dia sale de MEXTIZZA_2X1, nunca escrito a mano: si la promocion se mueve,
+   los avisos se mueven con ella. Antes decia 'viernes' en tres lugares, y mover
+   la promocion habria dejado los tres anunciando el dia equivocado. */
+const DIA_2X1_NOMBRE = (typeof MEXTIZZA_2X1 !== 'undefined' && MEXTIZZA_2X1.nombre) || '';
+const DIA_2X1_MIN = (typeof MEXTIZZA_2X1 !== 'undefined' && MEXTIZZA_2X1.enMinuscula) || '';
+
 /* Como se le llama a cada promocion en el ticket. */
 const NOMBRE_PROMO = {
-  '2x1': '2x1 de viernes',
+  '2x1': DIA_2X1_MIN ? '2x1 de ' + DIA_2X1_MIN : '2x1',
   'tarjeta:pizza': 'Traviesa de tu tarjeta',
   'tarjeta:brownie': 'Brownie de tu tarjeta',
 };
@@ -396,7 +402,7 @@ function mextizzaDescuentoPrevisto(lines, tarjeta, usarPremio, hayDosPorUno) {
 function AvisoPremio({ premio, style }) {
   if (!premio) return null;
   const texto = {
-    '2x1': 'Se aplicó tu 2x1 de viernes',
+    '2x1': DIA_2X1_MIN ? 'Se aplicó tu 2x1 de ' + DIA_2X1_MIN : 'Se aplicó tu 2x1',
     'tarjeta:brownie': 'Canjeaste tu brownie de la tarjeta',
     'tarjeta:pizza': 'Canjeaste tu Traviesa de la tarjeta',
   }[premio.tipo] || 'Promoción aplicada';
@@ -418,7 +424,7 @@ function AvisoPremio({ premio, style }) {
   );
 }
 
-/* Aviso del 2x1 de viernes. `activo` lo dice el servidor (campo dosPorUno), no
+/* Aviso del 2x1. `activo` lo dice el servidor (campo dosPorUno), no
    el reloj del telefono: si el cliente trae mal la hora, el anuncio y el cobro
    dirian cosas distintas. */
 function Aviso2x1({ activo, style }) {
@@ -434,7 +440,7 @@ function Aviso2x1({ activo, style }) {
         color: 'var(--negro-carbon)', letterSpacing: 0.5, flexShrink: 0,
       }}>2x1</span>
       <span style={{ fontFamily: 'var(--font-body)', fontSize: 13, lineHeight: 1.4, color: 'var(--negro-carbon)' }}>
-        Viernes de 2x1: pide dos pizzas y la más barata va por nuestra cuenta.
+        {DIA_2X1_NOMBRE} de 2x1: pide dos pizzas y la más barata va por nuestra cuenta.
       </span>
     </div>
   );

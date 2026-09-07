@@ -119,7 +119,10 @@ function comparar(etiqueta, real, esperado) {
     '\n         real     ' + JSON.stringify(real)));
 }
 
-// Jueves 10 y viernes 11 de septiembre de 2026, en horario abierto (CDMX = UTC-6).
+// Miercoles 9, jueves 10 y viernes 11 de septiembre de 2026, en horario abierto
+// (CDMX = UTC-6). El 2x1 se movio a los miercoles; el viernes se conserva en las
+// pruebas justamente para comprobar que YA NO dispara nada.
+const MIE = (h) => new Date(Date.UTC(2026, 8, 9, h + 6));
 const JUE = (h) => new Date(Date.UTC(2026, 8, 10, h + 6));
 const VIE = (h) => new Date(Date.UTC(2026, 8, 11, h + 6));
 // Un dia cualquiera a las 18:00 CDMX; septiembre 2026 empieza en martes,
@@ -186,8 +189,11 @@ function acumularHasta(meta, PIZZA) {
 
 // --- pruebas ---------------------------------------------------------------
 console.log('\nHORARIO Y 2x1');
-comparar('viernes 19:00 es 2x1', ctx.es2x1_(VIE(19)), true);
-comparar('viernes 18:00 NO es 2x1', ctx.es2x1_(VIE(18)), false);
+comparar('miercoles 19:00 es 2x1', ctx.es2x1_(MIE(19)), true);
+comparar('miercoles 18:00 NO es 2x1', ctx.es2x1_(MIE(18)), false);
+comparar('miercoles 22:00 sigue siendo 2x1', ctx.es2x1_(MIE(22)), true);
+// El dia viejo tiene que haber dejado de contar.
+comparar('viernes 19:00 YA NO es 2x1', ctx.es2x1_(VIE(19)), false);
 comparar('jueves 20:00 NO es 2x1', ctx.es2x1_(JUE(20)), false);
 
 console.log('\nMIGRACION DE LA HOJA clientes');
@@ -213,13 +219,13 @@ const r2 = pedir([{ producto_id: PIZZA, cantidad: 1 }], { cuando: JUE(20) });
 comparar('segundo pedido el MISMO dia no suma', r2.tarjeta.dias, 1);
 comparar('sin premio todavia', r2.premio, null);
 
-console.log('\n2x1 DEL VIERNES');
-const r3 = pedir([{ producto_id: CARA, cantidad: 1 }, { producto_id: BARATA, cantidad: 1 }], { cuando: VIE(19) });
+console.log('\n2x1 DEL MIERCOLES');
+const r3 = pedir([{ producto_id: CARA, cantidad: 1 }, { producto_id: BARATA, cantidad: 1 }], { cuando: MIE(19) });
 comparar('regala una de las dos', r3.premio && r3.premio.tipo, '2x1');
 comparar('cobra la cara, regala la barata', totalDe(r3.folio), CATALOGO.productos[CARA].precio);
-const r4 = pedir([{ producto_id: CARA, cantidad: 1 }, { producto_id: postre, cantidad: 1 }], { cuando: VIE(20) });
+const r4 = pedir([{ producto_id: CARA, cantidad: 1 }, { producto_id: postre, cantidad: 1 }], { cuando: MIE(20) });
 comparar('pizza + postre NO dispara 2x1', r4.premio, null);
-const r4b = pedir([{ producto_id: BARATA, cantidad: 2 }], { cuando: VIE(21) });
+const r4b = pedir([{ producto_id: BARATA, cantidad: 2 }], { cuando: MIE(21) });
 comparar('cantidad 2 en una sola linea si dispara 2x1', r4b.premio && r4b.premio.tipo, '2x1');
 comparar('y cobra solo una', totalDe(r4b.folio), CATALOGO.productos[BARATA].precio);
 
@@ -262,9 +268,9 @@ comparar('cuenta un ciclo', r7.tarjeta.ciclos, 1);
 console.log('\nLAS PROMOCIONES NO SE ACUMULAN');
 acumularHasta(9, PIZZA);
 const r8 = pedir([{ producto_id: PIZZA, cantidad: 1 }, { producto_id: BARATA, cantidad: 1 }],
-  { cuando: VIE(21), usarPremio: 'pizza' });
+  { cuando: MIE(21), usarPremio: 'pizza' });
 const regaladas = hojas[SHEETS.ordenItems].filas.filter((f) => f[1] === r8.folio && f[8]);
-comparar('viernes + tarjeta: un solo regalo', regaladas.length, 1);
+comparar('2x1 + tarjeta: un solo regalo', regaladas.length, 1);
 /* El 2x1 regala la mas barata del par (189); la tarjeta regala la traviesa
    (199). Debe ganar la que le conviene al cliente. */
 comparar('gana la via que mas le conviene al cliente',
@@ -496,10 +502,10 @@ comparar('un pedido sin pizza no lleva descuento por recoger',
 
 // El descuento se suma a las promociones, no compite con ellas.
 const TEL_V = '5555555555';
-const rViernes = pedir([{ producto_id: CARA, cantidad: 1 }, { producto_id: BARATA, cantidad: 1 }],
-  { cuando: VIE(20), tel: TEL_V, entrega_tipo: 'pickup' });
-comparar('viernes recogiendo: 2x1 y ademas los $30',
-  totalDe(rViernes.folio), CATALOGO.productos[CARA].precio - 30);
+const rMiercoles = pedir([{ producto_id: CARA, cantidad: 1 }, { producto_id: BARATA, cantidad: 1 }],
+  { cuando: MIE(20), tel: TEL_V, entrega_tipo: 'pickup' });
+comparar('miercoles recogiendo: 2x1 y ademas los $30',
+  totalDe(rMiercoles.folio), CATALOGO.productos[CARA].precio - 30);
 
 console.log('\nEL RECORRIDO DEPENDE DE COMO SE ENTREGA');
 function recorrido(folio) {

@@ -105,10 +105,6 @@ function mextizzaEstaAbierto(ahora) {
   return { abierto, texto: h.texto };
 }
 
-/* Viernes de 2x1, de 7 pm en adelante. Sirve solo para ANUNCIARLO: quien
-   decide si el descuento se aplica es el servidor (es2x1_ en Code.gs), que usa
-   su propio reloj. Si el telefono trae mal la hora, lo peor que pasa es que el
-   letrero no cuadre; el cobro no cambia. */
 /* Busca un producto del menu por su id. Los premios se guardan como id
    ('traviesa'), pero el carrito necesita el objeto completo. Devuelve null si
    el id no existe, para que un premio mal escrito no meta una linea vacia. */
@@ -119,9 +115,22 @@ function mextizzaProducto(id) {
   return null;
 }
 
+/* El 2x1: que dia y desde que hora.
+
+   `nombre` esta aqui a proposito. Los avisos de la interfaz se arman con el en
+   vez de traer el dia escrito a mano, para que mover la promocion no pueda
+   dejar un letrero anunciando el dia equivocado.
+
+   0 = domingo, 3 = miercoles. Espejo de DIA_2X1 y HORA_2X1 en Code.gs; el build
+   compara las dos capas y se detiene si dejan de coincidir. */
+const MEXTIZZA_2X1 = { dia: 3, desde: 19, nombre: 'Miércoles', enMinuscula: 'miércoles' };
+
+/* Sirve solo para ANUNCIARLO: quien decide si el descuento se aplica es el
+   servidor (es2x1_ en Code.gs), que usa su propio reloj. Si el telefono trae mal
+   la hora, lo peor que pasa es que el letrero no cuadre; el cobro no cambia. */
 function mextizzaEs2x1(ahora) {
   const cdmx = mextizzaAhoraCDMX(ahora);
-  return cdmx.dia === 5 && cdmx.hora >= 19;
+  return cdmx.dia === MEXTIZZA_2X1.dia && cdmx.hora >= MEXTIZZA_2X1.desde;
 }
 
 
@@ -173,4 +182,4 @@ const MEXTIZZA_SOCIAL = {
   instagram: 'https://www.instagram.com/mextizzamx/',
   facebook: 'https://www.facebook.com/profile.php?id=61592120047383'
 };
-Object.assign(window, { MEXTIZZA_MENU, MEXTIZZA_ADDONS, MEXTIZZA_FACTS, mextizzaWhatsappLink, mextizzaEstaAbierto, mextizzaEs2x1, mextizzaProducto, mextizzaEsPizza, MEXTIZZA_PICKUP_DESCUENTO, MEXTIZZA_PICKUP_ACTIVO, mextizzaAceptaComplementos, MEXTIZZA_SOCIAL });
+Object.assign(window, { MEXTIZZA_MENU, MEXTIZZA_ADDONS, MEXTIZZA_FACTS, mextizzaWhatsappLink, mextizzaEstaAbierto, mextizzaEs2x1, MEXTIZZA_2X1, mextizzaProducto, mextizzaEsPizza, MEXTIZZA_PICKUP_DESCUENTO, MEXTIZZA_PICKUP_ACTIVO, mextizzaAceptaComplementos, MEXTIZZA_SOCIAL });

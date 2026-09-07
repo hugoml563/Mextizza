@@ -387,7 +387,7 @@ const CATALOGO = {
 };
 // <catalogo:fin>
 
-/* Tarjeta de recompensas y promocion del viernes.
+/* Tarjeta de recompensas y promocion del 2x1.
 
    Se cuentan DIAS DISTINTOS con pedido, no pedidos: dos ordenes el mismo dia
    valen una. Sin eso, cuatro pedidos seguidos en una tarde regalan un brownie.
@@ -426,12 +426,22 @@ function hoyCDMX_(d) {
   return Utilities.formatDate(d || new Date(), 'America/Mexico_City', 'yyyy-MM-dd');
 }
 
-/* Viernes despues de las 7. El dia se lee en hora de Mexico, no del servidor. */
+/* El dia del 2x1, despues de las 7 de la noche.
+
+   0 = domingo, 3 = miercoles, 5 = viernes. Espejo de MEXTIZZA_2X1 en
+   menu-data.js; build-js.js compara los dos y detiene la construccion si dejan
+   de coincidir. Antes era el viernes: para moverlo basta cambiar estos dos
+   numeros aqui y alla, y los textos de la interfaz se acomodan solos porque se
+   arman a partir de la constante. */
+const DIA_2X1 = 3;
+const HORA_2X1 = 19;
+
+/* El dia y la hora se leen SIEMPRE en hora de Mexico, no la del servidor. */
 function es2x1_(d) {
   const f = d || new Date();
-  const dia = Number(Utilities.formatDate(f, 'America/Mexico_City', 'u')) % 7; // 5 = viernes
+  const dia = Number(Utilities.formatDate(f, 'America/Mexico_City', 'u')) % 7; // 0 = domingo
   const hora = Number(Utilities.formatDate(f, 'America/Mexico_City', 'H'));
-  return dia === 5 && hora >= 19;
+  return dia === DIA_2X1 && hora >= HORA_2X1;
 }
 
 /* Una pizza es cualquier cosa que salga del horno: 'Del horno' y la 'Rotativa'
@@ -688,7 +698,7 @@ function aplicarPromos_(lineas, telefono, usarPremio, ahora) {
   const disp = premiosDe_(leerTarjeta_(telefono), premiosReservados_(telefono));
   const opciones = [];
 
-  // 2x1 del viernes: gratis la mas barata del par, una por pedido. Postres y
+  // 2x1: gratis la mas barata del par, una por pedido. Postres y
   // bebidas no cuentan: la promocion es de pizzas.
   const pizzas = [];
   lineas.forEach(function (l, idx) {
