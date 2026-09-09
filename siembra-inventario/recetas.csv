@@ -1,4 +1,4 @@
-producto_id,componente_id,cantidad,nota
+﻿producto_id,componente_id,cantidad,nota
 roni,peperoni,0.07,pizza
 roni,queso-monterrey,0.12,pizza
 roni,masa-base,1,pizza

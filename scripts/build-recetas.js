@@ -174,9 +174,13 @@ function generar() {
   for (const [id, comps] of Object.entries(COMPLEMENTOS)) agregar(id, comps, 'complemento');
   for (const [id, comps] of Object.entries(LOTES)) agregar(id, comps, 'lote');
 
+  /* El BOM no es adorno. Sin el, Sheets y varios editores leen el archivo como
+     Latin-1 y "Jamon" con acento llega a la hoja como "JamA3n". Los ids son ASCII
+     y la logica no se entera, pero Ricardo si: ve los nombres rotos en la tablet. */
+  const BOM = '﻿';
   fs.mkdirSync(DESTINO, { recursive: true });
-  fs.writeFileSync(path.join(DESTINO, 'insumos.csv'), csv(insumos));
-  fs.writeFileSync(path.join(DESTINO, 'recetas.csv'), csv(recetas));
+  fs.writeFileSync(path.join(DESTINO, 'insumos.csv'), BOM + csv(insumos), 'utf8');
+  fs.writeFileSync(path.join(DESTINO, 'recetas.csv'), BOM + csv(recetas), 'utf8');
 
   // Que ningun componente apunte a un insumo que no existe: un id mal escrito
   // se volveria un descuento silencioso que nunca ocurre.

@@ -1,4 +1,4 @@
-id,nombre,uom,categoria,tipo,costo_promedio,stock,stock_minimo,rinde,activo
+﻿id,nombre,uom,categoria,tipo,costo_promedio,stock,stock_minimo,rinde,activo
 harina-fuerza,Harina de fuerza,Kg,Masa,crudo,20,0,5,,si
 agua,Agua,L,Masa,crudo,0.06,0,20,,si
 levadura,Levadura instantánea,Kg,Masa,crudo,70,0,0.1,,si
