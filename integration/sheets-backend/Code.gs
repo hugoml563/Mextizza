@@ -350,6 +350,52 @@ function registrarConteo_(body, insumos) {
   return { insumo: ins.id, sistema: sistema, contado: contado, diferencia: dif };
 }
 
+/* CONTEO DE APERTURA. Se corre UNA VEZ, a mano, desde el editor de Apps Script.
+   No esta expuesta en la API a proposito: no es una operacion de cocina.
+
+   Como usarla: escribe las cantidades que de verdad hay en la columna `stock`
+   de la hoja `insumos`, en la unidad que dice cada renglon. La masa y la salsa
+   se cuentan en bolas y porciones ya listas, no en kilos de harina. Luego corre
+   esta funcion.
+
+   Lo que hace es asentar en el libro lo que ya escribiste, sin mover el saldo.
+   Sin este paso el libro arrancaria en cero mientras la hoja dice otra cosa, y
+   a la primera diferencia nadie sabria cual de los dos miente.
+
+   Correrla dos veces duplicaria el asiento de apertura, asi que se planta antes
+   si el libro ya trae movimientos. */
+function sembrarLibroInicial() {
+  const insumos = leerInsumos_();
+  const mv = sheet_(SHEETS.movimientos);
+
+  if (mv.getLastRow() > 1) {
+    throw new Error('El libro ya tiene movimientos. La apertura se asienta ' +
+      'una sola vez; si de verdad quieres rehacerla, vacia inv_movimientos primero.');
+  }
+
+  const ahora = new Date();
+  const filas = [];
+  for (const id in insumos) {
+    const i = insumos[id];
+    if (!(i.stock > 0)) continue;
+    filas.push([ahora, 'ajuste', i.id, i.stock, i.costo, i.stock * i.costo,
+      'apertura', 'Conteo inicial']);
+  }
+
+  if (!filas.length) {
+    throw new Error('Todos los insumos estan en cero. Escribe primero las ' +
+      'cantidades contadas en la columna `stock` de la hoja `insumos`.');
+  }
+
+  mv.getRange(mv.getLastRow() + 1, 1, filas.length, filas[0].length).setValues(filas);
+
+  let valor = 0;
+  for (let i = 0; i < filas.length; i++) valor += filas[i][5];
+  Logger.log('Apertura asentada: ' + filas.length + ' insumos, valor ' +
+    Math.round(valor * 100) / 100);
+  return { insumos: filas.length, valor: Math.round(valor * 100) / 100 };
+}
+
 /* Lo que ve la pantalla de cocina. */
 function estadoInventario_() {
   const insumos = leerInsumos_();

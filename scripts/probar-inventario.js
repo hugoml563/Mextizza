@@ -255,5 +255,26 @@ comparar('sin masa fermentada, hoy no se puede hacer nada', roni.hoy, 0);
 comparar('el freno es la masa', roni.limitaHoy, 'Masa base NY 48h');
 comparar('pero en 48 h si, porque hay harina', roni.en48h > 0, true);
 
+console.log('\nCONTEO DE APERTURA');
+// El libro arranca vacio: sembrar sin haber contado nada no debe inventar nada.
+Object.keys(ctx.leerInsumos_()).forEach(function (id) { poner(id, 0); });
+hojas[SHEETS.movimientos].filas.length = 1;
+let grito = '';
+try { ctx.sembrarLibroInicial(); } catch (e) { grito = String(e); }
+comparar('sin nada contado se planta', /estan en cero/.test(grito), true);
+
+poner('harina-fuerza', 8);   // 8 kg a 20
+poner('peperoni', 2);        // 2 kg a 305
+const ap = ctx.sembrarLibroInicial();
+comparar('asienta solo lo que tiene existencia', ap.insumos, 2);
+cerca('y valua la apertura', ap.valor, 8 * 20 + 2 * 305);
+comparar('el saldo no se mueve, ya estaba escrito', stock('harina-fuerza'), 8);
+comparar('el libro queda con dos renglones', hojas[SHEETS.movimientos].filas.length - 1, 2);
+
+grito = '';
+try { ctx.sembrarLibroInicial(); } catch (e) { grito = String(e); }
+comparar('correrla dos veces se planta', /ya tiene movimientos/.test(grito), true);
+comparar('y no duplico el asiento', hojas[SHEETS.movimientos].filas.length - 1, 2);
+
 console.log('\n  ' + ok + ' pruebas ok, ' + mal + ' mal\n');
 process.exit(mal ? 1 : 0);
