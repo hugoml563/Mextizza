@@ -18,8 +18,9 @@
  * COTEJARLOS CONTRA EL EXCEL antes de operar con ellos: se leyeron a traves de
  * un conversor y una cifra mal copiada se vuelve merma fantasma para siempre.
  *
- * Aviso mayor: los gramajes del BOM son estimados migrados del escandallo
- * original y nunca se midieron con Ricardo. El inventario hereda ese error.
+ * Los gramajes SI los peso Ricardo en el escandallo original. Lo que no esta
+ * verificado es la transcripcion: se leyeron a traves de un conversor, no del
+ * Excel directo, y ese es el paso donde se puede haber colado una cifra.
  */
 const fs = require('fs');
 const path = require('path');
@@ -63,7 +64,7 @@ const CRUDOS = [
   ['crema',            'Crema para cocinar',                  'L',   'Otro',      70.00, 0.5],
   ['vodka',            'Vodka',                               'L',   'Otro',     250.00, 0.3],
   ['brownie-insumo',   'Brownie preparado',                   'Kg',  'Postre',   110.00, 0.5],
-  ['refresco-pza',     'Refresco 600 ml',                     'Pza', 'Bebida',    16.00, 12],
+  ['refresco-pza',     'Refresco 355 ml',                     'Pza', 'Bebida',    16.00, 12],
   ['agua-mineral-pza', 'Agua mineral 355 ml',                 'Pza', 'Bebida',     8.00, 12],
   ['caja-kraft',       'Caja kraft',                          'Pza', 'Empaque',    7.00, 30],
   ['sticker',          'Sticker Mextizza',                    'Pza', 'Empaque',    1.50, 50],

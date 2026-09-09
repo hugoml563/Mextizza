@@ -21,8 +21,8 @@ const MEXTIZZA_MENU = [
   ]},
   { cat: 'Para cerrar', title: 'Postres y bebidas', items: [
     { id: 'chocolatoso', name: 'Brownie', desc: '', price: 40, photo: '../../assets/photos/brownie.webp' },
-    { id: 'refresco-coca', name: 'Refresco Coca-Cola', desc: '600 ml', price: 35, photo: '../../assets/photos/cocacola.webp' },
-    { id: 'refresco-sprite', name: 'Refresco Sprite', desc: '600 ml', price: 35, photo: '../../assets/photos/sprite.webp' },
+    { id: 'refresco-coca', name: 'Refresco Coca-Cola', desc: '355 ml', price: 35, photo: '../../assets/photos/cocacola.webp' },
+    { id: 'refresco-sprite', name: 'Refresco Sprite', desc: '355 ml', price: 35, photo: '../../assets/photos/sprite.webp' },
     { id: 'agua', name: 'Agua Mineral', desc: '', price: 35, photo: '../../assets/photos/agua-mineral.webp' }
   ]}
 ];

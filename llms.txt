@@ -29,8 +29,8 @@ y cada pizza se hornea cuando entra el pedido, no antes.
 ### Postres y bebidas
 
 - **Brownie** — $40 MXN. 
-- **Refresco Coca-Cola** — $35 MXN. 600 ml
-- **Refresco Sprite** — $35 MXN. 600 ml
+- **Refresco Coca-Cola** — $35 MXN. 355 ml
+- **Refresco Sprite** — $35 MXN. 355 ml
 - **Agua Mineral** — $35 MXN. 
 
 Hay 13 productos en total.
