@@ -36,6 +36,21 @@ if (!window.__mextizzaSheetsConfigLoaded) {
   const mextizzaOlvidarTokenAdmin = () => {
     try { window.localStorage.removeItem(MEXTIZZA_ADMIN_LS_KEY); } catch (e) {}
   };
+  /* Este navegador es el de la cocina capturando un pedido que le dictaron:
+     el sitio abierto en modo captura Y con el token de administrador guardado.
+
+     Vive aqui, en un solo lugar, porque cuatro rejas preguntan lo mismo antes
+     de dejar pasar un pedido -- la validez del formulario de entrega, su
+     aviso, el estado del boton de confirmar y el envio. Escribirlo cuatro
+     veces ya dejo el horario aplicado en tres de ellas cuando solo se habia
+     corregido una. */
+  const mextizzaCapturaCocina = () => {
+    try {
+      return new URLSearchParams(location.search).get('canal') === 'whatsapp'
+        && !!mextizzaTokenAdmin();
+    } catch (e) { return false; }
+  };
+
   const tokenPara = admin => {
     if (!admin) return MEXTIZZA_SHEETS_TOKEN;
     const t = mextizzaTokenAdmin();
@@ -89,7 +104,7 @@ if (!window.__mextizzaSheetsConfigLoaded) {
        Sin token guardado se comporta igual que siempre, con el token publico y
        el horario aplicado: poner el parametro en la direccion no alcanza para
        saltarse nada. */
-    const comoCocina = canal === 'WhatsApp' && !!mextizzaTokenAdmin();
+    const comoCocina = mextizzaCapturaCocina();
 
     return mextizzaApiPost('crear_orden', {
       canal,
@@ -149,5 +164,5 @@ if (!window.__mextizzaSheetsConfigLoaded) {
 
   const mextizzaTarjeta = (telefono) => mextizzaApiGet('tarjeta', { telefono: telefono || '' });
 
-  Object.assign(window, { mextizzaPickup, mextizzaTarjeta, mextizzaCrearOrden, mextizzaAvanzarEstado, mextizzaCancelarOrden, mextizzaEstadoOrden, mextizzaEstadoPorTelefono, mextizzaCancelarPorCliente, mextizzaListarAbiertas, mextizzaListarHoy, mextizzaSolicitarCatering, mextizzaTokenAdmin, mextizzaGuardarTokenAdmin, mextizzaOlvidarTokenAdmin, mextizzaInvEstado, mextizzaInvCompra, mextizzaInvLote, mextizzaInvMerma, mextizzaInvConteo });
+  Object.assign(window, { mextizzaPickup, mextizzaTarjeta, mextizzaCrearOrden, mextizzaAvanzarEstado, mextizzaCancelarOrden, mextizzaEstadoOrden, mextizzaEstadoPorTelefono, mextizzaCancelarPorCliente, mextizzaListarAbiertas, mextizzaListarHoy, mextizzaSolicitarCatering, mextizzaTokenAdmin, mextizzaGuardarTokenAdmin, mextizzaOlvidarTokenAdmin, mextizzaCapturaCocina, mextizzaInvEstado, mextizzaInvCompra, mextizzaInvLote, mextizzaInvMerma, mextizzaInvConteo });
 }

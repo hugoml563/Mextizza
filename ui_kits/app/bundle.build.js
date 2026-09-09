@@ -475,9 +475,14 @@ function DeliveryForm({
     texto: ""
   };
 
+  /* La cocina captura fuera de horario lo que le pidieron por telefono; un
+     cliente no. El servidor aplica la misma regla en crearOrden_. */
+  const capturaCocina = typeof mextizzaCapturaCocina === 'function' && mextizzaCapturaCocina();
+  const seAceptan = apertura.abierto || capturaCocina;
+
   // Recogiendo no hay direccion que validar ni zona que evaluar.
   const datosEntrega = pickup || !!calle.trim() && zonaOk;
-  const valid = !!nombre.trim() && telOk && datosEntrega && !!pago && apertura.abierto;
+  const valid = !!nombre.trim() && telOk && datosEntrega && !!pago && seAceptan;
   React.useEffect(() => {
     onValidChange && onValidChange(valid);
   }, [valid]);
@@ -496,7 +501,7 @@ function DeliveryForm({
   }, [nombre, digits, calle, colonia, horario, pago, notas, modo]);
   const gap = compact ? 12 : 14;
   const tone = zona ? zona.estado === 'dentro' ? 'ok' : zona.estado === 'limite' ? 'warn' : 'block' : 'ok';
-  return /*#__PURE__*/React.createElement("div", null, !apertura.abierto && /*#__PURE__*/React.createElement(StatusNote, {
+  return /*#__PURE__*/React.createElement("div", null, !seAceptan && /*#__PURE__*/React.createElement(StatusNote, {
     tone: "block",
     title: "El horno est\xE1 apagado",
     style: {

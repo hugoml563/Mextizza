@@ -163,8 +163,8 @@ function CartDrawer({ open, lines, onClose, onQty, step, setStep, canal = 'Web',
 
      Sin token guardado, este navegador no es el de la cocina y el horario
      vuelve a valer, igual que para cualquier cliente. */
-  const comoCocina = canal === 'WhatsApp'
-    && typeof mextizzaTokenAdmin === 'function' && !!mextizzaTokenAdmin();
+  const comoCocina = typeof mextizzaCapturaCocina === 'function'
+    && mextizzaCapturaCocina();
   const puedePedir = apertura.abierto || comoCocina;
   const motivo = !puedePedir ? 'cerrado' : (!ready ? 'datos' : null);
 
