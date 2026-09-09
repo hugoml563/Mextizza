@@ -46,9 +46,15 @@ function DeliveryForm({ compact = false, attempted = false, onValidChange, onDat
     ? mextizzaEstaAbierto(ahora)
     : { abierto: true, texto: "" };
 
+  /* La cocina captura fuera de horario lo que le pidieron por telefono; un
+     cliente no. El servidor aplica la misma regla en crearOrden_. */
+  const capturaCocina = typeof mextizzaCapturaCocina === 'function'
+    && mextizzaCapturaCocina();
+  const seAceptan = apertura.abierto || capturaCocina;
+
   // Recogiendo no hay direccion que validar ni zona que evaluar.
   const datosEntrega = pickup || (!!calle.trim() && zonaOk);
-  const valid = !!nombre.trim() && telOk && datosEntrega && !!pago && apertura.abierto;
+  const valid = !!nombre.trim() && telOk && datosEntrega && !!pago && seAceptan;
 
   React.useEffect(() => { onValidChange && onValidChange(valid); }, [valid]);
   React.useEffect(() => {
@@ -66,7 +72,7 @@ function DeliveryForm({ compact = false, attempted = false, onValidChange, onDat
 
   return (
     <div>
-      {!apertura.abierto && (
+      {!seAceptan && (
         <StatusNote tone="block" title="El horno está apagado" style={{ marginBottom: 14 }}>
           Abrimos {apertura.texto.toLowerCase()}. Si quieres dejarlo apuntado desde ahorita, escríbenos por WhatsApp.
         </StatusNote>

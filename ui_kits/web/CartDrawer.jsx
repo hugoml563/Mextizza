@@ -155,7 +155,18 @@ function CartDrawer({ open, lines, onClose, onQty, step, setStep, canal = 'Web',
   const apertura = typeof mextizzaEstaAbierto === 'function'
     ? mextizzaEstaAbierto()
     : { abierto: true, texto: '' };
-  const motivo = !apertura.abierto ? 'cerrado' : (!ready ? 'datos' : null);
+
+  /* El modo captura desde el navegador de la cocina no respeta el horario:
+     Ricardo registra lo que le pidieron por telefono antes de abrir. El
+     servidor aplica exactamente la misma regla en crearOrden_; esto solo evita
+     que el boton frene algo que el backend si iba a aceptar.
+
+     Sin token guardado, este navegador no es el de la cocina y el horario
+     vuelve a valer, igual que para cualquier cliente. */
+  const comoCocina = typeof mextizzaCapturaCocina === 'function'
+    && mextizzaCapturaCocina();
+  const puedePedir = apertura.abierto || comoCocina;
+  const motivo = !puedePedir ? 'cerrado' : (!ready ? 'datos' : null);
 
   // entrega arranca en null: DeliveryForm no ha reportado nada en el primer
   // pintado, y leerlo directo tumbaba la pagina entera.
@@ -235,7 +246,7 @@ function CartDrawer({ open, lines, onClose, onQty, step, setStep, canal = 'Web',
        antes de la hora de cierre, y el servidor rechaza igual: mas vale decirlo
        nosotros que mandar el pedido a que rebote. */
     const ap = typeof mextizzaEstaAbierto === 'function' ? mextizzaEstaAbierto() : { abierto: true };
-    if (!ap.abierto || !ready) {
+    if ((!ap.abierto && !comoCocina) || !ready) {
       // setIntentos fuerza un repintado: el motivo de abajo se recalcula con
       // la hora de ahora, no con la de cuando se abrio la pestana.
       setAttempted(true);

@@ -44,6 +44,16 @@ window.__resources = Object.assign(window.__resources || {}, {
 <div style="font-family:'Bungee',cursive;font-size:11px;letter-spacing:2px;text-transform:uppercase;color:#C1502E">Centro de ventas</div>
 <div style="font-size:12.5px;font-weight:700;color:#6b6b6b;margin-top:3px">{{ fecha }} · {{ reloj }}</div>
 </div>
+<div style="flex:none;display:flex;gap:8px;margin-left:6px">
+<sc-for list="{{ vistas }}" as="v" hint-placeholder-count="2">
+<sc-if value="{{ v.activa }}" hint-placeholder-val="{{ true }}">
+<button onClick="{{ v.set }}" style="padding:9px 16px;border:2px solid #1A1A1A;border-radius:6px;background:#1A1A1A;color:#F5F0E8;font-family:'Oswald',sans-serif;font-size:12px;font-weight:700;letter-spacing:1px;text-transform:uppercase;cursor:pointer;min-height:44px">{{ v.label }}</button>
+</sc-if>
+<sc-if value="{{ v.inactiva }}" hint-placeholder-val="{{ false }}">
+<button onClick="{{ v.set }}" style="padding:9px 16px;border:2px solid #1A1A1A;border-radius:6px;background:transparent;color:#1A1A1A;font-family:'Oswald',sans-serif;font-size:12px;font-weight:700;letter-spacing:1px;text-transform:uppercase;cursor:pointer;min-height:44px" style-hover="background:rgba(0,0,0,.06)">{{ v.label }}</button>
+</sc-if>
+</sc-for>
+</div>
 <div style="flex:1"></div>
 <div style="display:flex;gap:10px">
 <div style="min-width:104px;padding:8px 14px;background:#FFFFFF;border:2px solid #1A1A1A;border-radius:6px">
@@ -66,6 +76,8 @@ window.__resources = Object.assign(window.__resources || {}, {
 </sc-if>
 
 <div style="flex:1;display:flex;min-height:0">
+
+<sc-if value="{{ verPedidos }}" hint-placeholder-val="{{ true }}">
 
 <div style="flex:1;display:flex;flex-direction:column;min-width:0;padding:16px 18px 0">
 <div style="flex:none;display:flex;gap:8px;margin-bottom:14px">
@@ -181,6 +193,106 @@ window.__resources = Object.assign(window.__resources || {}, {
 </div>
 </sc-if>
 
+</sc-if>
+
+<sc-if value="{{ verInventario }}" hint-placeholder-val="{{ false }}">
+
+<div style="flex:1;display:flex;flex-direction:column;min-width:0;padding:16px 18px 0">
+<div style="flex:none;margin-bottom:12px">
+<div style="font-family:'Bungee',cursive;font-size:13px;letter-spacing:1px;text-transform:uppercase">Cuántas se pueden hacer</div>
+<!-- Los dos horizontes son el punto del tablero: la masa tarda 48 horas en
+     fermentar, asi que tener harina no es tener pizzas. -->
+<div style="font-size:12px;font-weight:700;color:#6b6b6b;margin-top:3px">Hoy, con la masa que ya fermentó. En 48 h, si se pone masa ahorita.</div>
+</div>
+<div style="flex:1;overflow:auto;padding-bottom:18px;display:grid;grid-template-columns:repeat(3,1fr);gap:12px;align-content:start">
+<sc-for list="{{ capacidad }}" as="c" hint-placeholder-count="9">
+<div style="background:#FFFFFF;border:2px solid #1A1A1A;border-radius:8px;padding:12px 14px">
+<div style="font-size:13.5px;font-weight:700;line-height:1.3;min-height:35px">{{ c.nombre }}</div>
+<div style="display:flex;align-items:baseline;gap:8px;margin-top:6px">
+<sc-if value="{{ c.hayHoy }}" hint-placeholder-val="{{ true }}"><span style="font-family:'Bungee',cursive;font-size:30px;line-height:1;color:#2E7D5B">{{ c.hoy }}</span></sc-if>
+<sc-if value="{{ c.sinHoy }}" hint-placeholder-val="{{ false }}"><span style="font-family:'Bungee',cursive;font-size:30px;line-height:1;color:#E4007C">{{ c.hoy }}</span></sc-if>
+<span style="font-size:11px;font-weight:700;letter-spacing:1.2px;text-transform:uppercase;color:#6b6b6b">hoy</span>
+</div>
+<div style="margin-top:5px;font-size:12.5px;font-weight:700;color:#4A4A4A">{{ c.en48h }} en 48 h</div>
+<div style="margin-top:8px;padding-top:8px;border-top:1px dashed rgba(0,0,0,.14);font-size:11.5px;font-weight:700;color:#C1502E">Te frena: {{ c.limita }}</div>
+</div>
+</sc-for>
+<sc-if value="{{ sinCapacidad }}" hint-placeholder-val="{{ false }}">
+<div style="grid-column:1/-1;text-align:center;padding:60px 20px;color:#9a9a9a">
+<div style="font-family:'Bungee',cursive;font-size:16px;letter-spacing:1px;text-transform:uppercase">Sin recetas cargadas</div>
+<div style="font-size:13px;font-weight:700;margin-top:6px">Pega los insumos y las recetas en el Sheet para que esto se llene.</div>
+</div>
+</sc-if>
+</div>
+</div>
+
+<div style="flex:none;width:322px;background:#FFFFFF;border-left:3px solid #1A1A1A;padding:18px;overflow:auto">
+
+<sc-if value="{{ inv.hayAviso }}" hint-placeholder-val="{{ false }}">
+<div style="margin-bottom:14px;padding:10px 12px;background:#F7EBD8;border-left:3px solid #C1502E;font-size:12px;font-weight:700;line-height:1.45">{{ inv.aviso }}</div>
+</sc-if>
+
+<sc-if value="{{ inv.enLista }}" hint-placeholder-val="{{ true }}">
+<div style="display:flex;align-items:center;gap:10px;font-family:'Bungee',cursive;font-size:11px;letter-spacing:1px;text-transform:uppercase;margin-bottom:12px">Existencias<span style="flex:1;height:2px;background:#1A1A1A;opacity:.15"></span><span style="font-family:'Oswald',sans-serif;font-size:13px;color:#C1502E">{{ inv.valor }}</span></div>
+
+<sc-for list="{{ inv.lotes }}" as="lo" hint-placeholder-count="2">
+<button onClick="{{ lo.abrir }}" style="width:100%;margin-bottom:8px;padding:13px 14px;border:2px solid #1A1A1A;border-radius:6px;background:#1A1A1A;color:#F5F0E8;font-family:'Oswald',sans-serif;font-size:12.5px;font-weight:700;letter-spacing:1px;text-transform:uppercase;cursor:pointer;text-align:left;min-height:48px" style-hover="background:#C1502E;border-color:#C1502E">Hice un lote de {{ lo.corto }}<span style="display:block;font-size:11px;letter-spacing:0;text-transform:none;color:#D9A65C;margin-top:2px">Hay {{ lo.stock }} · el lote rinde {{ lo.rinde }}</span></button>
+</sc-for>
+
+<div style="font-size:11px;font-weight:700;letter-spacing:1.2px;text-transform:uppercase;color:#6b6b6b;margin:16px 0 8px">Toca un insumo para moverlo</div>
+<sc-for list="{{ inv.insumos }}" as="s" hint-placeholder-count="10">
+<button onClick="{{ s.abrir }}" style="width:100%;display:flex;justify-content:space-between;align-items:center;gap:10px;padding:9px 10px;margin-bottom:5px;border:2px solid rgba(0,0,0,.12);border-radius:6px;background:transparent;font-family:'Oswald',sans-serif;cursor:pointer;text-align:left;min-height:44px" style-hover="border-color:#1A1A1A">
+<span style="flex:1;min-width:0;font-size:12.5px;font-weight:700;color:#1A1A1A">{{ s.nombre }}</span>
+<span style="flex:none;font-size:12.5px;font-weight:700;color:#4A4A4A">{{ s.stock }}</span>
+<sc-if value="{{ s.agotado }}" hint-placeholder-val="{{ false }}"><span style="flex:none;padding:2px 7px;border-radius:99px;background:#E4007C;color:#FFFFFF;font-size:9.5px;font-weight:700;letter-spacing:1px;text-transform:uppercase">Agotado</span></sc-if>
+<sc-if value="{{ s.bajo }}" hint-placeholder-val="{{ false }}"><span style="flex:none;padding:2px 7px;border-radius:99px;background:#D9A65C;color:#1A1A1A;font-size:9.5px;font-weight:700;letter-spacing:1px;text-transform:uppercase">Bajo</span></sc-if>
+</button>
+</sc-for>
+</sc-if>
+
+<sc-if value="{{ inv.enInsumo }}" hint-placeholder-val="{{ false }}">
+<button onClick="{{ inv.cerrar }}" style="margin-bottom:12px;padding:8px 12px;border:2px solid #1A1A1A;border-radius:6px;background:transparent;font-family:'Oswald',sans-serif;font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;cursor:pointer;min-height:40px" style-hover="background:#1A1A1A;color:#F5F0E8">‹ Existencias</button>
+<div style="font-family:'Bungee',cursive;font-size:14px;line-height:1.25">{{ inv.cap.nombre }}</div>
+<div style="font-size:12px;font-weight:700;color:#6b6b6b;margin-top:4px">Ahora hay {{ inv.cap.stock }} · {{ inv.cap.costo }}</div>
+
+<div style="margin-top:16px;padding-top:14px;border-top:2px dashed rgba(0,0,0,.14)">
+<div style="font-size:11px;font-weight:700;letter-spacing:1.2px;text-transform:uppercase;color:#C1502E">Compré</div>
+<div style="display:flex;gap:8px;margin-top:7px">
+<input type="number" step="any" inputmode="decimal" placeholder="{{ inv.cap.uom }}" onInput="{{ inv.cap.setCompraCant }}" style="flex:1;min-width:0;padding:11px 10px;border:2px solid #1A1A1A;border-radius:6px;font-family:'Oswald',sans-serif;font-size:14px;font-weight:700;background:#FFFFFF;color:#1A1A1A">
+<input type="number" step="any" inputmode="decimal" placeholder="$ pagado" onInput="{{ inv.cap.setCompraImporte }}" style="flex:1;min-width:0;padding:11px 10px;border:2px solid #1A1A1A;border-radius:6px;font-family:'Oswald',sans-serif;font-size:14px;font-weight:700;background:#FFFFFF;color:#1A1A1A">
+</div>
+<button onClick="{{ inv.cap.guardarCompra }}" style="width:100%;margin-top:7px;padding:12px;border:none;border-radius:6px;background:#1A1A1A;color:#FFFFFF;font-family:'Bungee',cursive;font-size:11.5px;letter-spacing:1px;text-transform:uppercase;cursor:pointer;min-height:46px" style-hover="background:#C1502E"><sc-if value="{{ inv.quieto }}" hint-placeholder-val="{{ true }}">Guardar la compra</sc-if><sc-if value="{{ inv.guardando }}" hint-placeholder-val="{{ false }}"><span class="mx-puntos" aria-label="Guardando"><i></i><i></i><i></i></span></sc-if></button>
+<div style="font-size:11px;color:#6b6b6b;font-weight:700;margin-top:5px">Con lo que pagaste, el sistema recalcula el costo promedio.</div>
+</div>
+
+<div style="margin-top:16px;padding-top:14px;border-top:2px dashed rgba(0,0,0,.14)">
+<div style="font-size:11px;font-weight:700;letter-spacing:1.2px;text-transform:uppercase;color:#C1502E">Se echó a perder</div>
+<input type="number" step="any" inputmode="decimal" placeholder="{{ inv.cap.uom }}" onInput="{{ inv.cap.setMerma }}" style="width:100%;margin-top:7px;padding:11px 10px;border:2px solid #1A1A1A;border-radius:6px;font-family:'Oswald',sans-serif;font-size:14px;font-weight:700;background:#FFFFFF;color:#1A1A1A">
+<button onClick="{{ inv.cap.guardarMerma }}" style="width:100%;margin-top:7px;padding:12px;border:2px solid #1A1A1A;border-radius:6px;background:transparent;color:#1A1A1A;font-family:'Bungee',cursive;font-size:11.5px;letter-spacing:1px;text-transform:uppercase;cursor:pointer;min-height:46px" style-hover="background:#E4007C;color:#FFFFFF;border-color:#E4007C">Dar de baja</button>
+</div>
+
+<div style="margin-top:16px;padding-top:14px;border-top:2px dashed rgba(0,0,0,.14)">
+<div style="font-size:11px;font-weight:700;letter-spacing:1.2px;text-transform:uppercase;color:#C1502E">Lo conté y hay</div>
+<input type="number" step="any" inputmode="decimal" placeholder="{{ inv.cap.uom }}" onInput="{{ inv.cap.setConteo }}" style="width:100%;margin-top:7px;padding:11px 10px;border:2px solid #1A1A1A;border-radius:6px;font-family:'Oswald',sans-serif;font-size:14px;font-weight:700;background:#FFFFFF;color:#1A1A1A">
+<button onClick="{{ inv.cap.guardarConteo }}" style="width:100%;margin-top:7px;padding:12px;border:2px solid #1A1A1A;border-radius:6px;background:transparent;color:#1A1A1A;font-family:'Bungee',cursive;font-size:11.5px;letter-spacing:1px;text-transform:uppercase;cursor:pointer;min-height:46px" style-hover="background:#1A1A1A;color:#F5F0E8">Ajustar a lo contado</button>
+<div style="font-size:11px;color:#6b6b6b;font-weight:700;margin-top:5px">La diferencia contra el sistema queda registrada: esa es la merma real.</div>
+</div>
+</sc-if>
+
+<sc-if value="{{ inv.enLote }}" hint-placeholder-val="{{ false }}">
+<button onClick="{{ inv.cerrar }}" style="margin-bottom:12px;padding:8px 12px;border:2px solid #1A1A1A;border-radius:6px;background:transparent;font-family:'Oswald',sans-serif;font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;cursor:pointer;min-height:40px" style-hover="background:#1A1A1A;color:#F5F0E8">‹ Existencias</button>
+<div style="font-family:'Bungee',cursive;font-size:14px;line-height:1.25">{{ inv.cap.nombre }}</div>
+<div style="font-size:12px;font-weight:700;color:#6b6b6b;margin-top:4px">Cada lote rinde {{ inv.cap.rinde }} · ahora hay {{ inv.cap.stock }}</div>
+<div style="margin-top:16px;font-size:11px;font-weight:700;letter-spacing:1.2px;text-transform:uppercase;color:#C1502E">¿Cuántos lotes hiciste?</div>
+<input type="number" step="1" inputmode="numeric" placeholder="1" onInput="{{ inv.cap.setLotes }}" style="width:100%;margin-top:7px;padding:11px 10px;border:2px solid #1A1A1A;border-radius:6px;font-family:'Oswald',sans-serif;font-size:14px;font-weight:700;background:#FFFFFF;color:#1A1A1A">
+<button onClick="{{ inv.cap.guardarLote }}" style="width:100%;margin-top:7px;padding:12px;border:none;border-radius:6px;background:#1A1A1A;color:#FFFFFF;font-family:'Bungee',cursive;font-size:11.5px;letter-spacing:1px;text-transform:uppercase;cursor:pointer;min-height:46px" style-hover="background:#C1502E"><sc-if value="{{ inv.quieto }}" hint-placeholder-val="{{ true }}">Registrar el lote</sc-if><sc-if value="{{ inv.guardando }}" hint-placeholder-val="{{ false }}"><span class="mx-puntos" aria-label="Guardando"><i></i><i></i><i></i></span></sc-if></button>
+<div style="font-size:11px;color:#6b6b6b;font-weight:700;margin-top:5px">Baja los ingredientes crudos y sube las porciones que salieron.</div>
+</sc-if>
+
+</div>
+</sc-if>
+
+
 </div>
 </div>
 </x-dc>
@@ -209,7 +321,8 @@ const fechaLarga = d => {
 };
 
 class Component extends DCLogic {
-  state = { ordenes: [], filtro: 'activas', reloj: '20:34', fechaViva: fechaLarga(new Date()), error: null };
+  state = { ordenes: [], filtro: 'activas', reloj: '20:34', fechaViva: fechaLarga(new Date()), error: null,
+    vista: 'pedidos', inv: null, captura: null, invError: null, aviso: '', guardando: false };
 
   total(o) { return o.lineas.reduce((s,l) => s + l.importe, 0); }
 
@@ -260,7 +373,10 @@ class Component extends DCLogic {
   componentDidMount() {
     if (!mextizzaTokenAdmin()) this.pedirTokenAdmin('El Centro de Ventas necesita autorizarse.');
     this.cargar();
-    this._poll = setInterval(() => this.cargar(), 15000);
+    this._poll = setInterval(() => {
+      this.cargar();
+      if (this.state.vista === 'inventario' && !this.state.captura) this.cargarInv();
+    }, 15000);
     const tickReloj = () => this.setState({ reloj: new Date().toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit', hour12: false }), fechaViva: fechaLarga(new Date()) });
     tickReloj();
     this._reloj = setInterval(tickReloj, 30000);
@@ -269,6 +385,7 @@ class Component extends DCLogic {
   componentWillUnmount() {
     clearInterval(this._poll);
     clearInterval(this._reloj);
+    clearTimeout(this._avisoTmr);
   }
 
   /* El estado avanza en pantalla ANTES de que el servidor conteste. Apps Script
@@ -310,6 +427,11 @@ class Component extends DCLogic {
     }
   }
 
+  cambiarVista(v) {
+    this.setState({ vista: v, aviso: '', invError: null, captura: null });
+    if (v === 'inventario' && !this.state.inv) this.cargarInv();
+  }
+
   async cancelar(i) {
     const o = this.state.ordenes[i];
     if (!o) return;
@@ -319,6 +441,140 @@ class Component extends DCLogic {
     } catch (err) {
       this.setState({ error: 'No se pudo cancelar la orden: ' + err.message });
     }
+  }
+
+  /* Inventario. Se pide aparte del tablero de pedidos y solo cuando esa pestaña
+     está abierta: cada llamada a Apps Script cuesta un par de segundos, y en
+     plena hora pico la cocina no necesita pagarlos por una pantalla que nadie
+     está viendo. */
+  async cargarInv() {
+    if (!mextizzaTokenAdmin()) return;
+    try {
+      const { inventario } = await mextizzaInvEstado();
+      this.setState({ inv: inventario, invError: null });
+    } catch (err) {
+      this.setState({ invError: 'No se pudo leer el inventario: ' + err.message });
+    }
+  }
+
+  abrirCaptura(modo, id) {
+    // Los campos viven fuera del estado: escribir un número no tiene por qué
+    // volver a dibujar la pantalla, y al cerrar el panel se limpian solos.
+    this._cap = {};
+    this.setState({ captura: { modo, id }, invError: null, aviso: '' });
+  }
+
+  cerrarCaptura() {
+    this._cap = {};
+    this.setState({ captura: null, invError: null });
+  }
+
+  /* Un solo camino para los cuatro movimientos: valida, llama, y si sale bien
+     cierra el panel y vuelve a leer. Si algo falla, el panel se queda abierto
+     con lo capturado para poder corregir sin volver a empezar. */
+  async guardarMov(fn, payload, aviso) {
+    if (this.state.guardando) return;
+    this.setState({ guardando: true, invError: null });
+    try {
+      await fn(payload);
+      this.setState({ guardando: false, captura: null, aviso });
+      this._cap = {};
+      // El acuse se va solo: dejarlo fijo lo vuelve parte del decorado y a la
+      // tercera compra ya nadie lo lee.
+      clearTimeout(this._avisoTmr);
+      this._avisoTmr = setTimeout(() => this.setState({ aviso: '' }), 6000);
+      await this.cargarInv();
+    } catch (err) {
+      this.setState({ guardando: false, invError: 'No se guardó: ' + err.message });
+    }
+  }
+
+  numeroCap(campo) {
+    const n = Number(this._cap[campo]);
+    return isNaN(n) ? 0 : n;
+  }
+
+  vistaInventario() {
+    const inv = this.state.inv;
+    const cap = this.state.captura;
+    const vacio = { hayAviso: false, aviso: '', enLista: true, enInsumo: false, enLote: false,
+      valor: '', lotes: [], insumos: [], quieto: true, guardando: false,
+      cerrar: () => this.cerrarCaptura(), cap: {} };
+    if (!inv) {
+      // Sin token no se esta leyendo nada, y decir que si seria mentirle a la
+      // cocina mientras espera una pantalla que nunca va a llegar.
+      const aviso = !mextizzaTokenAdmin()
+        ? 'Falta el token de administrador. Toca "Conectar" arriba para capturarlo.'
+        : (this.state.invError || 'Leyendo el inventario…');
+      return { ...vacio, hayAviso: true, aviso };
+    }
+
+    const porId = {};
+    for (const i of inv.insumos) porId[i.id] = i;
+    const conUom = i => i.stock + ' ' + i.uom;
+
+    const base = {
+      hayAviso: !!(this.state.invError || this.state.aviso),
+      aviso: this.state.invError || this.state.aviso || '',
+      valor: money(Math.round(inv.valor)),
+      guardando: !!this.state.guardando,
+      quieto: !this.state.guardando,
+      cerrar: () => this.cerrarCaptura(),
+      enLista: !cap, enInsumo: !!(cap && cap.modo === 'insumo'), enLote: !!(cap && cap.modo === 'lote'),
+      lotes: inv.insumos.filter(i => i.tipo === 'preparado').map(i => ({
+        corto: i.nombre.toLowerCase().indexOf('masa') === 0 ? 'masa' : 'salsa',
+        stock: conUom(i),
+        rinde: i.rinde + ' ' + i.uom,
+        abrir: () => this.abrirCaptura('lote', i.id)
+      })),
+      insumos: inv.insumos.map(i => ({
+        nombre: i.nombre, stock: conUom(i),
+        agotado: i.alerta === 'agotado', bajo: i.alerta === 'bajo',
+        abrir: () => this.abrirCaptura('insumo', i.id)
+      })),
+      cap: {}
+    };
+
+    if (!cap) return base;
+    const i = porId[cap.id];
+    if (!i) return { ...base, enLista: true, enInsumo: false, enLote: false };
+
+    const set = campo => e => { this._cap[campo] = e.target.value; };
+    base.cap = {
+      nombre: i.nombre, uom: i.uom, stock: conUom(i), rinde: i.rinde + ' ' + i.uom,
+      costo: money(i.costo) + ' / ' + i.uom,
+      setCompraCant: set('compraCant'), setCompraImporte: set('compraImporte'),
+      setMerma: set('merma'), setConteo: set('conteo'), setLotes: set('lotes'),
+      guardarCompra: () => {
+        const cantidad = this.numeroCap('compraCant');
+        const importe = this.numeroCap('compraImporte');
+        if (cantidad <= 0) return this.setState({ invError: 'Falta cuánto llegó.' });
+        if (importe <= 0) return this.setState({ invError: 'Falta cuánto se pagó: sin eso no se puede recalcular el costo.' });
+        this.guardarMov(mextizzaInvCompra, { insumo_id: i.id, cantidad, importe, nota: '' },
+          'Entraron ' + cantidad + ' ' + i.uom + ' de ' + i.nombre + '.');
+      },
+      guardarMerma: () => {
+        const cantidad = this.numeroCap('merma');
+        if (cantidad <= 0) return this.setState({ invError: 'Falta cuánto se echó a perder.' });
+        this.guardarMov(mextizzaInvMerma, { insumo_id: i.id, cantidad, motivo: 'Baja desde la cocina' },
+          'Se dieron de baja ' + cantidad + ' ' + i.uom + ' de ' + i.nombre + '.');
+      },
+      guardarConteo: () => {
+        if (this._cap.conteo === undefined || this._cap.conteo === '') {
+          return this.setState({ invError: 'Falta cuánto contaste.' });
+        }
+        const contado = this.numeroCap('conteo');
+        const dif = Math.round((contado - i.stock) * 1000) / 1000;
+        this.guardarMov(mextizzaInvConteo, { insumo_id: i.id, contado, nota: 'Conteo desde la cocina' },
+          i.nombre + ': el sistema traía ' + i.stock + ' y contaste ' + contado + ' (' + dif + ').');
+      },
+      guardarLote: () => {
+        const lotes = Math.round(this.numeroCap('lotes')) || 1;
+        this.guardarMov(mextizzaInvLote, { preparado_id: i.id, lotes },
+          'Se registró ' + (lotes === 1 ? 'un lote' : lotes + ' lotes') + ' de ' + i.nombre + '.');
+      }
+    };
+    return base;
   }
 
   renderVals() {
@@ -384,6 +640,17 @@ class Component extends DCLogic {
     const canales = {};
     for (const o of cerradas) canales[o.canal] = (canales[o.canal] || 0) + 1;
 
+    /* Los dos horizontes vienen calculados del servidor: la receta vive en el
+       Sheet y el reloj de la tablet no tiene por que opinar sobre ella. */
+    const capacidad = ((this.state.inv && this.state.inv.capacidad) || []).map(c => ({
+      nombre: c.nombre,
+      hoy: c.hoy,
+      hayHoy: c.hoy > 0,
+      sinHoy: c.hoy === 0,
+      en48h: c.en48h,
+      limita: c.hoy > 0 ? c.limitaHoy : (c.limitaHoy || '—')
+    }));
+
     return {
       fecha: (this.props.fecha && this.props.fecha !== 'Martes 25 de agosto') ? this.props.fecha : this.state.fechaViva,
       reloj: this.state.reloj,
@@ -393,6 +660,20 @@ class Component extends DCLogic {
       error: this.state.error || '',
       onConectar: () => this.pedirTokenAdmin(),
       verCorte: this.props.verCorte ?? true,
+      vistas: [
+        { label: 'Pedidos', clave: 'pedidos' },
+        { label: 'Inventario', clave: 'inventario' }
+      ].map(v => ({
+        label: v.label,
+        activa: this.state.vista === v.clave,
+        inactiva: this.state.vista !== v.clave,
+        set: () => this.cambiarVista(v.clave)
+      })),
+      verPedidos: this.state.vista === 'pedidos',
+      verInventario: this.state.vista === 'inventario',
+      capacidad: capacidad,
+      sinCapacidad: capacidad.length === 0,
+      inv: this.vistaInventario(),
       corte: {
         ordenes: cerradas.length,
         total: money(suma),

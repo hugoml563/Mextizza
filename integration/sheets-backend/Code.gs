@@ -33,7 +33,13 @@ const SHEETS = {
   productos: 'productos',
   complementos: 'complementos',
   clientes: 'clientes',
-  catering: 'catering'
+  catering: 'catering',
+  /* Inventarios. `insumos` guarda el saldo como cache; la verdad es la suma
+     de `movimientos`, que solo crece y nunca se edita. */
+  insumos: 'insumos',
+  recetas: 'recetas',
+  movimientos: 'inv_movimientos',
+  conteos: 'inv_conteos'
 };
 
 const ESTADOS_ACTIVOS = ['recibida', 'confirmada', 'horno', 'lista', 'camino'];
@@ -54,7 +60,7 @@ const TS_POR_ESTADO = {
   entregada: 't_entregada'
 };
 
-const ORDENES_HEADERS = ['folio', 'canal', 'estado', 'cliente_telefono', 'cliente_nombre', 'direccion', 'colonia', 'km', 'pago_metodo', 'pago_estado', 'subtotal', 'total', 't_recibida', 't_confirmada', 't_horno', 't_lista', 't_camino', 't_entregada', 'reparto', 'notas', 'motivo_cancelacion', 'entrega_tipo', 'descuento', 'sello', 'premio', 'consecutivo'];
+const ORDENES_HEADERS = ['folio', 'canal', 'estado', 'cliente_telefono', 'cliente_nombre', 'direccion', 'colonia', 'km', 'pago_metodo', 'pago_estado', 'subtotal', 'total', 't_recibida', 't_confirmada', 't_horno', 't_lista', 't_camino', 't_entregada', 'reparto', 'notas', 'motivo_cancelacion', 'entrega_tipo', 'descuento', 'sello', 'premio', 'consecutivo', 'backflush'];
 const ORDEN_ITEMS_HEADERS = ['linea_id', 'folio', 'producto_id', 'producto_nombre', 'cantidad', 'precio_unit', 'complementos_total', 'importe', 'promocion'];
 const ITEM_COMPLEMENTOS_HEADERS = ['linea_id', 'complemento_id', 'complemento_nombre', 'precio'];
 const PRODUCTOS_HEADERS = ['id', 'nombre', 'descripcion', 'categoria', 'precio', 'activo', 'foto'];
@@ -62,7 +68,380 @@ const COMPLEMENTOS_HEADERS = ['id', 'nombre', 'grupo', 'precio', 'activo'];
 const CLIENTES_HEADERS = ['telefono', 'nombre', 'direccion', 'colonia', 'notas', 'pedidos', 'dias_ciclo', 'ultimo_dia', 'brownie_usado', 'pizza_usada', 'ciclos', 'brownie_guardado'];
 const CATERING_HEADERS = ['folio', 'nombre', 'telefono', 'personas', 'fecha_evento', 'notas', 'estado', 'creado_en'];
 
+const INSUMOS_HEADERS = ['id', 'nombre', 'uom', 'categoria', 'tipo', 'costo_promedio', 'stock', 'stock_minimo', 'rinde', 'activo'];
+const RECETAS_HEADERS = ['producto_id', 'componente_id', 'cantidad', 'nota'];
+const MOVIMIENTOS_HEADERS = ['fecha', 'tipo', 'insumo_id', 'cantidad', 'costo_unitario', 'importe', 'referencia', 'nota'];
+const CONTEOS_HEADERS = ['fecha', 'insumo_id', 'stock_sistema', 'stock_contado', 'diferencia', 'valor_diferencia', 'nota'];
+
 /** Corre esto UNA vez para crear las 6 pestañas con encabezados. No borra datos si ya existen. */
+/* ====================================================================
+   INVENTARIOS
+
+   Dos niveles. Los insumos crudos se compran; los preparados —masa y
+   salsa— se producen por lote y se almacenan. Al vender una pizza se
+   descuenta el preparado como tal, NO se explota a harina: quien hace
+   la masa ya gasto la harina cuando hizo el lote, y contarla dos veces
+   dejaria el inventario en negativo.
+
+   La masa tarda 48 HORAS en fermentar. Por eso la capacidad se calcula
+   en dos horizontes: con lo que hay listo ahora, y con lo que se podria
+   hacer si se pone masa hoy. Un sistema que solo mire la harina diria
+   que se pueden hacer 40 pizzas cuando en realidad no hay ninguna.
+
+   El stock de la hoja `insumos` es cache: la verdad es la suma de
+   `inv_movimientos`, que nunca se edita ni se borra. Si un saldo no
+   cuadra, el libro dice en que renglon se torcio.
+   ==================================================================== */
+
+/* Lee el catalogo completo una sola vez. Apps Script cobra caro cada
+   llamada a la hoja, y el backflush necesita el catalogo entero. */
+function leerInsumos_() {
+  const sh = sheet_(SHEETS.insumos);
+  const data = sh.getDataRange().getValues();
+  const c = INSUMOS_HEADERS;
+  const map = {};
+  for (let r = 1; r < data.length; r++) {
+    const id = String(data[r][0] || '').trim();
+    if (!id) continue;
+    map[id] = {
+      fila: r + 1,
+      id: id,
+      nombre: String(data[r][c.indexOf('nombre')] || ''),
+      uom: String(data[r][c.indexOf('uom')] || ''),
+      categoria: String(data[r][c.indexOf('categoria')] || ''),
+      tipo: String(data[r][c.indexOf('tipo')] || 'crudo'),
+      costo: Number(data[r][c.indexOf('costo_promedio')]) || 0,
+      stock: Number(data[r][c.indexOf('stock')]) || 0,
+      minimo: Number(data[r][c.indexOf('stock_minimo')]) || 0,
+      rinde: Number(data[r][c.indexOf('rinde')]) || 0
+    };
+  }
+  return map;
+}
+
+/* { producto_id: [ { componente, cantidad } ] } */
+function leerRecetas_() {
+  const data = sheet_(SHEETS.recetas).getDataRange().getValues();
+  const map = {};
+  for (let r = 1; r < data.length; r++) {
+    const prod = String(data[r][0] || '').trim();
+    const comp = String(data[r][1] || '').trim();
+    const cant = Number(data[r][2]);
+    if (!prod || !comp || !cant) continue;
+    if (!map[prod]) map[prod] = [];
+    map[prod].push({ componente: comp, cantidad: cant });
+  }
+  return map;
+}
+
+/* El almacen como estaria en 48 horas: lo que hay hoy, mas los lotes de
+   preparado que se alcanzan a hacer con los crudos que ya estan en la cocina.
+
+   Antes esto se calculaba explotando la receta del preparado a harina, y esa
+   cuenta tiraba a la basura la masa que ya estaba fermentada. Con tres bolas
+   listas y cero harina decia que en 48 horas se podian hacer cero pizzas,
+   cuando la verdad es que se pueden hacer tres.
+
+   Los lotes se reparten en el orden en que vienen los preparados, asi que si
+   la masa y la salsa se pelean el mismo crudo -- el aceite de oliva esta en las
+   dos -- el primero se lo lleva. Eso subestima, nunca sobreestima, y en una
+   cocina conviene errar por ese lado. */
+function inventarioEn48h_(insumos, recetas) {
+  const proj = {};
+  for (const id in insumos) {
+    const i = insumos[id];
+    proj[id] = { id: i.id, nombre: i.nombre, uom: i.uom, tipo: i.tipo,
+      rinde: i.rinde, costo: i.costo, minimo: i.minimo, stock: i.stock };
+  }
+
+  for (const id in proj) {
+    const p = proj[id];
+    if (p.tipo !== 'preparado' || !(p.rinde > 0) || !recetas[id]) continue;
+
+    const receta = recetas[id];
+    let lotes = Infinity;
+    for (let i = 0; i < receta.length; i++) {
+      const ins = proj[receta[i].componente];
+      if (!ins) continue;
+      lotes = Math.min(lotes, Math.floor(ins.stock / receta[i].cantidad));
+    }
+    if (!isFinite(lotes) || lotes <= 0) continue;
+
+    for (let i = 0; i < receta.length; i++) {
+      const ins = proj[receta[i].componente];
+      if (ins) ins.stock -= receta[i].cantidad * lotes;
+    }
+    p.stock += lotes * p.rinde;
+  }
+  return proj;
+}
+
+/* Cuantas unidades del producto alcanzan con el stock dado, y cual es el
+   componente que lo frena. Saber que faltan 12 no sirve; saber que el
+   freno es el provolone si. */
+function alcanzaPara_(comps, insumos) {
+  let tope = Infinity;
+  let limita = null;
+  for (let i = 0; i < comps.length; i++) {
+    const ins = insumos[comps[i].componente];
+    if (!ins) continue;
+    const posible = Math.floor(ins.stock / comps[i].cantidad);
+    if (posible < tope) { tope = posible; limita = ins.nombre; }
+  }
+  return { cantidad: tope === Infinity ? 0 : Math.max(0, tope), limita: limita };
+}
+
+/* Capacidad por pizza en los dos horizontes. */
+function capacidad_(insumos, recetas) {
+  const out = [];
+  const proyeccion = inventarioEn48h_(insumos, recetas);
+  for (const id in CATALOGO.productos) {
+    if (!recetas[id]) continue;
+    const p = CATALOGO.productos[id];
+    if (p.cat === 'Para cerrar') continue;
+    const hoy = alcanzaPara_(recetas[id], insumos);
+    const luego = alcanzaPara_(recetas[id], proyeccion);
+    out.push({
+      id: id, nombre: p.nombre,
+      hoy: hoy.cantidad, limitaHoy: hoy.limita,
+      en48h: luego.cantidad, limita48h: luego.limita
+    });
+  }
+  out.sort(function (a, b) { return a.hoy - b.hoy; });
+  return out;
+}
+
+/* Aplica un paquete de cambios de stock en el menor numero de llamadas
+   posible: una escritura por insumo tocado, y un solo bloque de
+   movimientos al final. */
+function aplicarCambios_(insumos, cambios, tipo, referencia, nota) {
+  const sh = sheet_(SHEETS.insumos);
+  const cStock = INSUMOS_HEADERS.indexOf('stock') + 1;
+  const cCosto = INSUMOS_HEADERS.indexOf('costo_promedio') + 1;
+  const movs = [];
+  const ahora = new Date();
+
+  for (const id in cambios) {
+    const ins = insumos[id];
+    if (!ins) continue;
+    const delta = cambios[id].delta;
+    const nuevo = ins.stock + delta;
+    sh.getRange(ins.fila, cStock).setValue(nuevo);
+    if (cambios[id].costo !== undefined) {
+      sh.getRange(ins.fila, cCosto).setValue(cambios[id].costo);
+      ins.costo = cambios[id].costo;
+    }
+    ins.stock = nuevo;
+    movs.push([ahora, tipo, id, delta, ins.costo, delta * ins.costo,
+      textoSeguro_(referencia), textoSeguro_(nota || '')]);
+  }
+
+  if (movs.length) {
+    const mv = sheet_(SHEETS.movimientos);
+    mv.getRange(mv.getLastRow() + 1, 1, movs.length, movs[0].length).setValues(movs);
+  }
+  return movs.length;
+}
+
+/* Descuenta el inventario de un pedido. Corre al pasar a HORNO, que es
+   cuando el ingrediente de verdad se usa: si el pedido se cancela
+   despues de hornearse, la comida ya se fue y el stock debe reflejarlo. */
+function backflushOrden_(folio, insumos, recetas) {
+  const items = rowsAsObjects_(sheet_(SHEETS.ordenItems)).filter(function (it) {
+    return it.folio === folio;
+  });
+  if (!items.length) return { ok: false, motivo: 'sin lineas' };
+
+  const addons = rowsAsObjects_(sheet_(SHEETS.itemComplementos));
+  const cambios = {};
+  const faltantes = [];
+
+  const gastar = function (productoId, veces) {
+    const comps = recetas[productoId];
+    if (!comps) { faltantes.push(productoId); return; }
+    for (let i = 0; i < comps.length; i++) {
+      const id = comps[i].componente;
+      if (!insumos[id]) { faltantes.push(id); continue; }
+      if (!cambios[id]) cambios[id] = { delta: 0 };
+      cambios[id].delta -= comps[i].cantidad * veces;
+    }
+  };
+
+  for (let i = 0; i < items.length; i++) {
+    const it = items[i];
+    const cant = Number(it.cantidad) || 1;
+    gastar(String(it.producto_id), cant);
+    // Los complementos gastan aparte: van sobre la pizza, no dentro.
+    const suyos = addons.filter(function (a) { return a.linea_id === it.linea_id; });
+    for (let j = 0; j < suyos.length; j++) {
+      if (suyos[j].complemento_id) gastar(String(suyos[j].complemento_id), cant);
+    }
+  }
+
+  const n = aplicarCambios_(insumos, cambios, 'consumo', folio, '');
+  return { ok: true, insumos: n, faltantes: faltantes };
+}
+
+/* Produce un lote de masa o de salsa: consume los crudos y suma las
+   porciones que rinde. Es el UNICO momento en que la receta de un
+   preparado se explota. */
+function producirLote_(preparadoId, lotes, insumos, recetas) {
+  const prep = insumos[preparadoId];
+  if (!prep || prep.tipo !== 'preparado') throw new Error('No es un preparado: ' + preparadoId);
+  const receta = recetas[preparadoId];
+  if (!receta) throw new Error('El preparado no tiene receta: ' + preparadoId);
+
+  const n = Math.max(1, Number(lotes) || 1);
+  const cambios = {};
+  for (let i = 0; i < receta.length; i++) {
+    const id = receta[i].componente;
+    if (!insumos[id]) throw new Error('Insumo desconocido en la receta: ' + id);
+    cambios[id] = { delta: -receta[i].cantidad * n };
+  }
+  // El preparado hereda el costo de lo que se gasto en hacerlo.
+  let costoLote = 0;
+  for (const id in cambios) costoLote += Math.abs(cambios[id].delta) * insumos[id].costo;
+  const porciones = prep.rinde * n;
+  cambios[preparadoId] = {
+    delta: porciones,
+    costo: porciones > 0 ? costoLote / porciones : 0
+  };
+
+  aplicarCambios_(insumos, cambios, 'produccion', preparadoId,
+    n + ' lote(s), rinde ' + porciones);
+  return { preparado: preparadoId, lotes: n, porciones: porciones };
+}
+
+/* Compra: suma stock y recalcula el costo promedio ponderado. Es lo que
+   hace que el valor del inventario siga al precio real y no al de la
+   cotizacion de julio. */
+function registrarCompra_(body, insumos) {
+  const ins = insumos[String(body.insumo_id)];
+  if (!ins) throw new Error('Insumo desconocido: ' + body.insumo_id);
+  const cant = Number(body.cantidad);
+  if (!(cant > 0)) throw new Error('La cantidad de una compra tiene que ser mayor a cero');
+
+  const importe = Number(body.importe);
+  const costoCompra = importe > 0 ? importe / cant : Number(body.costo_unitario) || ins.costo;
+  const stockNuevo = ins.stock + cant;
+  const promedio = stockNuevo > 0
+    ? (ins.stock * ins.costo + cant * costoCompra) / stockNuevo
+    : costoCompra;
+
+  const cambios = {};
+  cambios[ins.id] = { delta: cant, costo: promedio };
+  aplicarCambios_(insumos, cambios, 'compra', textoSeguro_(body.proveedor || ''),
+    body.nota || '');
+  return { insumo: ins.id, stock: stockNuevo, costo_promedio: promedio };
+}
+
+function registrarMerma_(body, insumos) {
+  const ins = insumos[String(body.insumo_id)];
+  if (!ins) throw new Error('Insumo desconocido: ' + body.insumo_id);
+  const cant = Number(body.cantidad);
+  if (!(cant > 0)) throw new Error('La cantidad de una merma tiene que ser mayor a cero');
+  const cambios = {};
+  cambios[ins.id] = { delta: -cant };
+  aplicarCambios_(insumos, cambios, 'merma', '', body.motivo || '');
+  return { insumo: ins.id, stock: ins.stock };
+}
+
+/* Conteo fisico. La diferencia contra el sistema ES la merma, y es el
+   numero que la hoja Food Cost Real del Excel llama brecha. */
+function registrarConteo_(body, insumos) {
+  const ins = insumos[String(body.insumo_id)];
+  if (!ins) throw new Error('Insumo desconocido: ' + body.insumo_id);
+  const contado = Number(body.contado);
+  if (isNaN(contado)) throw new Error('Falta la cantidad contada');
+
+  const sistema = ins.stock;
+  const dif = contado - sistema;
+  const cambios = {};
+  cambios[ins.id] = { delta: dif };
+  aplicarCambios_(insumos, cambios, 'ajuste', 'conteo',
+    'sistema ' + sistema + ', contado ' + contado);
+
+  const ct = sheet_(SHEETS.conteos);
+  ct.appendRow([new Date(), ins.id, sistema, contado, dif, dif * ins.costo,
+    textoSeguro_(body.nota || '')]);
+  return { insumo: ins.id, sistema: sistema, contado: contado, diferencia: dif };
+}
+
+/* CONTEO DE APERTURA. Se corre UNA VEZ, a mano, desde el editor de Apps Script.
+   No esta expuesta en la API a proposito: no es una operacion de cocina.
+
+   Como usarla: escribe las cantidades que de verdad hay en la columna `stock`
+   de la hoja `insumos`, en la unidad que dice cada renglon. La masa y la salsa
+   se cuentan en bolas y porciones ya listas, no en kilos de harina. Luego corre
+   esta funcion.
+
+   Lo que hace es asentar en el libro lo que ya escribiste, sin mover el saldo.
+   Sin este paso el libro arrancaria en cero mientras la hoja dice otra cosa, y
+   a la primera diferencia nadie sabria cual de los dos miente.
+
+   Correrla dos veces duplicaria el asiento de apertura, asi que se planta antes
+   si el libro ya trae movimientos. */
+function sembrarLibroInicial() {
+  const insumos = leerInsumos_();
+  const mv = sheet_(SHEETS.movimientos);
+
+  if (mv.getLastRow() > 1) {
+    throw new Error('El libro ya tiene movimientos. La apertura se asienta ' +
+      'una sola vez; si de verdad quieres rehacerla, vacia inv_movimientos primero.');
+  }
+
+  const ahora = new Date();
+  const filas = [];
+  for (const id in insumos) {
+    const i = insumos[id];
+    if (!(i.stock > 0)) continue;
+    filas.push([ahora, 'ajuste', i.id, i.stock, i.costo, i.stock * i.costo,
+      'apertura', 'Conteo inicial']);
+  }
+
+  if (!filas.length) {
+    throw new Error('Todos los insumos estan en cero. Escribe primero las ' +
+      'cantidades contadas en la columna `stock` de la hoja `insumos`.');
+  }
+
+  mv.getRange(mv.getLastRow() + 1, 1, filas.length, filas[0].length).setValues(filas);
+
+  let valor = 0;
+  for (let i = 0; i < filas.length; i++) valor += filas[i][5];
+  Logger.log('Apertura asentada: ' + filas.length + ' insumos, valor ' +
+    Math.round(valor * 100) / 100);
+  return { insumos: filas.length, valor: Math.round(valor * 100) / 100 };
+}
+
+/* Lo que ve la pantalla de cocina. */
+function estadoInventario_() {
+  const insumos = leerInsumos_();
+  const recetas = leerRecetas_();
+  const lista = [];
+  let valor = 0;
+  for (const id in insumos) {
+    const i = insumos[id];
+    valor += i.stock * i.costo;
+    lista.push({
+      id: i.id, nombre: i.nombre, uom: i.uom, categoria: i.categoria,
+      tipo: i.tipo, stock: Math.round(i.stock * 1000) / 1000, rinde: i.rinde,
+      minimo: i.minimo, costo: Math.round(i.costo * 100) / 100,
+      alerta: i.stock <= 0 ? 'agotado' : (i.minimo > 0 && i.stock <= i.minimo ? 'bajo' : '')
+    });
+  }
+  // Primero lo que urge: agotado, luego bajo, luego el resto.
+  const peso = { agotado: 0, bajo: 1, '': 2 };
+  lista.sort(function (a, b) {
+    return peso[a.alerta] - peso[b.alerta] || a.nombre.localeCompare(b.nombre);
+  });
+  return {
+    insumos: lista,
+    capacidad: capacidad_(insumos, recetas),
+    valor: Math.round(valor * 100) / 100,
+    alertas: lista.filter(function (x) { return x.alerta; }).length
+  };
+}
+
 function configurarHojas() {
   const ss = SpreadsheetApp.getActiveSpreadsheet();
   const specs = [
@@ -72,7 +451,11 @@ function configurarHojas() {
     [SHEETS.productos, PRODUCTOS_HEADERS],
     [SHEETS.complementos, COMPLEMENTOS_HEADERS],
     [SHEETS.clientes, CLIENTES_HEADERS],
-    [SHEETS.catering, CATERING_HEADERS]
+    [SHEETS.catering, CATERING_HEADERS],
+    [SHEETS.insumos, INSUMOS_HEADERS],
+    [SHEETS.recetas, RECETAS_HEADERS],
+    [SHEETS.movimientos, MOVIMIENTOS_HEADERS],
+    [SHEETS.conteos, CONTEOS_HEADERS]
   ];
   specs.forEach(([nombre, headers]) => {
     let sh = ss.getSheetByName(nombre);
@@ -266,7 +649,9 @@ function doPost(e) {
     let result;
     switch (body.action) {
       case 'crear_orden':
-        result = crearOrden_(body);
+        /* El nivel viaja para el horario: la cocina puede capturar por
+           telefono a las 3:50, un cliente no. Ver crearOrden_. */
+        result = crearOrden_(body, nivel);
         break;
       case 'avanzar_estado':
         requiereAdmin_(nivel);
@@ -275,6 +660,24 @@ function doPost(e) {
       case 'cancelar':
         requiereAdmin_(nivel);
         result = cancelarOrden_(body);
+        break;
+        /* Movimientos de inventario. Todos piden admin: mueven dinero y
+           saldo, y se capturan desde la cocina, no desde el sitio. */
+      case 'inv_compra':
+        requiereAdmin_(nivel);
+        result = registrarCompra_(body, leerInsumos_());
+        break;
+      case 'inv_lote':
+        requiereAdmin_(nivel);
+        result = producirLote_(body.preparado_id, body.lotes, leerInsumos_(), leerRecetas_());
+        break;
+      case 'inv_merma':
+        requiereAdmin_(nivel);
+        result = registrarMerma_(body, leerInsumos_());
+        break;
+      case 'inv_conteo':
+        requiereAdmin_(nivel);
+        result = registrarConteo_(body, leerInsumos_());
         break;
       case 'solicitar_catering':
         result = crearSolicitudCatering_(body);
@@ -328,6 +731,12 @@ function doGet(e) {
     }
     if (e.parameter.action === 'estado') {
       return jsonOut_({ ok: true, orden: estadoOrden_(e.parameter.folio) });
+    }
+    /* Estado del inventario para la pantalla de cocina. Va con token admin:
+       los costos y los saldos no son informacion de cliente. */
+    if (e.parameter.action === 'inv_estado') {
+      requiereAdmin_(nivel);
+      return jsonOut_({ ok: true, inventario: estadoInventario_() });
     }
     if (e.parameter.action === 'catalogo') {
       return jsonOut_({ ok: true, productos: rowsAsObjects_(sheet_(SHEETS.productos)), complementos: rowsAsObjects_(sheet_(SHEETS.complementos)) });
@@ -511,8 +920,16 @@ function estaAbierto_(ahora) {
   return HORARIO.dias.indexOf(dia) !== -1 && hora >= HORARIO.desde && hora < HORARIO.hasta;
 }
 
-function crearOrden_(body) {
-  if (!estaAbierto_()) {
+function crearOrden_(body, nivel) {
+  /* El horario es una regla para los clientes, no para la cocina. Ricardo
+     recibe pedidos por telefono y por WhatsApp antes de abrir, y el sistema
+     no tiene por que negarle capturarlos: quien decide si se cocina es el.
+
+     Solo se lo salta el token de administrador, que vive nada mas en el
+     navegador de la cocina. El token publico -- el que viaja en la web y
+     dentro del APK, donde cualquiera puede leerlo -- sigue bloqueado, que es
+     el caso que dejo entrar una orden a la 1:27 de la manana. */
+  if (nivel !== 'admin' && !estaAbierto_()) {
     throw new Error('La cocina esta cerrada. Tomamos pedidos de miercoles a domingo, de 4:00 pm a 11:00 pm.');
   }
   const now = new Date();
@@ -843,6 +1260,26 @@ function avanzarEstado_(body) {
   sh.getRange(index, ORDENES_HEADERS.indexOf('estado') + 1).setValue(nuevo);
   const tsCol = TS_POR_ESTADO[nuevo];
   if (tsCol) sh.getRange(index, ORDENES_HEADERS.indexOf(tsCol) + 1).setValue(new Date());
+  /* El inventario se descuenta al entrar al horno, no al entregar: es cuando
+     el ingrediente de verdad se usa. Un pedido que se cancele despues de
+     hornearse ya gasto la comida, y el stock tiene que decirlo.
+
+     La columna `backflush` evita descontar dos veces si alguien avanza y
+     retrocede el estado. Mismo patron que la columna `sello`. */
+  if (nuevo === 'horno' && row[ORDENES_HEADERS.indexOf('backflush')] !== 'hecho') {
+    try {
+      const insumos = leerInsumos_();
+      const recetas = leerRecetas_();
+      backflushOrden_(body.folio, insumos, recetas);
+      sh.getRange(index, ORDENES_HEADERS.indexOf('backflush') + 1).setValue('hecho');
+    } catch (e) {
+      /* El inventario no puede detener la cocina. Si algo falla se marca y se
+         sigue: es peor dejar un pedido atorado que tener un saldo flojo. */
+      sh.getRange(index, ORDENES_HEADERS.indexOf('backflush') + 1)
+        .setValue('error: ' + String(e).slice(0, 90));
+    }
+  }
+
   /* Aqui, y solo aqui, se sella la tarjeta. Un pedido cancelado o que se quedo
      a medias no cuenta, que es justo lo que se pedia. */
   if (nuevo === 'entregada' && row[ORDENES_HEADERS.indexOf('sello')] === 'pendiente') {

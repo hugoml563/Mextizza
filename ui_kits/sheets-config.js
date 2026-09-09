@@ -36,6 +36,21 @@ if (!window.__mextizzaSheetsConfigLoaded) {
   const mextizzaOlvidarTokenAdmin = () => {
     try { window.localStorage.removeItem(MEXTIZZA_ADMIN_LS_KEY); } catch (e) {}
   };
+  /* Este navegador es el de la cocina capturando un pedido que le dictaron:
+     el sitio abierto en modo captura Y con el token de administrador guardado.
+
+     Vive aqui, en un solo lugar, porque cuatro rejas preguntan lo mismo antes
+     de dejar pasar un pedido -- la validez del formulario de entrega, su
+     aviso, el estado del boton de confirmar y el envio. Escribirlo cuatro
+     veces ya dejo el horario aplicado en tres de ellas cuando solo se habia
+     corregido una. */
+  const mextizzaCapturaCocina = () => {
+    try {
+      return new URLSearchParams(location.search).get('canal') === 'whatsapp'
+        && !!mextizzaTokenAdmin();
+    } catch (e) { return false; }
+  };
+
   const tokenPara = admin => {
     if (!admin) return MEXTIZZA_SHEETS_TOKEN;
     const t = mextizzaTokenAdmin();
@@ -81,6 +96,16 @@ if (!window.__mextizzaSheetsConfigLoaded) {
       else if (l.addonTotal) it.addons = [{ nombre: (l.addonNames || []).join(', '), precio: l.addonTotal }];
     });
 
+    /* Modo captura (?canal=whatsapp): si este navegador es el de la cocina y
+       trae el token de administrador, el pedido se manda con el. El servidor
+       le permite entonces capturar fuera de horario, que es lo que pasa cuando
+       alguien habla por telefono a las 3:50 y la cocina abre a las 4.
+
+       Sin token guardado se comporta igual que siempre, con el token publico y
+       el horario aplicado: poner el parametro en la direccion no alcanza para
+       saltarse nada. */
+    const comoCocina = mextizzaCapturaCocina();
+
     return mextizzaApiPost('crear_orden', {
       canal,
       cliente: { telefono: entrega.telefono, nombre: entrega.nombre },
@@ -96,7 +121,7 @@ if (!window.__mextizzaSheetsConfigLoaded) {
       /* Cual premio quiere canjear. Es una PETICION, no una orden: el servidor
          solo lo aplica si la tarjeta de ese telefono de verdad lo tiene. */
       usarPremio
-    });
+    }, comoCocina);
   };
 
   const mextizzaAvanzarEstado = folio => mextizzaApiPost('avanzar_estado', { folio }, true);
@@ -109,6 +134,22 @@ if (!window.__mextizzaSheetsConfigLoaded) {
   const mextizzaCancelarPorCliente = folio => mextizzaApiPost('cancelar_cliente', { folio });
   const mextizzaListarAbiertas = () => mextizzaApiGet('listar_abiertas', {}, true);
   const mextizzaListarHoy = () => mextizzaApiGet('listar_hoy', {}, true);
+
+  /* Inventarios. Todo va con token admin: los saldos y los costos se capturan
+     desde la tablet de la cocina, no desde el sitio, y ninguno es informacion
+     que un cliente deba poder leer. */
+  const mextizzaInvEstado = () => mextizzaApiGet('inv_estado', {}, true);
+  /** Compra recibida. Se manda el importe pagado y el sistema saca el costo unitario. */
+  const mextizzaInvCompra = ({ insumo_id, cantidad, importe, nota }) =>
+    mextizzaApiPost('inv_compra', { insumo_id, cantidad, importe, nota }, true);
+  /** Un lote de masa o de salsa: consume los crudos y suma las porciones que rinde. */
+  const mextizzaInvLote = ({ preparado_id, lotes }) =>
+    mextizzaApiPost('inv_lote', { preparado_id, lotes }, true);
+  const mextizzaInvMerma = ({ insumo_id, cantidad, motivo }) =>
+    mextizzaApiPost('inv_merma', { insumo_id, cantidad, motivo }, true);
+  /** Conteo fisico. La diferencia contra el sistema es la merma real del periodo. */
+  const mextizzaInvConteo = ({ insumo_id, contado, nota }) =>
+    mextizzaApiPost('inv_conteo', { insumo_id, contado, nota }, true);
 
   const mextizzaSolicitarCatering = ({ nombre, telefono, personas, fecha_evento, notas }) =>
     mextizzaApiPost('solicitar_catering', { nombre, telefono, personas, fecha_evento, notas });
@@ -123,5 +164,5 @@ if (!window.__mextizzaSheetsConfigLoaded) {
 
   const mextizzaTarjeta = (telefono) => mextizzaApiGet('tarjeta', { telefono: telefono || '' });
 
-  Object.assign(window, { mextizzaPickup, mextizzaTarjeta, mextizzaCrearOrden, mextizzaAvanzarEstado, mextizzaCancelarOrden, mextizzaEstadoOrden, mextizzaEstadoPorTelefono, mextizzaCancelarPorCliente, mextizzaListarAbiertas, mextizzaListarHoy, mextizzaSolicitarCatering, mextizzaTokenAdmin, mextizzaGuardarTokenAdmin, mextizzaOlvidarTokenAdmin });
+  Object.assign(window, { mextizzaPickup, mextizzaTarjeta, mextizzaCrearOrden, mextizzaAvanzarEstado, mextizzaCancelarOrden, mextizzaEstadoOrden, mextizzaEstadoPorTelefono, mextizzaCancelarPorCliente, mextizzaListarAbiertas, mextizzaListarHoy, mextizzaSolicitarCatering, mextizzaTokenAdmin, mextizzaGuardarTokenAdmin, mextizzaOlvidarTokenAdmin, mextizzaCapturaCocina, mextizzaInvEstado, mextizzaInvCompra, mextizzaInvLote, mextizzaInvMerma, mextizzaInvConteo });
 }
