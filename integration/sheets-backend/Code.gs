@@ -68,7 +68,8 @@ const COMPLEMENTOS_HEADERS = ['id', 'nombre', 'grupo', 'precio', 'activo'];
 const CLIENTES_HEADERS = ['telefono', 'nombre', 'direccion', 'colonia', 'notas', 'pedidos', 'dias_ciclo', 'ultimo_dia', 'brownie_usado', 'pizza_usada', 'ciclos', 'brownie_guardado'];
 const CATERING_HEADERS = ['folio', 'nombre', 'telefono', 'personas', 'fecha_evento', 'notas', 'estado', 'creado_en'];
 
-const INSUMOS_HEADERS = ['id', 'nombre', 'uom', 'categoria', 'tipo', 'costo_promedio', 'stock', 'stock_minimo', 'rinde', 'activo'];
+const INSUMOS_HEADERS = ['id', 'nombre', 'uom', 'categoria', 'tipo', 'costo_promedio', 'stock', 'stock_minimo', 'rinde', 'activo', 'colchon'];
+const PARAMETROS_HEADERS = ['clave', 'valor', 'nota'];
 const RECETAS_HEADERS = ['producto_id', 'componente_id', 'cantidad', 'nota'];
 const MOVIMIENTOS_HEADERS = ['fecha', 'tipo', 'insumo_id', 'cantidad', 'costo_unitario', 'importe', 'referencia', 'nota'];
 const CONTEOS_HEADERS = ['fecha', 'insumo_id', 'stock_sistema', 'stock_contado', 'diferencia', 'valor_diferencia', 'nota'];
@@ -113,7 +114,11 @@ function leerInsumos_() {
       costo: Number(data[r][c.indexOf('costo_promedio')]) || 0,
       stock: Number(data[r][c.indexOf('stock')]) || 0,
       minimo: Number(data[r][c.indexOf('stock_minimo')]) || 0,
-      rinde: Number(data[r][c.indexOf('rinde')]) || 0
+      rinde: Number(data[r][c.indexOf('rinde')]) || 0,
+      /* -1 significa "no configurado", y es distinto de 0, que es un
+         colchon valido: comprar exactamente lo que se va a gastar. */
+      colchon: String(data[r][c.indexOf('colchon')]).trim() === ''
+        ? -1 : Number(data[r][c.indexOf('colchon')])
     };
   }
   return map;
@@ -413,6 +418,214 @@ function sembrarLibroInicial() {
   return { insumos: filas.length, valor: Math.round(valor * 100) / 100 };
 }
 
+/* ============================ SUGERENCIA DE COMPRA ========================
+
+   El modelo es NIVEL PAR con revision periodica, que es lo que usa una cocina.
+   No es min-max ni EOQ: esos suponen que reabastecer tarda semanas y que tener
+   de mas solo cuesta bodega. Aqui reabastecer es ir a la tienda, y tener de mas
+   se pudre. Comprar de sobra no ahorra, tira.
+
+       par       = consumo_diario × dias_de_cobertura × (1 + colchon)
+       sugerido  = par − lo que hay
+
+   No hace falta historia de consumo por insumo, y esa es la ventaja de tener
+   el BOM: el consumo de peperoni se deduce del de pizzas. El pronostico se
+   hace UNA vez, sobre pizzas al dia, y las recetas lo reparten entre los 35
+   insumos. */
+
+/* Cuanto se vende de cada producto, en proporcion. Se mide de los pedidos
+   reales; mientras no haya suficientes, se reparte parejo entre las pizzas.
+
+   Se prefiere medirla a pedirsela a alguien: son nueve numeros que cambian
+   solos, y nadie va a mantenerlos a mano. Se excluyen las canceladas, que no
+   se cocinaron. */
+function mezclaReal_(recetas, dias) {
+  const corte = new Date();
+  corte.setDate(corte.getDate() - (dias || 60));
+
+  const ordenes = sheet_(SHEETS.ordenes).getDataRange().getValues();
+  const cEstado = ORDENES_HEADERS.indexOf('estado');
+  const cRecibida = ORDENES_HEADERS.indexOf('t_recibida');
+  const vivas = {};
+  for (let r = 1; r < ordenes.length; r++) {
+    const folio = String(ordenes[r][0] || '');
+    if (!folio || String(ordenes[r][cEstado]) === 'cancelada') continue;
+    const f = ordenes[r][cRecibida];
+    if (f instanceof Date && f < corte) continue;
+    vivas[folio] = true;
+  }
+
+  const items = sheet_(SHEETS.ordenItems).getDataRange().getValues();
+  const cuenta = {};
+  let total = 0;
+  for (let r = 1; r < items.length; r++) {
+    if (!vivas[String(items[r][1] || '')]) continue;
+    const pid = String(items[r][2] || '').trim();
+    const cant = Number(items[r][4]) || 0;
+    if (!pid || !recetas[pid] || cant <= 0) continue;
+    cuenta[pid] = (cuenta[pid] || 0) + cant;
+    total += cant;
+  }
+
+  /* Con pocos pedidos la mezcla medida es ruido, no señal: dos Alohas
+     seguidas no significan que el 100% del menu sea Aloha. */
+  const MINIMO = 30;
+  if (total < MINIMO) {
+    const vendibles = [];
+    for (const id in CATALOGO.productos) {
+      if (recetas[id] && CATALOGO.productos[id].cat !== 'Para cerrar') vendibles.push(id);
+    }
+    const mezcla = {};
+    for (let i = 0; i < vendibles.length; i++) mezcla[vendibles[i]] = 1 / vendibles.length;
+    return { mezcla: mezcla, medida: false, pedidos: total, minimo: MINIMO };
+  }
+
+  const mezcla = {};
+  for (const id in cuenta) mezcla[id] = cuenta[id] / total;
+  return { mezcla: mezcla, medida: true, pedidos: total, minimo: MINIMO };
+}
+
+/* Cuanto insumo CRUDO se gasta al dia, explotando los preparados hasta el
+   fondo. La harina no la gasta una pizza: la gasta el lote de masa que hubo
+   que hacer para esa pizza. Si no se explotara, la lista de compras nunca
+   pediria harina y la cocina se quedaria sin masa a los tres dias.
+
+   Los componentes repetidos se suman. El aceite de oliva esta en la masa y en
+   la salsa, y contarlo por separado pediria de menos. */
+function demandaDiaria_(insumos, recetas, pizzasDia, mezcla) {
+  const porDia = {};
+
+  function sumar(producto, veces) {
+    const comps = recetas[producto];
+    if (!comps) return;
+    for (let i = 0; i < comps.length; i++) {
+      const c = comps[i];
+      const ins = insumos[c.componente];
+      if (!ins) continue;
+      if (ins.tipo === 'preparado' && ins.rinde > 0 && recetas[c.componente]) {
+        // Una porcion de preparado cuesta un lote entre lo que rinde el lote.
+        sumar(c.componente, (veces * c.cantidad) / ins.rinde);
+      } else {
+        porDia[c.componente] = (porDia[c.componente] || 0) + veces * c.cantidad;
+      }
+    }
+  }
+
+  for (const id in mezcla) sumar(id, pizzasDia * mezcla[id]);
+  return porDia;
+}
+
+/* Lo mismo pero SIN explotar: cuantas porciones de preparado se gastan al dia.
+   Para la masa esto es lo que importa, porque no se compra, se produce, y
+   tarda 48 horas en estar lista. */
+function demandaPreparados_(insumos, recetas, pizzasDia, mezcla) {
+  const porDia = {};
+  for (const id in mezcla) {
+    const comps = recetas[id] || [];
+    for (let i = 0; i < comps.length; i++) {
+      const ins = insumos[comps[i].componente];
+      if (!ins || ins.tipo !== 'preparado') continue;
+      porDia[ins.id] = (porDia[ins.id] || 0) + pizzasDia * mezcla[id] * comps[i].cantidad;
+    }
+  }
+  return porDia;
+}
+
+/* El colchon depende de si el insumo aguanta o se pudre, y por eso NO es un
+   solo numero para todos. Un min-max generico trata igual a la harina y a la
+   arugula, y esa es justo la manera de acabar tirando verdura.
+
+   Se lee de la columna `colchon` de la hoja `insumos` para poder ajustarlo por
+   renglon; si viene vacia se usa este default por categoria. */
+const COLCHON_DEFAULT = { Masa: 0.5, Empaque: 0.5, Bebida: 0.5, Salsa: 0.2, Postre: 0.2, Vegetal: 0.15, Queso: 0.2, Carne: 0.2, Otro: 0.2 };
+
+function parametrosInv_() {
+  const sh = sheet_(SHEETS.parametros);
+  const data = sh.getDataRange().getValues();
+  const p = {};
+  for (let r = 1; r < data.length; r++) {
+    const k = String(data[r][0] || '').trim();
+    if (k) p[k] = data[r][1];
+  }
+  return {
+    pizzasDia: Number(p.pizzas_al_dia) > 0 ? Number(p.pizzas_al_dia) : 4,
+    diasCobertura: Number(p.dias_cobertura) > 0 ? Number(p.dias_cobertura) : 4
+  };
+}
+
+/* La lista de compras sugerida. */
+function sugerenciasCompra_() {
+  const insumos = leerInsumos_();
+  const recetas = leerRecetas_();
+  const par = parametrosInv_();
+  const mez = mezclaReal_(recetas);
+
+  const diario = demandaDiaria_(insumos, recetas, par.pizzasDia, mez.mezcla);
+  const diarioPrep = demandaPreparados_(insumos, recetas, par.pizzasDia, mez.mezcla);
+
+  const compras = [];
+  let costoTotal = 0;
+  for (const id in insumos) {
+    const i = insumos[id];
+    if (i.tipo === 'preparado') continue;      // eso se produce, no se compra
+    const consumo = diario[id] || 0;
+    if (consumo <= 0) continue;                // no entra en ninguna receta viva
+    const colchon = i.colchon >= 0 ? i.colchon
+      : (COLCHON_DEFAULT[i.categoria] !== undefined ? COLCHON_DEFAULT[i.categoria] : 0.2);
+    const nivelPar = consumo * par.diasCobertura * (1 + colchon);
+    const falta = nivelPar - i.stock;
+    if (falta <= 0) continue;
+    const cant = Math.round(falta * 1000) / 1000;
+    costoTotal += cant * i.costo;
+    compras.push({
+      id: i.id, nombre: i.nombre, uom: i.uom, categoria: i.categoria,
+      stock: Math.round(i.stock * 1000) / 1000,
+      par: Math.round(nivelPar * 1000) / 1000,
+      comprar: cant,
+      importe: Math.round(cant * i.costo * 100) / 100,
+      /* Dias que aguanta con lo que hay. Es el numero que decide el orden:
+         no importa cuanto falta, importa que tan pronto se acaba. */
+      dias: Math.round((i.stock / consumo) * 10) / 10
+    });
+  }
+  compras.sort(function (a, b) { return a.dias - b.dias; });
+
+  /* La masa no se compra. Y avisar tarde no sirve de nada: tarda 48 horas en
+     fermentar, asi que es el unico faltante que no se puede corregir el mismo
+     dia. Por eso va aparte y no revuelto en la lista del super. */
+  const produccion = [];
+  for (const id in diarioPrep) {
+    const i = insumos[id];
+    if (!i) continue;
+    const consumo = diarioPrep[id];
+    const nivelPar = consumo * par.diasCobertura;
+    const falta = nivelPar - i.stock;
+    if (falta <= 0) continue;
+    produccion.push({
+      id: i.id, nombre: i.nombre, uom: i.uom,
+      stock: Math.round(i.stock * 100) / 100,
+      par: Math.round(nivelPar * 100) / 100,
+      faltan: Math.round(falta * 100) / 100,
+      lotes: i.rinde > 0 ? Math.ceil(falta / i.rinde) : 0,
+      dias: Math.round((i.stock / consumo) * 10) / 10
+    });
+  }
+  produccion.sort(function (a, b) { return a.dias - b.dias; });
+
+  return {
+    compras: compras,
+    produccion: produccion,
+    costoTotal: Math.round(costoTotal * 100) / 100,
+    supuestos: {
+      pizzasDia: par.pizzasDia,
+      diasCobertura: par.diasCobertura,
+      mezclaMedida: mez.medida,
+      pedidosMedidos: mez.pedidos,
+      minimoParaMedir: mez.minimo
+    }
+  };
+}
+
 /* Lo que ve la pantalla de cocina. */
 function estadoInventario_() {
   const insumos = leerInsumos_();
@@ -437,6 +650,7 @@ function estadoInventario_() {
   return {
     insumos: lista,
     capacidad: capacidad_(insumos, recetas),
+    reabasto: sugerenciasCompra_(),
     valor: Math.round(valor * 100) / 100,
     alertas: lista.filter(function (x) { return x.alerta; }).length
   };
@@ -455,7 +669,8 @@ function configurarHojas() {
     [SHEETS.insumos, INSUMOS_HEADERS],
     [SHEETS.recetas, RECETAS_HEADERS],
     [SHEETS.movimientos, MOVIMIENTOS_HEADERS],
-    [SHEETS.conteos, CONTEOS_HEADERS]
+    [SHEETS.conteos, CONTEOS_HEADERS],
+    [SHEETS.parametros, PARAMETROS_HEADERS]
   ];
   specs.forEach(([nombre, headers]) => {
     let sh = ss.getSheetByName(nombre);
@@ -484,6 +699,17 @@ function configurarHojas() {
       Logger.log(nombre + ': columnas agregadas -> ' + faltan.join(', '));
     }
   });
+  /* La hoja de parametros nace con valores para que la lista de compras
+     funcione desde el primer dia. Son estimaciones y se editan aqui mismo,
+     sin tocar el codigo ni volver a desplegar. */
+  const sp = ss.getSheetByName(SHEETS.parametros);
+  if (sp && sp.getLastRow() <= 1) {
+    sp.getRange(2, 1, 2, 3).setValues([
+      ['pizzas_al_dia', 4, 'Cuantas pizzas esperas vender al dia. Hoy es tu objetivo; cuando haya historia, el promedio real.'],
+      ['dias_cobertura', 4, 'Cuantos dias tiene que aguantar la despensa entre una compra y la siguiente.']
+    ]);
+  }
+
   const def = ss.getSheetByName('Sheet1') || ss.getSheetByName('Hoja 1');
   if (def && def.getLastRow() === 0 && ss.getSheets().length > 6) ss.deleteSheet(def);
 }

@@ -34,11 +34,17 @@ function Hoja(headers) {
         f[c - 1] = comoSheets(v);
       },
       getValues: () => filas.slice(r - 1, r - 1 + (nr || 1)).map((f) => f.slice(c - 1, c - 1 + (nc || 1))),
-      setValues: (vs) => vs.forEach((fila, i) => fila.forEach((v, j) => {
-        const f = filas[r - 1 + i];
-        while (f.length < c + j) f.push('');
-        f[c - 1 + j] = v;
-      })),
+      /* Escribir mas alla del ultimo renglon crea los renglones, como en una
+         hoja de verdad: Sheets nace con mil filas vacias. Este doble los
+         asumia existentes y tronaba al sembrar inv_parametros. */
+      setValues: (vs) => vs.forEach((fila, i) => {
+        while (filas.length < r + i) filas.push([]);
+        fila.forEach((v, j) => {
+          const f = filas[r - 1 + i];
+          while (f.length < c + j) f.push('');
+          f[c - 1 + j] = comoSheets(v);
+        });
+      }),
     }),
   };
 }

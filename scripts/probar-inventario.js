@@ -298,5 +298,67 @@ try { ctx.sembrarLibroInicial(); } catch (e) { grito = String(e); }
 comparar('correrla dos veces se planta', /ya tiene movimientos/.test(grito), true);
 comparar('y no duplico el asiento', hojas[SHEETS.movimientos].filas.length - 1, 2);
 
+
+console.log('\nSUGERENCIA DE COMPRA');
+/* Se fija la mezcla a una sola pizza para poder verificar la aritmetica a
+   mano. Con mezcla pareja el numero sale de nueve sumandos y una prueba que
+   no se puede recalcular en papel no prueba nada. */
+const soloRoni = { roni: 1 };
+const insA = ctx.leerInsumos_(), recA = ctx.leerRecetas_();
+
+const d = ctx.demandaDiaria_(insA, recA, 10, soloRoni);
+cerca('10 Roni gastan 0.70 de peperoni', d['peperoni'], 0.70);
+cerca('y 1.20 de queso monterrey', d['queso-monterrey'], 1.20);
+comparar('la masa NO aparece: es preparado', d['masa-base'], undefined);
+/* 10 pizzas = 10 bolas = 10/4.5 lotes, y cada lote lleva 1 kg de harina. */
+cerca('pero si aparece su harina', d['harina-fuerza'], 10 / 4.5);
+/* El aceite esta en la masa (0.05/lote) y en la salsa (0.15/lote). Si no se
+   sumaran, la lista de compras pediria de menos. */
+cerca('el aceite suma masa y salsa',
+  d['aoev'], (10 / 4.5) * 0.05 + (10 / 20) * 0.15);
+
+const p = ctx.demandaPreparados_(insA, recA, 10, soloRoni);
+cerca('en porciones, 10 pizzas son 10 bolas', p['masa-base'], 10);
+
+console.log('\nEL PAR Y LO QUE FALTA');
+Object.keys(insA).forEach((id) => poner(id, 0));
+hojas[SHEETS.parametros].filas = [['clave', 'valor', 'nota'],
+  ['pizzas_al_dia', 4, ''], ['dias_cobertura', 4, '']];
+poner('peperoni', 0.1);   // por debajo del par, para que si pida
+let r2 = ctx.sugerenciasCompra_();
+const pep = r2.compras.filter((x) => x.id === 'peperoni')[0];
+/* Mezcla pareja entre 9 pizzas; el peperoni esta en Roni (0.070), Traviesa
+   (0.070) y Combinada (0.035), asi que 4 pizzas al dia gastan: */
+const consumoPep = 4 * (0.070 + 0.070 + 0.035) / 9;
+cerca('el par son 4 dias mas colchon', pep.par, consumoPep * 4 * 1.2, 0.001);
+cerca('se compra la diferencia contra lo que hay', pep.comprar, consumoPep * 4 * 1.2 - 0.1, 0.001);
+cerca('y dice cuantos dias aguanta', pep.dias, 0.1 / consumoPep, 0.1);
+
+/* Tener MAS que el par no es un faltante negativo: es no comprar. */
+poner('peperoni', 0.5);
+comparar('con mas que el par, no se pide nada',
+  ctx.sugerenciasCompra_().compras.filter((x) => x.id === 'peperoni').length, 0);
+
+console.log('\nLO QUE SOBRA NO SE PIDE');
+poner('peperoni', 99);
+r2 = ctx.sugerenciasCompra_();
+comparar('con bodega de sobra, el peperoni no aparece',
+  r2.compras.filter((x) => x.id === 'peperoni').length, 0);
+
+console.log('\nLA MASA SE PRODUCE, NO SE COMPRA');
+comparar('nunca sale en la lista del super',
+  r2.compras.filter((x) => x.id === 'masa-base').length, 0);
+poner('masa-base', 0);
+r2 = ctx.sugerenciasCompra_();
+const masa = r2.produccion.filter((x) => x.id === 'masa-base')[0];
+comparar('sale en produccion', !!masa, true);
+cerca('faltan 16 bolas: 4 al dia por 4 dias', masa.faltan, 16);
+comparar('que son 4 lotes de 4.5', masa.lotes, 4);
+
+console.log('\nLOS SUPUESTOS VIAJAN CON LA RESPUESTA');
+comparar('dice de donde salio el numero',
+  [r2.supuestos.pizzasDia, r2.supuestos.diasCobertura], [4, 4]);
+comparar('y avisa que la mezcla aun no se mide', r2.supuestos.mezclaMedida, false);
+
 console.log('\n  ' + ok + ' pruebas ok, ' + mal + ' mal\n');
 process.exit(mal ? 1 : 0);
