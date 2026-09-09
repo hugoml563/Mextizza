@@ -35,7 +35,14 @@ Copies of the source HTML and the extracted document text live in `sources/` so 
 
 **Language is Spanish (Mexico).** Not neutral LatAm Spanish — regional and specific. English words appear only where the industry already uses them and the founders do: *dark kitchen*, *delivery*, *catering*, *starters*, *mains*, *food cost*, *POS/KDS*. Do not translate those into Spanish for the sake of purity; the plan itself writes "Starters / Mains / Postre" as menu categories.
 
-**Voice: a craftsperson stating facts, not a restaurant selling romance.** The strongest copy in the source material is technical and unembellished:
+**Voice: warm first. A neighbour who cooks well, not a technician documenting a
+process.** Copy opens on a scene anyone recognises; the craft detail comes second and
+in passing, the way you let someone glance into your kitchen. Never the other way
+round.
+
+The owner has corrected this twice. The source material below IS technical, and
+reading it as the model pulls the writing back to a dry register — **his intent
+outranks these artifacts.** They are the vocabulary, not the temperature:
 
 - "Masa delgada, crujiente en la orilla, flexible al centro."
 - "Fermentación fría de 48 horas con temperatura controlada."
@@ -43,7 +50,19 @@ Copies of the source HTML and the extracted document text live in `sources/` so 
 - "48 HORAS DE FERMENTO" (social tile)
 - "HECHA POR MEXICANOS — Con técnica italiana" (social tile)
 
-Notice the pattern: **the process is the marketing.** A number and a technique beat an adjective. Write "fermentación fría 48h", not "masa artesanal de calidad premium".
+Those lines are accurate, and they are the *ingredients* of the voice, not the voice
+itself. A number and a technique still beat an empty adjective — write "fermentación
+fría 48h", never "masa artesanal de calidad premium" — but a post built only out of
+numbers reads as a spec sheet, and nobody orders a pizza because someone explained
+the physics of pepperoni to them.
+
+**The test:** open on the moment, close on the wink, and let the fact ride along only
+if it fits without lecturing. "Hay días de experimentar y hay días de peperoni… Tú
+nomás pídela. No hay que explicar nada." — that is the register. Not "cada rodaja se
+curva con el calor y hace su propia cazuelita".
+
+The everyday Mexican register carries the warmth: *tantita*, *picosita*, *tú nomás
+pídela*, *que sea con tu nutriólogo*. Playful beats precise when the two compete.
 
 **Person.** Marketing copy is impersonal or first-person-plural — the brand talks about the work, not about the reader's feelings ("Horneada como allá, gozada como acá" is about the pizza). Transactional and app copy switches to **tú**, never *usted*: "Elige tu masa", "Tu pedido llega en 30 min". The brand is a neighbourhood workshop, not a hotel.
 
