@@ -635,5 +635,38 @@ comparar('el consecutivo avanza de uno en uno',
   consecutivos.every((c, i) => i === 0 || c === consecutivos[i - 1] + 1), true);
 comparar('y no viaja al cliente',
   'consecutivo' in ctx.formaEstado_({ folio: 'x', estado: 'recibida' }), false);
+/* EL HORARIO ES REGLA PARA EL CLIENTE, NO PARA LA COCINA.
+
+   Ricardo captura por telefono antes de abrir; el token publico no puede.
+   Esa asimetria es lo que se prueba aqui: si se pierde el bloqueo del publico
+   vuelve el pedido de la 1:27 de la manana que motivo la validacion. */
+console.log('\nHORARIO Y CAPTURA DE COCINA');
+const horaCerrada = (function () {
+  // Miercoles 9 a las 8 de la manana en CDMX: faltan ocho horas para abrir.
+  const d = new Date('2026-09-09T14:00:00Z');
+  if (ctx.estaAbierto_(d)) throw new Error('la hora elegida SI esta abierta');
+  return d;
+})();
+
+let telH = 5590000000;
+const intentar = (nivel, cuando) => {
+  RELOJ = cuando;
+  try {
+    ctx.crearOrden_({
+      canal: 'web', cliente: { telefono: String(++telH), nombre: 'Prueba horario' },
+      direccion: 'Calle 1', colonia: 'Lomas Lindas', km: 1, pago_metodo: 'Efectivo',
+      items: [{ producto_id: CARA, cantidad: 1 }],
+    }, nivel);
+    return 'paso';
+  } catch (e) {
+    return /cocina esta cerrada/i.test(String(e)) ? 'cerrada' : 'otro: ' + e;
+  }
+};
+
+comparar('cerrada, el token publico no pide', intentar('publico', horaCerrada), 'cerrada');
+comparar('cerrada, sin nivel tampoco', intentar(undefined, horaCerrada), 'cerrada');
+comparar('cerrada, la cocina si captura', intentar('admin', horaCerrada), 'paso');
+comparar('abierta, el publico pide normal', intentar('publico', diaAbierto()), 'paso');
+
 console.log('\n  ' + ok + ' pruebas ok, ' + mal + ' mal\n');
 process.exit(mal ? 1 : 0);

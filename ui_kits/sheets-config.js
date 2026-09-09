@@ -81,6 +81,16 @@ if (!window.__mextizzaSheetsConfigLoaded) {
       else if (l.addonTotal) it.addons = [{ nombre: (l.addonNames || []).join(', '), precio: l.addonTotal }];
     });
 
+    /* Modo captura (?canal=whatsapp): si este navegador es el de la cocina y
+       trae el token de administrador, el pedido se manda con el. El servidor
+       le permite entonces capturar fuera de horario, que es lo que pasa cuando
+       alguien habla por telefono a las 3:50 y la cocina abre a las 4.
+
+       Sin token guardado se comporta igual que siempre, con el token publico y
+       el horario aplicado: poner el parametro en la direccion no alcanza para
+       saltarse nada. */
+    const comoCocina = canal === 'WhatsApp' && !!mextizzaTokenAdmin();
+
     return mextizzaApiPost('crear_orden', {
       canal,
       cliente: { telefono: entrega.telefono, nombre: entrega.nombre },
@@ -96,7 +106,7 @@ if (!window.__mextizzaSheetsConfigLoaded) {
       /* Cual premio quiere canjear. Es una PETICION, no una orden: el servidor
          solo lo aplica si la tarjeta de ese telefono de verdad lo tiene. */
       usarPremio
-    });
+    }, comoCocina);
   };
 
   const mextizzaAvanzarEstado = folio => mextizzaApiPost('avanzar_estado', { folio }, true);

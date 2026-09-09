@@ -649,7 +649,9 @@ function doPost(e) {
     let result;
     switch (body.action) {
       case 'crear_orden':
-        result = crearOrden_(body);
+        /* El nivel viaja para el horario: la cocina puede capturar por
+           telefono a las 3:50, un cliente no. Ver crearOrden_. */
+        result = crearOrden_(body, nivel);
         break;
       case 'avanzar_estado':
         requiereAdmin_(nivel);
@@ -918,8 +920,16 @@ function estaAbierto_(ahora) {
   return HORARIO.dias.indexOf(dia) !== -1 && hora >= HORARIO.desde && hora < HORARIO.hasta;
 }
 
-function crearOrden_(body) {
-  if (!estaAbierto_()) {
+function crearOrden_(body, nivel) {
+  /* El horario es una regla para los clientes, no para la cocina. Ricardo
+     recibe pedidos por telefono y por WhatsApp antes de abrir, y el sistema
+     no tiene por que negarle capturarlos: quien decide si se cocina es el.
+
+     Solo se lo salta el token de administrador, que vive nada mas en el
+     navegador de la cocina. El token publico -- el que viaja en la web y
+     dentro del APK, donde cualquiera puede leerlo -- sigue bloqueado, que es
+     el caso que dejo entrar una orden a la 1:27 de la manana. */
+  if (nivel !== 'admin' && !estaAbierto_()) {
     throw new Error('La cocina esta cerrada. Tomamos pedidos de miercoles a domingo, de 4:00 pm a 11:00 pm.');
   }
   const now = new Date();
