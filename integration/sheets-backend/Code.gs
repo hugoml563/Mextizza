@@ -134,30 +134,46 @@ function leerRecetas_() {
   return map;
 }
 
-/* Receta con los preparados explotados a insumo crudo, para el horizonte
-   de 48 horas. Los componentes repetidos se suman: el aceite de oliva
-   aparece en la masa y en la salsa, y contarlo por separado haria creer
-   que alcanza para mas pizzas de las que alcanza. */
-function recetaPlana_(producto, recetas, insumos) {
-  const suma = {};
-  const comps = recetas[producto] || [];
-  for (let i = 0; i < comps.length; i++) {
-    const c = comps[i];
-    const ins = insumos[c.componente];
-    if (ins && ins.tipo === 'preparado' && ins.rinde > 0 && recetas[c.componente]) {
-      // Una porcion de preparado cuesta un lote entre lo que rinde el lote.
-      const lote = recetas[c.componente];
-      for (let j = 0; j < lote.length; j++) {
-        const k = lote[j].componente;
-        suma[k] = (suma[k] || 0) + (lote[j].cantidad / ins.rinde) * c.cantidad;
-      }
-    } else {
-      suma[c.componente] = (suma[c.componente] || 0) + c.cantidad;
-    }
+/* El almacen como estaria en 48 horas: lo que hay hoy, mas los lotes de
+   preparado que se alcanzan a hacer con los crudos que ya estan en la cocina.
+
+   Antes esto se calculaba explotando la receta del preparado a harina, y esa
+   cuenta tiraba a la basura la masa que ya estaba fermentada. Con tres bolas
+   listas y cero harina decia que en 48 horas se podian hacer cero pizzas,
+   cuando la verdad es que se pueden hacer tres.
+
+   Los lotes se reparten en el orden en que vienen los preparados, asi que si
+   la masa y la salsa se pelean el mismo crudo -- el aceite de oliva esta en las
+   dos -- el primero se lo lleva. Eso subestima, nunca sobreestima, y en una
+   cocina conviene errar por ese lado. */
+function inventarioEn48h_(insumos, recetas) {
+  const proj = {};
+  for (const id in insumos) {
+    const i = insumos[id];
+    proj[id] = { id: i.id, nombre: i.nombre, uom: i.uom, tipo: i.tipo,
+      rinde: i.rinde, costo: i.costo, minimo: i.minimo, stock: i.stock };
   }
-  return Object.keys(suma).map(function (k) {
-    return { componente: k, cantidad: suma[k] };
-  });
+
+  for (const id in proj) {
+    const p = proj[id];
+    if (p.tipo !== 'preparado' || !(p.rinde > 0) || !recetas[id]) continue;
+
+    const receta = recetas[id];
+    let lotes = Infinity;
+    for (let i = 0; i < receta.length; i++) {
+      const ins = proj[receta[i].componente];
+      if (!ins) continue;
+      lotes = Math.min(lotes, Math.floor(ins.stock / receta[i].cantidad));
+    }
+    if (!isFinite(lotes) || lotes <= 0) continue;
+
+    for (let i = 0; i < receta.length; i++) {
+      const ins = proj[receta[i].componente];
+      if (ins) ins.stock -= receta[i].cantidad * lotes;
+    }
+    p.stock += lotes * p.rinde;
+  }
+  return proj;
 }
 
 /* Cuantas unidades del producto alcanzan con el stock dado, y cual es el
@@ -178,12 +194,13 @@ function alcanzaPara_(comps, insumos) {
 /* Capacidad por pizza en los dos horizontes. */
 function capacidad_(insumos, recetas) {
   const out = [];
+  const proyeccion = inventarioEn48h_(insumos, recetas);
   for (const id in CATALOGO.productos) {
     if (!recetas[id]) continue;
     const p = CATALOGO.productos[id];
     if (p.cat === 'Para cerrar') continue;
     const hoy = alcanzaPara_(recetas[id], insumos);
-    const luego = alcanzaPara_(recetaPlana_(id, recetas, insumos), insumos);
+    const luego = alcanzaPara_(recetas[id], proyeccion);
     out.push({
       id: id, nombre: p.nombre,
       hoy: hoy.cantidad, limitaHoy: hoy.limita,

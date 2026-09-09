@@ -255,6 +255,28 @@ comparar('sin masa fermentada, hoy no se puede hacer nada', roni.hoy, 0);
 comparar('el freno es la masa', roni.limitaHoy, 'Masa base NY 48h');
 comparar('pero en 48 h si, porque hay harina', roni.en48h > 0, true);
 
+/* La masa que ya esta fermentada cuenta para las 48 horas. Antes no: la cuenta
+   explotaba la receta a harina y tiraba las bolas listas, asi que con masa hecha
+   y cero harina prometia cero pizzas. */
+Object.keys(ctx.leerInsumos_()).forEach(function (id) { poner(id, 0); });
+poner('masa-base', 3); poner('salsa-tomate', 3);
+poner('caja-kraft', 3); poner('sticker', 3);
+poner('peperoni', 0.25); poner('queso-monterrey', 0.5);
+cap = ctx.capacidad_(ctx.leerInsumos_(), ctx.leerRecetas_());
+const r48 = cap.filter(function (x) { return x.id === 'roni'; })[0];
+comparar('con masa lista y cero harina, hoy alcanza para 3', r48.hoy, 3);
+comparar('y en 48 h siguen siendo 3, no cero', r48.en48h, 3);
+
+// Poner harina y agua suma lotes NUEVOS a las bolas que ya estaban.
+poner('harina-fuerza', 2); poner('agua', 2); poner('levadura', 1);
+poner('azucar', 1); poner('sal', 1); poner('aoev', 1);
+poner('peperoni', 5); poner('queso-monterrey', 5);
+poner('caja-kraft', 99); poner('sticker', 99); poner('salsa-tomate', 99);
+cap = ctx.capacidad_(ctx.leerInsumos_(), ctx.leerRecetas_());
+const r48b = cap.filter(function (x) { return x.id === 'roni'; })[0];
+comparar('hoy siguen siendo las 3 bolas de siempre', r48b.hoy, 3);
+comparar('y en 48 h son esas 3 mas dos lotes de 4.5', r48b.en48h, 12);
+
 console.log('\nCONTEO DE APERTURA');
 // El libro arranca vacio: sembrar sin haber contado nada no debe inventar nada.
 Object.keys(ctx.leerInsumos_()).forEach(function (id) { poner(id, 0); });
