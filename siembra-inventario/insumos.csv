@@ -1,0 +1,38 @@
+id,nombre,uom,categoria,tipo,costo_promedio,stock,stock_minimo,rinde,activo
+harina-fuerza,Harina de fuerza,Kg,Masa,crudo,20,0,5,,si
+agua,Agua,L,Masa,crudo,0.06,0,20,,si
+levadura,Levadura instantánea,Kg,Masa,crudo,70,0,0.1,,si
+azucar,Azúcar,Kg,Masa,crudo,30,0,1,,si
+sal,Sal,Kg,Masa,crudo,25,0,1,,si
+aoev,Aceite de oliva extra virgen,L,Masa,crudo,123,0,1,,si
+jitomate,Jitomate,Kg,Salsa,crudo,25,0,3,,si
+cebolla,Cebolla,Kg,Salsa,crudo,30,0,2,,si
+ajo,Ajo,Kg,Salsa,crudo,180,0,0.2,,si
+hierbas,Hierbas italianas,Kg,Salsa,crudo,300,0,0.05,,si
+pimienta,Pimienta negra molida,Kg,Salsa,crudo,220,0,0.05,,si
+pasta-jitomate,Pasta de jitomate,Kg,Salsa,crudo,60,0,0.5,,si
+queso-monterrey,Queso monterrey,Kg,Queso,crudo,120,0,3,,si
+queso-provolone,Queso provolone,Kg,Queso,crudo,339,0,1,,si
+queso-parmesano,Queso parmesano,Kg,Queso,crudo,220,0,0.5,,si
+queso-gorgonzola,Queso gorgonzola,Kg,Queso,crudo,315,0,0.3,,si
+peperoni,Peperoni,Kg,Carne,crudo,305,0,1,,si
+jamon,Jamón,Kg,Carne,crudo,147,0,1,,si
+jamon-serrano,Jamón serrano,Kg,Carne,crudo,587,0,0.3,,si
+cochinita,Cochinita pibil preparada,Kg,Carne,crudo,350,0,1,,si
+pina,Piña,Kg,Vegetal,crudo,125,0,1,,si
+champinones,Champiñones,Kg,Vegetal,crudo,100,0,0.5,,si
+pimiento-verde,Pimiento verde,Kg,Vegetal,crudo,45,0,0.5,,si
+arugula,Arúgula,Kg,Vegetal,crudo,270,0,0.2,,si
+morada,Cebolla morada encurtida,Kg,Vegetal,crudo,40,0,0.3,,si
+miel,Miel,Kg,Otro,crudo,162,0,0.3,,si
+macha,Salsa macha,Kg,Otro,crudo,110,0,0.2,,si
+habanero,Salsa habanero,Kg,Otro,crudo,70,0,0.2,,si
+crema,Crema para cocinar,L,Otro,crudo,70,0,0.5,,si
+vodka,Vodka,L,Otro,crudo,250,0,0.3,,si
+brownie-insumo,Brownie preparado,Kg,Postre,crudo,110,0,0.5,,si
+refresco-pza,Refresco 600 ml,Pza,Bebida,crudo,16,0,12,,si
+agua-mineral-pza,Agua mineral 355 ml,Pza,Bebida,crudo,8,0,12,,si
+caja-kraft,Caja kraft,Pza,Empaque,crudo,7,0,30,,si
+sticker,Sticker Mextizza,Pza,Empaque,crudo,1.5,0,50,,si
+masa-base,Masa base NY 48h,Bola,Preparado,preparado,0,0,9,4.5,si
+salsa-tomate,Salsa de tomate artesanal,Porción,Preparado,preparado,0,0,20,20,si
