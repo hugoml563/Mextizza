@@ -292,6 +292,74 @@ window.__resources = Object.assign(window.__resources || {}, {
 </div>
 </sc-if>
 
+<sc-if value="{{ verCompras }}" hint-placeholder-val="{{ false }}">
+
+<div style="flex:1;display:flex;flex-direction:column;min-width:0;padding:16px 18px 0">
+<div style="flex:none;margin-bottom:12px">
+<div style="font-family:'Bungee',cursive;font-size:13px;letter-spacing:1px;text-transform:uppercase">Lo que hay que comprar</div>
+<div style="font-size:12px;font-weight:700;color:#6b6b6b;margin-top:3px">{{ compras.supuestos }} Arriba lo que se acaba primero.</div>
+</div>
+
+<div style="flex:1;overflow:auto;padding-bottom:18px">
+<sc-for list="{{ compras.lista }}" as="c" hint-placeholder-count="12">
+<div style="display:flex;align-items:center;gap:12px;padding:10px 12px;margin-bottom:6px;background:#FFFFFF;border:2px solid #1A1A1A;border-radius:6px">
+<!-- Cuanto aguanta lo que hay. Es lo que decide el orden: no importa cuanto
+     falta, importa que tan pronto se acaba. -->
+<sc-if value="{{ c.urge }}" hint-placeholder-val="{{ true }}"><span style="flex:none;width:86px;padding:3px 0;text-align:center;border-radius:99px;background:#E4007C;color:#FFFFFF;font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase">{{ c.dias }}</span></sc-if>
+<sc-if value="{{ c.tranquilo }}" hint-placeholder-val="{{ false }}"><span style="flex:none;width:86px;padding:3px 0;text-align:center;border-radius:99px;background:#F5F0E8;border:2px solid rgba(0,0,0,.14);font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:#4A4A4A">{{ c.dias }}</span></sc-if>
+<span style="flex:1;min-width:0;font-size:13.5px;font-weight:700">{{ c.nombre }}</span>
+<span style="flex:none;font-family:'Bungee',cursive;font-size:15px;color:#C1502E">{{ c.cantidad }}</span>
+<span style="flex:none;width:64px;text-align:right;font-size:12.5px;font-weight:700;color:#6b6b6b">{{ c.importe }}</span>
+</div>
+</sc-for>
+<sc-if value="{{ compras.vacia }}" hint-placeholder-val="{{ false }}">
+<div style="text-align:center;padding:60px 20px;color:#9a9a9a">
+<div style="font-family:'Bungee',cursive;font-size:16px;letter-spacing:1px;text-transform:uppercase">No hace falta nada</div>
+<div style="font-size:13px;font-weight:700;margin-top:6px">La despensa cubre los días configurados.</div>
+</div>
+</sc-if>
+</div>
+</div>
+
+<div style="flex:none;width:322px;background:#FFFFFF;border-left:3px solid #1A1A1A;padding:18px;overflow:auto">
+
+<div style="display:flex;justify-content:space-between;align-items:baseline;padding:12px 14px;background:#1A1A1A;border-radius:6px">
+<span style="font-size:11px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:#D9A65C">Toda la compra</span>
+<span style="font-family:'Bungee',cursive;font-size:18px;color:#FFFFFF">{{ compras.total }}</span>
+</div>
+
+<!-- La masa no se compra: se pone a fermentar 48 horas antes. Es el unico
+     faltante que no se puede corregir el mismo dia, asi que va aparte y no
+     revuelto entre el jitomate y las cajas. -->
+<div style="display:flex;align-items:center;gap:10px;font-family:'Bungee',cursive;font-size:11px;letter-spacing:1px;text-transform:uppercase;margin:26px 0 6px">Hay que preparar<span style="flex:1;height:2px;background:#1A1A1A;opacity:.15"></span></div>
+<div style="font-size:11.5px;font-weight:700;color:#6b6b6b;line-height:1.45;margin-bottom:12px">Esto no se compra. La masa tarda 48 horas, así que ponerla tarde no se arregla el mismo día.</div>
+
+<sc-for list="{{ compras.produccion }}" as="p" hint-placeholder-count="2">
+<div style="padding:11px 13px;margin-bottom:8px;border:2px solid #C1502E;border-radius:6px">
+<div style="font-size:13px;font-weight:700">{{ p.nombre }}</div>
+<div style="display:flex;align-items:baseline;gap:7px;margin-top:4px">
+<span style="font-family:'Bungee',cursive;font-size:22px;line-height:1;color:#C1502E">{{ p.lotes }}</span>
+<span style="font-size:11px;font-weight:700;letter-spacing:1.2px;text-transform:uppercase;color:#6b6b6b">lotes</span>
+</div>
+<div style="font-size:11.5px;font-weight:700;color:#6b6b6b;margin-top:4px">{{ p.detalle }}</div>
+</div>
+</sc-for>
+<sc-if value="{{ compras.sinProduccion }}" hint-placeholder-val="{{ false }}">
+<div style="padding:11px 13px;border:2px dashed rgba(0,0,0,.18);border-radius:6px;font-size:12px;font-weight:700;color:#6b6b6b">Hay masa y salsa de sobra.</div>
+</sc-if>
+
+<!-- De donde salio el numero. Sin esto, una estimacion se lee como una
+     medicion y termina decidiendo compras que nadie reviso. -->
+<sc-if value="{{ compras.mezclaCruda }}" hint-placeholder-val="{{ true }}">
+<div style="margin-top:22px;padding:12px 14px;background:#F7EBD8;border-left:3px solid #C1502E;font-size:11.5px;font-weight:700;line-height:1.5;color:#4A4A4A">{{ compras.mezclaTexto }} Ajusta los supuestos en la hoja <b>inv_parametros</b>.</div>
+</sc-if>
+<sc-if value="{{ compras.mezclaMedida }}" hint-placeholder-val="{{ false }}">
+<div style="margin-top:22px;padding:12px 14px;border:2px dashed rgba(0,0,0,.18);border-radius:6px;font-size:11.5px;font-weight:700;line-height:1.5;color:#4A4A4A">{{ compras.mezclaTexto }}</div>
+</sc-if>
+
+</div>
+</sc-if>
+
 
 </div>
 </div>
@@ -375,7 +443,8 @@ class Component extends DCLogic {
     this.cargar();
     this._poll = setInterval(() => {
       this.cargar();
-      if (this.state.vista === 'inventario' && !this.state.captura) this.cargarInv();
+      const enInv = this.state.vista === 'inventario' || this.state.vista === 'compras';
+      if (enInv && !this.state.captura) this.cargarInv();
     }, 15000);
     const tickReloj = () => this.setState({ reloj: new Date().toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit', hour12: false }), fechaViva: fechaLarga(new Date()) });
     tickReloj();
@@ -429,7 +498,9 @@ class Component extends DCLogic {
 
   cambiarVista(v) {
     this.setState({ vista: v, aviso: '', invError: null, captura: null });
-    if (v === 'inventario' && !this.state.inv) this.cargarInv();
+    /* Las dos pestanas comen del mismo inv_estado, asi que una sola llamada
+       las alimenta a las dos y cambiar de una a otra es instantaneo. */
+    if ((v === 'inventario' || v === 'compras') && !this.state.inv) this.cargarInv();
   }
 
   async cancelar(i) {
@@ -492,6 +563,49 @@ class Component extends DCLogic {
   numeroCap(campo) {
     const n = Number(this._cap[campo]);
     return isNaN(n) ? 0 : n;
+  }
+
+  /* La lista del super. Vive en su propia pestaña y no revuelta con la
+     capacidad, porque son dos momentos distintos: la capacidad se mira de
+     reojo en medio del turno, y esto se mira una vez antes de salir. */
+  vistaCompras() {
+    const r = this.state.inv && this.state.inv.reabasto;
+    if (!r) return { lista: [], vacia: true, produccion: [], sinProduccion: true,
+      total: '$0', supuestos: '', mezclaCruda: false, mezclaMedida: false, mezclaTexto: '' };
+
+    const s = r.supuestos || {};
+    return {
+      lista: (r.compras || []).map(c => ({
+        nombre: c.nombre,
+        cantidad: c.comprar + ' ' + c.uom,
+        importe: money(Math.round(c.importe)),
+        /* Lo que ordena la lista no es cuanto falta sino que tan pronto se
+           acaba: medio kilo de peperoni urge mas que diez kilos de harina. */
+        /* En dias enteros. "Para 0.8 d" no es como alguien mira una
+           despensa, y el decimal finge una precision que el pronostico de
+           pizzas no tiene. */
+        dias: c.dias === 0 ? 'Sin nada'
+          : (c.dias < 1 ? 'Menos de 1 d' : (Math.floor(c.dias) + (c.dias < 2 ? ' día' : ' días'))),
+        urge: c.dias <= 1,
+        tranquilo: c.dias > 1
+      })),
+      vacia: (r.compras || []).length === 0,
+      produccion: (r.produccion || []).map(p => ({
+        nombre: p.nombre,
+        lotes: p.lotes,
+        detalle: 'Faltan ' + p.faltan + ' ' + p.uom + ' · hay ' + p.stock
+      })),
+      sinProduccion: (r.produccion || []).length === 0,
+      total: money(Math.round(r.costoTotal || 0)),
+      supuestos: 'Para ' + s.pizzasDia + ' pizzas al día y ' + s.diasCobertura + ' días de despensa.',
+      /* Se dice de donde salio el numero. Una cifra sin su supuesto invita a
+         creerle mas de lo que vale, y estos supuestos hoy son estimaciones. */
+      mezclaCruda: !s.mezclaMedida,
+      mezclaMedida: !!s.mezclaMedida,
+      mezclaTexto: s.mezclaMedida
+        ? 'Repartido como se vende de verdad.'
+        : 'Repartido parejo entre las pizzas: faltan pedidos para medir la mezcla real.'
+    };
   }
 
   vistaInventario() {
@@ -662,7 +776,8 @@ class Component extends DCLogic {
       verCorte: this.props.verCorte ?? true,
       vistas: [
         { label: 'Pedidos', clave: 'pedidos' },
-        { label: 'Inventario', clave: 'inventario' }
+        { label: 'Inventario', clave: 'inventario' },
+        { label: 'Compras', clave: 'compras' }
       ].map(v => ({
         label: v.label,
         activa: this.state.vista === v.clave,
@@ -671,6 +786,8 @@ class Component extends DCLogic {
       })),
       verPedidos: this.state.vista === 'pedidos',
       verInventario: this.state.vista === 'inventario',
+      verCompras: this.state.vista === 'compras',
+      compras: this.vistaCompras(),
       capacidad: capacidad,
       sinCapacidad: capacidad.length === 0,
       inv: this.vistaInventario(),
