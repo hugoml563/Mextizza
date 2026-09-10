@@ -322,16 +322,23 @@ cerca('en porciones, 10 pizzas son 10 bolas', p['masa-base'], 10);
 
 console.log('\nEL PAR Y LO QUE FALTA');
 Object.keys(insA).forEach((id) => poner(id, 0));
-hojas[SHEETS.parametros].filas = [['clave', 'valor', 'nota'],
-  ['pizzas_al_dia', 4, ''], ['dias_cobertura', 4, '']];
+/* Los valores NO son 4 y 4 a proposito: esos son los defaults de
+   parametrosInv_, y con ellos la prueba pasaba aunque la hoja ni se leyera.
+   Asi paso desapercibido que SHEETS.parametros estaba sin definir. */
+comparar('la hoja de parametros existe', typeof SHEETS.parametros, 'string');
+/* Se muta el arreglo, no se reemplaza: los metodos de la hoja falsa cierran
+   sobre `filas`, asi que asignarle otro arreglo no cambia lo que leen. */
+const fp = hojas[SHEETS.parametros].filas;
+fp.length = 0;
+fp.push(['clave', 'valor', 'nota'], ['pizzas_al_dia', 6, ''], ['dias_cobertura', 3, '']);
 poner('peperoni', 0.1);   // por debajo del par, para que si pida
 let r2 = ctx.sugerenciasCompra_();
 const pep = r2.compras.filter((x) => x.id === 'peperoni')[0];
 /* Mezcla pareja entre 9 pizzas; el peperoni esta en Roni (0.070), Traviesa
    (0.070) y Combinada (0.035), asi que 4 pizzas al dia gastan: */
-const consumoPep = 4 * (0.070 + 0.070 + 0.035) / 9;
-cerca('el par son 4 dias mas colchon', pep.par, consumoPep * 4 * 1.2, 0.001);
-cerca('se compra la diferencia contra lo que hay', pep.comprar, consumoPep * 4 * 1.2 - 0.1, 0.001);
+const consumoPep = 6 * (0.070 + 0.070 + 0.035) / 9;
+cerca('el par sale de la hoja: 3 dias mas colchon', pep.par, consumoPep * 3 * 1.2, 0.001);
+cerca('se compra la diferencia contra lo que hay', pep.comprar, consumoPep * 3 * 1.2 - 0.1, 0.001);
 cerca('y dice cuantos dias aguanta', pep.dias, 0.1 / consumoPep, 0.1);
 
 /* Tener MAS que el par no es un faltante negativo: es no comprar. */
@@ -352,12 +359,12 @@ poner('masa-base', 0);
 r2 = ctx.sugerenciasCompra_();
 const masa = r2.produccion.filter((x) => x.id === 'masa-base')[0];
 comparar('sale en produccion', !!masa, true);
-cerca('faltan 16 bolas: 4 al dia por 4 dias', masa.faltan, 16);
-comparar('que son 4 lotes de 4.5', masa.lotes, 4);
+cerca('faltan 18 bolas: 6 al dia por 3 dias', masa.faltan, 18);
+comparar('que son 4 lotes de 4.5', masa.lotes, 4);   // 18/4.5 = 4
 
 console.log('\nLOS SUPUESTOS VIAJAN CON LA RESPUESTA');
-comparar('dice de donde salio el numero',
-  [r2.supuestos.pizzasDia, r2.supuestos.diasCobertura], [4, 4]);
+comparar('dice de donde salio el numero, leido de la hoja',
+  [r2.supuestos.pizzasDia, r2.supuestos.diasCobertura], [6, 3]);
 comparar('y avisa que la mezcla aun no se mide', r2.supuestos.mezclaMedida, false);
 
 console.log('\n  ' + ok + ' pruebas ok, ' + mal + ' mal\n');

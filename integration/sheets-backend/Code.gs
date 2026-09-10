@@ -39,7 +39,10 @@ const SHEETS = {
   insumos: 'insumos',
   recetas: 'recetas',
   movimientos: 'inv_movimientos',
-  conteos: 'inv_conteos'
+  conteos: 'inv_conteos',
+  /* Los supuestos de la lista de compras: pizzas al dia y dias de
+     cobertura. Viven en la hoja para poder moverlos sin desplegar. */
+  parametros: 'inv_parametros'
 };
 
 const ESTADOS_ACTIVOS = ['recibida', 'confirmada', 'horno', 'lista', 'camino'];
