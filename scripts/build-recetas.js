@@ -99,8 +99,7 @@ const PIZZAS = {
               ['queso-gorgonzola', 0.030], ['queso-monterrey', 0.120]],
   combinada: [['jamon', 0.060], ['peperoni', 0.035], ['champinones', 0.040],
               ['pimiento-verde', 0.060], ['cebolla', 0.020], ['queso-monterrey', 0.120]],
-  traviesa:  [['peperoni', 0.070], ['queso-monterrey', 0.120], ['miel', 0.020],
-              ['macha', 0.010]],
+  traviesa:  [['peperoni', 0.070], ['queso-monterrey', 0.120], ['miel', 0.020]],
   serranita: [['jamon-serrano', 0.025], ['queso-parmesano', 0.020], ['arugula', 0.010],
               ['queso-monterrey', 0.120]],
   cochinita: [['cochinita', 0.120], ['queso-monterrey', 0.150], ['morada', 0.030],
@@ -109,6 +108,23 @@ const PIZZAS = {
 
 /* La Newyork lleva salsa a la vodka: la crema y el vodka van sobre la salsa
    base, no en lugar de ella. Por eso conserva salsa-tomate. */
+
+/* La Traviesa NO lleva salsa macha. Mi primera transcripcion le puso 10 gramos
+   porque lei "miel picante" como miel mezclada con macha, y no es eso: la miel
+   picante es su propia preparacion, de miel con chiles secos, vinagre de
+   manzana, sal y pimienta cayena. La macha solo existe como complemento.
+
+   El error habria descontado macha que nunca se usa, apareciendo como merma
+   fantasma en el conteo, y de paso puso una advertencia de cacahuate falsa en
+   el menu.
+
+   TRES PREPARADOS SIGUEN SIN DESGLOSAR
+
+   La miel picante, la salsa macha y el brownie se hacen en casa, pero aqui
+   estan como insumos comprados. Eso significa que el inventario nunca va a
+   pedir chiles secos, vinagre ni cacahuate, y que su costo es un estimado en
+   vez de salir de sus ingredientes. Se arregla igual que la masa y la salsa,
+   como `preparado` con receta y rinde, en cuanto se tengan los gramajes. */
 
 // Postres y bebidas: el producto ES el insumo, sin transformacion.
 const OTROS = {

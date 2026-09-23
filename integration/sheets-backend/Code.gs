@@ -1019,7 +1019,7 @@ const CATALOGO = {
     'champinones': { nombre: 'Extra champiñones', precio: 15 },
     'miel': { nombre: 'Drizzle de miel', precio: 15 },
     'habanero': { nombre: 'Toque de salsa habanero', precio: 15 },
-    'macha': { nombre: 'Toque de salsa macha', precio: 15 },
+    'macha': { nombre: 'Toque de salsa macha (cacahuate)', precio: 15 },
     'aoev': { nombre: 'Terminado con aceite de oliva extra virgen', precio: 15 },
   },
 };

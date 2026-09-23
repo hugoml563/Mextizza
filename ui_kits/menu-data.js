@@ -51,7 +51,7 @@ const MEXTIZZA_ADDONS = [
   { id: 'toque', title: 'El último toque', note: 'Va encima al salir del horno.', items: [
     { id: 'miel', name: 'Drizzle de miel', price: 15 },
     { id: 'habanero', name: 'Toque de salsa habanero', price: 15 },
-    { id: 'macha', name: 'Toque de salsa macha', price: 15 },
+    { id: 'macha', name: 'Toque de salsa macha (cacahuate)', price: 15 },
     { id: 'aoev', name: 'Terminado con aceite de oliva extra virgen', price: 15 }
   ]}
 ];

@@ -80,12 +80,24 @@ cocina y que no se repita.
 
 ## Alérgenos
 
-Nuestras pizzas contienen **gluten y lácteos**. Algunas llevan además frutos
-secos o derivados. Todo se prepara en la misma cocina, así que **no podemos
-garantizar la ausencia de trazas** de ningún ingrediente.
+Todas nuestras pizzas llevan **gluten**, porque la masa es de harina de trigo,
+y **lácteos**, porque llevan queso.
+
+**Cacahuate:** ninguna de nuestras pizzas lo lleva de origen. Lo contiene
+únicamente la **salsa macha**, que es un complemento que tú agregas. Si no la
+pides, tu pizza no lleva cacahuate.
+
+El brownie contiene gluten, lácteos y chocolate. **No contiene nueces.**
+
+La miel picante de la **Pizza Traviesa** es miel con chiles secos, vinagre de
+manzana, sal y pimienta cayena. No lleva cacahuate.
+
+Todo se prepara en la misma cocina y sobre las mismas superficies, así que **no
+podemos garantizar la ausencia de trazas** de ningún ingrediente. Si tu alergia
+al cacahuate es grave, tenlo presente aunque pidas una pizza que no lo lleve.
 
 Si tienes una alergia, escríbela en las indicaciones del pedido y, si es grave,
-háblanos antes de pedir.
+háblanos por WhatsApp antes de pedir.
 
 ## Alcohol en la preparación
 
@@ -126,10 +138,13 @@ de Protección al Consumidor.
 
 - **Confirma el RFC y la figura fiscal.** Persona física con actividad
   empresarial o sociedad.
-- **Los alérgenos hay que cotejarlos contra el BOM real.** Escribí gluten,
-  lácteos y frutos secos a partir de las recetas que cargamos, pero quien
-  conoce la cocina es Ricardo. Un alérgeno mal declarado es el riesgo más serio
-  de toda esta lista, muy por encima de cualquier otro.
+- **Los alérgenos ya los confirmó Hugo:** la salsa macha lleva cacahuate, el
+  brownie es puro chocolate sin nuez, y la miel picante es miel con chiles
+  secos, vinagre de manzana, sal y pimienta cayena. Si la macha lleva ADEMAS
+  ajonjolí, hay que agregarlo: es alérgeno declarable en varios países.
+- El cacahuate entra solo por el complemento de macha, nunca por una pizza del
+  menú. Eso hay que revisarlo cada vez que se cambie una receta: es el unico
+  alérgeno del catálogo que un cliente puede evitar por completo si sabe.
 - La ventana de cancelación "antes del horno" es la que ya está implementada en
   el sistema, así que este texto y el código coinciden hoy. Si se cambia una,
   hay que cambiar la otra.
