@@ -29,3 +29,9 @@ ui_kits/app/
 # sin tener que provocarlos a mano (nueve pedidos para llenar una tarjeta, por
 # ejemplo). Utiles en local, ruido en produccion.
 pruebas/
+
+# Borradores legales sin revisar por abogado. Traen notas internas y campos
+# entre corchetes; servirlos como si fueran el aviso vigente seria peor que no
+# tener ninguno. Se quita esta linea cuando se publiquen como paginas de
+# verdad.
+legal/
