@@ -16,7 +16,7 @@
 notificaciones en [domicilio para notificaciones], y con el nombre comercial
 **Mextizza**, es responsable del tratamiento de tus datos personales.
 
-Puedes contactarnos en [correo de contacto] o al [teléfono].
+Puedes contactarnos en mextizza@gmail.com o al [teléfono].
 
 ## Qué datos recabamos
 
@@ -30,8 +30,8 @@ recabamos:
 - El historial de tus pedidos, para la tarjeta de recompensas
 
 **No recabamos datos sensibles**, ni datos financieros o patrimoniales. No
-guardamos números de tarjeta: los pagos con tarjeta los procesa un tercero y
-nosotros solo vemos si el pedido quedó pagado o no.
+guardamos números de tarjeta: los pagos con tarjeta los procesa **Mercado
+Pago** y nosotros solo vemos si el pedido quedó pagado o no.
 
 Si nos escribes alguna alergia o restricción alimentaria en las indicaciones
 del pedido, ese dato puede considerarse sensible. Lo usamos únicamente para
@@ -51,7 +51,7 @@ preparar tu pizza y lo conservamos igual que el resto del pedido.
 - Avisarte de promociones y novedades
 - Entender qué se vende más para mejorar el menú
 
-Si no quieres las finalidades adicionales, dínoslo en [correo de contacto] y
+Si no quieres las finalidades adicionales, dínoslo en mextizza@gmail.com y
 listo. Tu negativa no afecta que te vendamos.
 
 ## Con quién los compartimos
@@ -66,6 +66,9 @@ Los compartimos únicamente con:
   datos se almacenan en sus servidores, que están fuera de México. Al hacer un
   pedido aceptas esta transferencia internacional, que es necesaria para
   prestarte el servicio.
+- **Mercado Pago**, cuando eliges pagar con tarjeta. Tus datos de pago los
+  recibe y trata directamente Mercado Pago conforme a su propio aviso de
+  privacidad; nosotros no los vemos ni los guardamos.
 - **Autoridades**, cuando la ley nos obligue.
 
 ## Cuánto tiempo los conservamos
@@ -82,7 +85,7 @@ Tienes derecho a **acceder** a tus datos, a **rectificarlos** si están mal, a
 **cancelarlos** cuando ya no los necesitemos y a **oponerte** a que los usemos
 para ciertos fines. También puedes revocar tu consentimiento.
 
-Para ejercerlos, escríbenos a [correo de contacto] con:
+Para ejercerlos, escríbenos a mextizza@gmail.com con:
 
 1. Tu nombre y un medio para contestarte
 2. Una identificación oficial (para confirmar que eres tú)
@@ -128,5 +131,3 @@ Lo demás que falta confirmar:
 
 - Si Mextizza opera como persona física con actividad empresarial o como
   sociedad. Eso define quién es el responsable.
-- Un correo de contacto dedicado para ARCO.
-- Quién procesa los pagos con tarjeta, para nombrarlo si el abogado lo pide.

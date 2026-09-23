@@ -16,7 +16,7 @@ Mextizza y por WhatsApp. Al hacer un pedido los aceptas.
 [RFC]. Somos una cocina sin salón: preparamos y entregamos, no recibimos
 comensales.
 
-Contacto: [correo] · [teléfono]
+Contacto: mextizza@gmail.com · [teléfono]
 
 ## Horario
 
@@ -56,9 +56,10 @@ vamos a tardar más de lo normal, te avisamos.
 
 ## Pagos
 
-Aceptamos [efectivo, transferencia y tarjeta en línea]. Los pagos con tarjeta
-los procesa [procesador de pagos]; nosotros no almacenamos los datos de tu
-tarjeta.
+Aceptamos **efectivo, transferencia y tarjeta en línea**. Los pagos con
+tarjeta los procesa **Mercado Pago**, que los trata conforme a su propio
+aviso de privacidad. Nosotros no vemos ni almacenamos los datos de tu
+tarjeta: solo si el pedido quedó pagado o no.
 
 ## Cancelaciones
 
@@ -86,6 +87,14 @@ garantizar la ausencia de trazas** de ningún ingrediente.
 Si tienes una alergia, escríbela en las indicaciones del pedido y, si es grave,
 háblanos antes de pedir.
 
+## Alcohol en la preparación
+
+La **Pizza Newyork** lleva vodka en la salsa. La mayor parte del alcohol se
+evapora en el horno, pero pueden quedar trazas. Si evitas el alcohol por
+motivos médicos, religiosos o personales, tenlo presente al pedirla.
+
+No vendemos bebidas alcohólicas.
+
 ## Promociones
 
 Las promociones vigentes, sus fechas y sus restricciones se publican en
@@ -104,7 +113,7 @@ El tratamiento de tus datos se rige por nuestro
 
 ## Quejas y ley aplicable
 
-Si tienes una queja, escríbenos primero a [correo]. Si no la resolvemos,
+Si tienes una queja, escríbenos primero a mextizza@gmail.com. Si no la resolvemos,
 puedes acudir a la **Procuraduría Federal del Consumidor (PROFECO)**, teléfono
 del Consumidor 55 5568 8722, o a profeco.gob.mx.
 
@@ -117,7 +126,6 @@ de Protección al Consumidor.
 
 - **Confirma el RFC y la figura fiscal.** Persona física con actividad
   empresarial o sociedad.
-- **Confirma el procesador de pagos** con tarjeta para nombrarlo.
 - **Los alérgenos hay que cotejarlos contra el BOM real.** Escribí gluten,
   lácteos y frutos secos a partir de las recetas que cargamos, pero quien
   conoce la cocina es Ricardo. Un alérgeno mal declarado es el riesgo más serio

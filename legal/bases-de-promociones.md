@@ -69,7 +69,7 @@ pedido entregado** que incluya al menos una pizza pagada.
 - Si detectamos uso indebido —tarjetas creadas con teléfonos falsos, pedidos
   hechos únicamente para acumular y luego cancelados— podemos cancelar la
   tarjeta, avisando al titular.
-- Cualquier duda: [correo] o WhatsApp.
+- Cualquier duda: mextizza@gmail.com o WhatsApp.
 
 ---
 
@@ -82,9 +82,10 @@ promoción y no honrarla, o cambiar las condiciones sin avisar.
 
 Dos cosas que conviene decidir antes de publicar:
 
-1. **La vigencia "permanente hasta nuevo aviso" te ata.** Si quieres poder
-   apagar el 2x1 de un día para otro, hay que redactarlo con una fecha de
-   término renovable en vez de indefinida. Pregúntaselo al abogado.
+1. **La vigencia queda "permanente hasta nuevo aviso"**, por decisión de Hugo.
+   Apagar o cambiar una promoción exige entonces anunciarlo aquí con
+   anticipación, y los premios ya acumulados se respetan siempre. Que el
+   abogado confirme cuánta anticipación basta.
 2. **La cláusula de uso indebido debería existir antes de necesitarla.**
    Publicarla después de cancelarle la tarjeta a alguien no sirve de nada.
 
