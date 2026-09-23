@@ -920,6 +920,7 @@ const footerEnlaces = {
   'Pizza a domicilio en Atizapán': '/pizza-a-domicilio-atizapan/',
   'Catering con horno': '/catering-pizza-horno-de-lena/',
   'La pizza del mes': '/pizza-del-mes/',
+  'Promociones': '/promociones/',
   'WhatsApp Business': mextizzaWhatsappLink('Hola, quiero hacer un pedido en Mextizza.'),
   'Sitio web': '/',
   'App Mextizza': '/app'
@@ -1006,7 +1007,7 @@ function WebFooter() {
   }, /*#__PURE__*/React.createElement(Icon, {
     name: "facebook",
     size: 19
-  })))), [['Pedidos', ['WhatsApp Business', 'Sitio web', 'App Mextizza']], ['Operación', [MEXTIZZA_FACTS.zona, 'Radio de 3 km', 'Sólo entrega, sin salón']], ['Más', ['Pizza a domicilio en Atizapán', 'Catering con horno', 'La pizza del mes']]].map(([t, items]) => /*#__PURE__*/React.createElement("div", {
+  })))), [['Pedidos', ['WhatsApp Business', 'Sitio web', 'App Mextizza']], ['Operación', [MEXTIZZA_FACTS.zona, 'Radio de 3 km', 'Sólo entrega, sin salón']], ['Más', ['Pizza a domicilio en Atizapán', 'Catering con horno', 'La pizza del mes', 'Promociones']]].map(([t, items]) => /*#__PURE__*/React.createElement("div", {
     key: t
   }, /*#__PURE__*/React.createElement("div", {
     style: {

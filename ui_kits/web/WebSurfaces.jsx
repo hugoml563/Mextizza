@@ -440,6 +440,7 @@ const footerEnlaces = {
   'Pizza a domicilio en Atizapán': '/pizza-a-domicilio-atizapan/',
   'Catering con horno': '/catering-pizza-horno-de-lena/',
   'La pizza del mes': '/pizza-del-mes/',
+  'Promociones': '/promociones/',
   'WhatsApp Business': mextizzaWhatsappLink('Hola, quiero hacer un pedido en Mextizza.'),
   'Sitio web': '/',
   'App Mextizza': '/app',
@@ -467,7 +468,7 @@ function WebFooter() {
             </a>
           </div>
         </div>
-        {[['Pedidos', ['WhatsApp Business', 'Sitio web', 'App Mextizza']], ['Operación', [MEXTIZZA_FACTS.zona, 'Radio de 3 km', 'Sólo entrega, sin salón']], ['Más', ['Pizza a domicilio en Atizapán', 'Catering con horno', 'La pizza del mes']]].map(([t, items]) => (
+        {[['Pedidos', ['WhatsApp Business', 'Sitio web', 'App Mextizza']], ['Operación', [MEXTIZZA_FACTS.zona, 'Radio de 3 km', 'Sólo entrega, sin salón']], ['Más', ['Pizza a domicilio en Atizapán', 'Catering con horno', 'La pizza del mes', 'Promociones']]].map(([t, items]) => (
           <div key={t}>
             <div style={{ fontFamily: 'var(--font-label)', fontSize: 10, letterSpacing: 1, textTransform: 'uppercase', color: 'var(--dorado-masa)', marginBottom: 14 }}>{t}</div>
             {items.map(i => footerEnlaces[i] ? (

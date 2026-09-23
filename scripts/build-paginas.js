@@ -19,7 +19,7 @@ const SITIO = 'https://mextizza.com';
 global.window = {};
 require(path.join(RAIZ, 'ui_kits', 'menu-data.js'));
 require(path.join(RAIZ, 'ui_kits', 'delivery-zone.js'));
-const { MEXTIZZA_MENU, MEXTIZZA_FACTS, MEXTIZZA_SOCIAL, MEXTIZZA_ZONE } = global.window;
+const { MEXTIZZA_MENU, MEXTIZZA_FACTS, MEXTIZZA_SOCIAL, MEXTIZZA_ZONE, MEXTIZZA_2X1 } = global.window;
 
 const esc = (s) => {
   if (s === null || s === undefined || typeof s === 'object') {
@@ -290,6 +290,129 @@ guardamos "por si alguien la pide".</p>
 // Pagina 404 propia. Vercel la usa automaticamente si existe en la raiz, y las
 // reglas de _redirects apuntan aqui lo que .vercelignore mantiene privado.
 // Lleva noindex: es una respuesta de error, no contenido que deba indexarse.
+/* ------------------------------------------------------------ promociones ---
+   Las bases de las promociones NO se escriben a mano. Se generan leyendo las
+   constantes de Code.gs, que es quien de verdad decide si un pedido lleva
+   descuento.
+
+   Una pagina de bases escrita aparte se separa del codigo al primer cambio, y
+   entonces el sitio anuncia una cosa y la caja aplica otra. Eso es exactamente
+   lo que PROFECO sanciona, y ademas es la clase de error que nadie nota hasta
+   que un cliente reclama con la pagina abierta. */
+const codeGs = fs.readFileSync(
+  path.join(RAIZ, 'integration', 'sheets-backend', 'Code.gs'), 'utf8');
+
+function constanteNumerica(nombre) {
+  const m = codeGs.match(new RegExp('const\\s+' + nombre + '\\s*=\\s*(\\d+)\\s*;'));
+  if (!m) throw new Error('No se encontro ' + nombre + ' en Code.gs');
+  return Number(m[1]);
+}
+
+const DIA_2X1 = constanteNumerica('DIA_2X1');
+const HORA_2X1 = constanteNumerica('HORA_2X1');
+
+const bloquePremios = codeGs.match(/const PREMIOS = \{([\s\S]*?)\};/);
+if (!bloquePremios) throw new Error('No se encontro PREMIOS en Code.gs');
+const premios = {};
+for (const linea of bloquePremios[1].split('\n')) {
+  const m = linea.match(/(\w+)\s*:\s*\{\s*dia:\s*(\d+),\s*producto:\s*'([^']+)'/);
+  if (m) premios[m[1]] = { dia: Number(m[2]), producto: m[3] };
+}
+if (!premios.brownie || !premios.pizza) throw new Error('PREMIOS incompleto');
+
+// Que el servidor y el sitio no se hayan separado ya.
+if (MEXTIZZA_2X1.dia !== DIA_2X1 || MEXTIZZA_2X1.desde !== HORA_2X1) {
+  throw new Error('El 2x1 no coincide: menu-data.js dice dia ' + MEXTIZZA_2X1.dia +
+    ' a las ' + MEXTIZZA_2X1.desde + ', y Code.gs dice dia ' + DIA_2X1 +
+    ' a las ' + HORA_2X1);
+}
+
+const nombreProducto = (id) => {
+  const p = MEXTIZZA_MENU.flatMap((g) => g.items).find((x) => x.id === id);
+  if (!p) throw new Error('Producto desconocido en PREMIOS: ' + id);
+  return p.name;
+};
+
+const hora12 = (h) => (h > 12 ? h - 12 : h) + ':00 ' + (h >= 12 ? 'pm' : 'am');
+const DIA_NOMBRE = MEXTIZZA_2X1.enMinuscula;
+
+const promos = documento({
+  slug: 'promociones',
+  title: 'Promociones y tarjeta de recompensas | Mextizza',
+  description: 'Las bases del 2x1 de los ' + DIA_NOMBRE + ' y de la tarjeta de ' +
+    'recompensas de Mextizza: cuándo aplican, qué incluyen y qué no.',
+  jsonld: {
+    '@context': 'https://schema.org', '@type': 'WebPage',
+    name: 'Promociones y tarjeta de recompensas',
+    description: 'Bases de las promociones vigentes de Mextizza.',
+    url: SITIO + '/promociones/',
+    isPartOf: { '@type': 'WebSite', name: 'Mextizza', url: SITIO + '/' },
+  },
+  cuerpo: `
+<h1>Promociones</h1>
+<p>Aquí están las reglas completas de lo que anunciamos. Si algo de lo que
+prometemos no está escrito en esta página, dínoslo y lo arreglamos.</p>
+<p class="dato">Última actualización: ${new Date().toLocaleDateString('es-MX',
+  { day: 'numeric', month: 'long', year: 'numeric' })}</p>
+
+<h2>2x1 de los ${DIA_NOMBRE}</h2>
+<p>Todos los <b>${DIA_NOMBRE} a partir de las ${hora12(HORA_2X1)}</b>, hora del
+centro de México, hasta que cerramos. Al pedir dos pizzas, <b>la de menor precio
+sale gratis</b>.</p>
+<ul>
+  <li>Aplica <b>solo a pizzas</b>. No aplica a bebidas, postres ni complementos.</li>
+  <li>La pizza sin costo es siempre la de <b>menor precio</b> de las dos.</li>
+  <li>Los complementos de la pizza gratis <b>sí se cobran</b>.</li>
+  <li>El descuento lo calcula nuestro sistema con su propio reloj, no con el de
+      tu teléfono. Si tu dispositivo trae mal la hora, manda el nuestro.</li>
+  <li>No se acumula con el premio de la tarjeta en la misma pizza.</li>
+</ul>
+<p>Vigencia permanente hasta nuevo aviso. Cualquier cambio se anuncia aquí
+antes de aplicarse.</p>
+
+<h2>Tarjeta de recompensas</h2>
+<p>Se registra <b>un sello por cada día en que recibes un pedido</b> que incluya
+al menos una pizza pagada. Tu tarjeta se identifica con tu número de teléfono.</p>
+<ul>
+  <li><b>Un solo sello por día</b>, sin importar cuántos pedidos hagas ese día.</li>
+  <li>El sello se registra <b>cuando el pedido se entrega</b>, no cuando lo
+      haces. Un pedido cancelado no suma.</li>
+  <li>En el sello <b>${premios.brownie.dia}</b> te llevas
+      <b>${esc(nombreProducto(premios.brownie.producto))}</b> sin costo.</li>
+  <li>En el sello <b>${premios.pizza.dia}</b> te llevas una
+      <b>${esc(nombreProducto(premios.pizza.producto))}</b> sin costo, y la
+      tarjeta vuelve a empezar.</li>
+  <li>Si no canjeas el premio del sello ${premios.brownie.dia}, se te guarda para
+      un pedido posterior.</li>
+  <li>Los premios <b>no son transferibles</b> ni canjeables por dinero, y se
+      aplican sobre un pedido: no se entregan por separado.</li>
+</ul>
+
+<h2>Reglas para las dos</h2>
+<ul>
+  <li>Aplican dentro de nuestra zona de entrega y en horario de servicio.</li>
+  <li>Podemos modificar o terminar una promoción anunciándolo en esta página.
+      <b>Los premios que ya acumulaste se respetan siempre.</b></li>
+  <li>Si detectamos uso indebido —tarjetas con teléfonos falsos, pedidos hechos
+      solo para acumular y luego cancelados— podemos cancelar la tarjeta, y te
+      avisamos si pasa.</li>
+</ul>
+
+<h2>Dudas o reclamaciones</h2>
+<p>Escríbenos a <a href="mailto:mextizza@gmail.com">mextizza@gmail.com</a> o por
+WhatsApp. Si no resolvemos tu queja, puedes acudir a la Procuraduría Federal del
+Consumidor en <a href="https://www.profeco.gob.mx" target="_blank"
+rel="noopener">profeco.gob.mx</a> o al Teléfono del Consumidor 55 5568 8722.</p>
+
+<div class="cta">
+  <a class="p" href="/">Ver el menú y pedir</a>
+  <a class="s" href="${wa('Hola, tengo una duda sobre las promociones de Mextizza.')}"
+     target="_blank" rel="noopener">Preguntar por WhatsApp</a>
+</div>
+`,
+});
+
+
 const p404 = `<!doctype html>
 <html lang="es">
 <head>
@@ -329,6 +452,7 @@ for (const [slug, html] of [
   ['pizza-a-domicilio-atizapan', p1],
   ['catering-pizza-horno-de-lena', p2],
   ['pizza-del-mes', p3],
+  ['promociones', promos],
 ]) {
   const dir = path.join(RAIZ, slug);
   fs.mkdirSync(dir, { recursive: true });

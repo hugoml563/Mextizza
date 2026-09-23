@@ -28,6 +28,10 @@ const PAGINAS = [
   { ruta: '/pizza-a-domicilio-atizapan/', prioridad: '0.9', frecuencia: 'monthly' },
   { ruta: '/catering-pizza-horno-de-lena/', prioridad: '0.8', frecuencia: 'monthly' },
   { ruta: '/pizza-del-mes/', prioridad: '0.8', frecuencia: 'monthly' },
+  /* Baja prioridad a proposito: no se busca en Google, pero tiene que estar
+     indexada y ser citable. Es la pagina a la que se apunta cuando alguien
+     pregunta que decia la promocion. */
+  { ruta: '/promociones/', prioridad: '0.4', frecuencia: 'monthly' },
 ];
 
 // --------------------------------------------------------------- robots.txt
