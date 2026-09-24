@@ -724,13 +724,22 @@ const cuerpoToken = (token) => ({
   direccion: 'Calle 1', colonia: 'Lomas Lindas', km: 1, pago_metodo: 'Efectivo',
   items: [{ producto_id: 'roni', cantidad: 1 }], idToken: token,
 });
-const conCuenta = ctx.crearOrden_(cuerpoToken('token-bueno'), 'admin');
+// Pedidos de cliente, en horario: el reloj de la prueba se pone en un dia abierto.
+RELOJ = diaAbierto();
+const conCuenta = ctx.crearOrden_(cuerpoToken('token-bueno'));
 comparar('el pedido con cuenta guarda el uid', campoDe(conCuenta.folio, 'uid'), 'uid-hugo');
-const conFalso = ctx.crearOrden_(cuerpoToken('token-falso'), 'admin');
+const conFalso = ctx.crearOrden_(cuerpoToken('token-falso'));
 comparar('un token malo NO tumba la venta', !!conFalso.folio, true);
 comparar('y el pedido entra como invitado', campoDe(conFalso.folio, 'uid'), '');
-const sinCuenta = ctx.crearOrden_(cuerpoToken(undefined), 'admin');
+const sinCuenta = ctx.crearOrden_(cuerpoToken(undefined));
 comparar('sin cuenta todo sigue igual que antes', campoDe(sinCuenta.folio, 'uid'), '');
+
+/* La cocina capturando el pedido de otro: la cuenta abierta en la tablet es
+   la de Ricardo, y no debe pegarse al pedido del cliente. */
+const capturaAdmin = ctx.crearOrden_(cuerpoToken('token-bueno'), 'admin');
+comparar('lo que captura la cocina no se liga a su cuenta', campoDe(capturaAdmin.folio, 'uid'), '');
+const capturaWhats = ctx.crearOrden_(Object.assign(cuerpoToken('token-bueno'), { canal: 'WhatsApp' }));
+comparar('ni aunque llegue por el canal WhatsApp sin token de admin', campoDe(capturaWhats.folio, 'uid'), '');
 
 console.log('\n  ' + ok + ' pruebas ok, ' + mal + ' mal\n');
 process.exit(mal ? 1 : 0);

@@ -1219,8 +1219,12 @@ function crearOrden_(body, nivel) {
   }
   const now = new Date();
   const telefono = body.cliente && body.cliente.telefono;
-  // Opcional: null es un invitado, no un error.
-  const cuenta = usuarioDeToken_(body.idToken);
+  /* Opcional: null es un invitado, no un error. Y si el pedido lo captura la
+     cocina (token de administrador o canal WhatsApp), la cuenta que venga es
+     la de quien captura, no la del cliente: se ignora. Si no, los sellos del
+     cliente acabarian en la cuenta de Ricardo. */
+  const capturaCocina = nivel === 'admin' || body.canal === 'WhatsApp';
+  const cuenta = capturaCocina ? null : usuarioDeToken_(body.idToken);
 
   /* Los precios salen del CATALOGO, no del cuerpo de la peticion. Antes se
      usaba it.precio_unit tal cual: con recompensas de por medio, confiar en el

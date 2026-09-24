@@ -109,7 +109,12 @@ if (!window.__mextizzaSheetsConfigLoaded) {
     /* Si hay sesion, el pedido viaja con el token de la cuenta y el servidor
        lo valida con Google. Sin sesion va como siempre: pedir no requiere
        cuenta, y un token vencido tampoco debe tumbar una venta. */
-    const idToken = window.mextizzaCuenta ? await window.mextizzaCuenta.token() : null;
+    /* En modo captura la cocina registra el pedido de OTRA persona. La cuenta
+       abierta en ese navegador es la de quien captura, no la del cliente, asi
+       que no viaja: si viajara, los sellos y el historial del cliente acabarian
+       en la cuenta de Ricardo. */
+    const idToken = (!comoCocina && canal !== 'WhatsApp' && window.mextizzaCuenta)
+      ? await window.mextizzaCuenta.token() : null;
 
     return mextizzaApiPost('crear_orden', {
       canal,
