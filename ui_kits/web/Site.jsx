@@ -11,6 +11,8 @@ function Site(){
   const [folio,setFolio]=React.useState(()=>{ try{return localStorage.getItem(FOLIO_KEY)||null;}catch(e){return null;} });
   React.useEffect(()=>{ try{ folio?localStorage.setItem(FOLIO_KEY,folio):localStorage.removeItem(FOLIO_KEY); }catch(e){} },[folio]);
   const [open,setOpen]=React.useState(false);
+  const [cuenta,setCuenta]=React.useState(false);
+  const cerrarCuenta=React.useCallback(()=>setCuenta(false),[]);
   const [step,setStep]=React.useState('cart');
   const [added,setAdded]=React.useState(null);
   const [view,setView]=React.useState('home');
@@ -62,6 +64,7 @@ function Site(){
     {modoCaptura && <div style={{background:'#1A1A1A',color:'#F5F0E8',textAlign:'center',padding:'8px 12px',fontFamily:'var(--font-label)',fontSize:11,letterSpacing:1,textTransform:'uppercase'}}>Modo captura · WhatsApp — este pedido se registra como canal WhatsApp</div>}
     <WebHeader count={count} view={view} onNav={nav} onCart={()=>{setOpen(true);setStep('cart');}}
       folio={folio} onSeguir={()=>{setOpen(true);setStep(folio?'done':'buscar');}}
+      onCuenta={()=>setCuenta(true)}
       /* Dentro del encabezado, para que quede a la vista mientras se navega: es
          lo primero que ve quien llega y ahi todavia puede decidir pedir dos
          pizzas. En el checkout el aviso llega tarde. */
@@ -74,6 +77,7 @@ function Site(){
     <WebSocial />
     <WebFooter />
     <AddonsDialog item={custom} onClose={()=>setCustom(null)} onAdd={add} />
+    <DialogoCuenta abierto={cuenta} onCerrar={cerrarCuenta} />
     <CartDrawer open={open} lines={lines} step={step} setStep={setStep} onQty={qty} onClose={()=>setOpen(false)} canal={canal}
       folioActivo={folio} onOrdenCreada={(f)=>{setFolio(f);setLines([]);}} onFolioEncontrado={setFolio}
       onAgregarPremio={(it)=>add(it,1,{},true)} />

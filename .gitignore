@@ -19,3 +19,8 @@ android/local.properties
 # Andamios temporales de composicion de imagen y video. Se crean para una
 # tarea y se borran; nunca deben viajar en el repositorio.
 /.tmp-*/
+
+# Configuracion de Firebase para Android. No es secreta (la misma clave va en
+# el sitio), pero vive junto a la llave de firma: el APK solo se construye en
+# la maquina que tiene las dos. Se vuelve a bajar de la consola de Firebase.
+/android/app/google-services.json

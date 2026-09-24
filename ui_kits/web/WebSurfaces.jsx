@@ -27,7 +27,7 @@ const webShell = {
 /* `cinta` es el anuncio de promocion. Va DENTRO del encabezado para que quede
    pegado arriba junto con el, y despues de la cinta de colores — que se ancla
    al borde inferior de su propio contenedor, no del encabezado entero. */
-function WebHeader({ count, onCart, onNav, view, folio, onSeguir, cinta }) {
+function WebHeader({ count, onCart, onNav, view, folio, onSeguir, cinta, onCuenta }) {
   return (
     <header style={{
       background: 'rgba(245,240,232,0.82)', backdropFilter: 'blur(10px) saturate(140%)', WebkitBackdropFilter: 'blur(10px) saturate(140%)',
@@ -57,6 +57,7 @@ function WebHeader({ count, onCart, onNav, view, folio, onSeguir, cinta }) {
               <span>Seguir</span>
             </button>
           )}
+          {onCuenta && <BotonCuenta onAbrir={onCuenta} />}
           <button onClick={onCart} aria-label="Ver pedido" style={{
             display: 'flex', alignItems: 'center', gap: 8, background: count ? 'var(--rosa-mexicano)' : 'transparent',
             border: count ? 'none' : 'var(--border-frame)', borderRadius: 'var(--radius-sm)', padding: '9px 14px',

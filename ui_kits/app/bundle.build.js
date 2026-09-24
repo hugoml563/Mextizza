@@ -1232,6 +1232,424 @@ Object.assign(window, {
 });
 })();
 
+/* ui_kits/Cuenta.jsx */
+(function () {
+const {
+  Icon
+} = window.MextizzaDesignSystem_8a35ee;
+
+/* Cuenta opcional: el boton del encabezado y el dialogo para entrar.
+
+   Nada de esto se interpone entre el cliente y su pizza. El dialogo solo
+   aparece si alguien toca "Entrar", y lo primero que dice es que es opcional.
+
+   El estado viene de window.mextizzaCuenta (ui_kits/cuenta.js), que es quien
+   habla con Firebase. Aqui solo se pinta. */
+
+function useCuenta() {
+  const [estado, setEstado] = React.useState(() => window.mextizzaCuenta ? window.mextizzaCuenta.estado() : {
+    listo: true,
+    usuario: null,
+    googleDisponible: false
+  });
+  React.useEffect(() => window.mextizzaCuenta ? window.mextizzaCuenta.suscribir(setEstado) : undefined, []);
+  return estado;
+}
+const primerNombre = u => String(u && (u.nombre || u.correo) || '').split(/[\s@]/)[0];
+function BotonCuenta({
+  onAbrir
+}) {
+  const {
+    usuario
+  } = useCuenta();
+  return /*#__PURE__*/React.createElement("button", {
+    onClick: onAbrir,
+    "aria-label": usuario ? 'Mi cuenta' : 'Entrar a mi cuenta',
+    style: {
+      display: 'flex',
+      alignItems: 'center',
+      gap: 7,
+      background: 'transparent',
+      border: 'var(--border-frame)',
+      borderRadius: 'var(--radius-sm)',
+      padding: '9px 12px',
+      color: 'var(--negro-carbon)',
+      cursor: 'pointer',
+      maxWidth: 160,
+      fontFamily: 'var(--font-body)',
+      fontWeight: 600,
+      fontSize: 12,
+      letterSpacing: 1,
+      textTransform: 'uppercase'
+    }
+  }, /*#__PURE__*/React.createElement(Icon, {
+    name: "user",
+    size: 17
+  }), /*#__PURE__*/React.createElement("span", {
+    className: "cuenta-texto",
+    style: {
+      overflow: 'hidden',
+      textOverflow: 'ellipsis',
+      whiteSpace: 'nowrap'
+    }
+  }, usuario ? primerNombre(usuario) : 'Entrar'));
+}
+const estiloCampo = {
+  width: '100%',
+  boxSizing: 'border-box',
+  padding: '12px 12px',
+  marginTop: 5,
+  border: '2px solid var(--negro-carbon)',
+  borderRadius: 'var(--radius-sm)',
+  fontFamily: 'var(--font-body)',
+  fontSize: 16,
+  background: '#FFFFFF',
+  color: 'var(--negro-carbon)'
+};
+const estiloEtiqueta = {
+  display: 'block',
+  marginTop: 12,
+  fontFamily: 'var(--font-body)',
+  fontWeight: 600,
+  fontSize: 12,
+  letterSpacing: 1,
+  textTransform: 'uppercase',
+  color: 'var(--negro-carbon)'
+};
+const estiloPrimario = {
+  width: '100%',
+  marginTop: 16,
+  padding: '13px 14px',
+  minHeight: 48,
+  cursor: 'pointer',
+  background: 'var(--rosa-mexicano)',
+  color: '#FFFFFF',
+  border: 'none',
+  borderRadius: 'var(--radius-sm)',
+  fontFamily: 'var(--font-body)',
+  fontWeight: 700,
+  fontSize: 13,
+  letterSpacing: 1,
+  textTransform: 'uppercase'
+};
+const estiloEnlace = {
+  background: 'none',
+  border: 'none',
+  padding: '8px 0',
+  cursor: 'pointer',
+  color: 'var(--rosa-mexicano-texto)',
+  fontFamily: 'var(--font-body)',
+  fontSize: 13,
+  textDecoration: 'underline'
+};
+function DialogoCuenta({
+  abierto,
+  onCerrar,
+  fijo = true
+}) {
+  const {
+    usuario,
+    googleDisponible
+  } = useCuenta();
+  const [modo, setModo] = React.useState('entrar'); // entrar | crear | recuperar
+  const [nombre, setNombre] = React.useState('');
+  const [correo, setCorreo] = React.useState('');
+  const [clave, setClave] = React.useState('');
+  const [error, setError] = React.useState('');
+  const [aviso, setAviso] = React.useState('');
+  const [ocupado, setOcupado] = React.useState(false);
+  const caja = React.useRef(null);
+  const cerrarRef = React.useRef(null);
+  React.useEffect(() => {
+    if (!abierto) return;
+    // El SDK empieza a bajar mientras la persona decide.
+    window.mextizzaCuenta && window.mextizzaCuenta.precargar();
+    setError('');
+    setAviso('');
+    setClave('');
+    const previo = document.activeElement;
+    if (cerrarRef.current) cerrarRef.current.focus();
+    const alTeclear = e => {
+      if (e.key === 'Escape') {
+        e.preventDefault();
+        onCerrar();
+        return;
+      }
+      if (e.key !== 'Tab' || !caja.current) return;
+      const foco = caja.current.querySelectorAll('button:not([disabled]), [href], input, [tabindex]:not([tabindex="-1"])');
+      if (!foco.length) return;
+      const primero = foco[0];
+      const ultimo = foco[foco.length - 1];
+      if (e.shiftKey && document.activeElement === primero) {
+        e.preventDefault();
+        ultimo.focus();
+      } else if (!e.shiftKey && document.activeElement === ultimo) {
+        e.preventDefault();
+        primero.focus();
+      }
+    };
+    document.addEventListener('keydown', alTeclear);
+    return () => {
+      document.removeEventListener('keydown', alTeclear);
+      try {
+        previo && previo.focus && previo.focus();
+      } catch (e) {}
+    };
+  }, [abierto, onCerrar]);
+  if (!abierto) return null;
+  const C = window.mextizzaCuenta;
+  const correr = async fn => {
+    if (ocupado || !C) return;
+    setOcupado(true);
+    setError('');
+    setAviso('');
+    try {
+      await fn();
+    } catch (e) {
+      setError(C.mensajeDeError(e));
+    } finally {
+      setOcupado(false);
+    }
+  };
+  const enviar = e => {
+    e.preventDefault();
+    if (modo === 'entrar') return correr(() => C.entrar(correo, clave));
+    if (modo === 'crear') return correr(() => C.registrar(nombre, correo, clave));
+    return correr(async () => {
+      await C.recuperar(correo);
+      setAviso('Te mandamos un correo para crear una contraseña nueva. Si no llega en unos minutos, revisa en spam.');
+    });
+  };
+  const etiquetaBoton = modo === 'entrar' ? 'Entrar' : modo === 'crear' ? 'Crear mi cuenta' : 'Mandarme el correo';
+  return /*#__PURE__*/React.createElement("div", {
+    onClick: onCerrar,
+    style: {
+      position: fijo ? 'fixed' : 'absolute',
+      inset: 0,
+      zIndex: 60,
+      background: 'rgba(26,26,26,.62)',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      padding: 18,
+      overflowY: 'auto'
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    ref: caja,
+    role: "dialog",
+    "aria-modal": "true",
+    "aria-labelledby": "cuenta-titulo",
+    onClick: e => e.stopPropagation(),
+    style: {
+      background: 'var(--blanco-hueso)',
+      borderRadius: 'var(--radius-lg)',
+      border: '2px solid var(--negro-carbon)',
+      padding: '24px 22px 20px',
+      width: '100%',
+      maxWidth: 380,
+      position: 'relative',
+      margin: 'auto',
+      boxShadow: '0 18px 50px rgba(0,0,0,.35)'
+    }
+  }, /*#__PURE__*/React.createElement("button", {
+    ref: cerrarRef,
+    onClick: onCerrar,
+    "aria-label": "Cerrar",
+    style: {
+      position: 'absolute',
+      top: 8,
+      right: 8,
+      width: 44,
+      height: 44,
+      display: 'grid',
+      placeItems: 'center',
+      cursor: 'pointer',
+      background: 'transparent',
+      border: 'none',
+      borderRadius: '50%'
+    }
+  }, /*#__PURE__*/React.createElement(Icon, {
+    name: "close",
+    size: 19
+  })), usuario ? /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("h2", {
+    id: "cuenta-titulo",
+    style: {
+      fontFamily: 'var(--font-display)',
+      fontSize: 28,
+      margin: '4px 0 6px'
+    }
+  }, "Hola, ", primerNombre(usuario)), /*#__PURE__*/React.createElement("p", {
+    style: {
+      fontFamily: 'var(--font-body)',
+      fontSize: 14,
+      margin: 0,
+      color: 'var(--gris-tinta, #4A4A4A)'
+    }
+  }, usuario.conGoogle ? 'Entraste con tu cuenta de Google, ' : 'Entraste con ', usuario.correo, "."), /*#__PURE__*/React.createElement("button", {
+    onClick: () => correr(() => C.salir()),
+    disabled: ocupado,
+    style: {
+      ...estiloPrimario,
+      background: 'transparent',
+      color: 'var(--negro-carbon)',
+      border: '2px solid var(--negro-carbon)'
+    }
+  }, ocupado ? /*#__PURE__*/React.createElement("span", {
+    className: "mx-puntos",
+    "aria-label": "Cerrando"
+  }, /*#__PURE__*/React.createElement("i", null), /*#__PURE__*/React.createElement("i", null), /*#__PURE__*/React.createElement("i", null)) : 'Cerrar sesión'), error && /*#__PURE__*/React.createElement("p", {
+    role: "alert",
+    style: {
+      color: 'var(--rosa-mexicano-texto)',
+      fontSize: 13,
+      marginTop: 10
+    }
+  }, error)) : /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("h2", {
+    id: "cuenta-titulo",
+    style: {
+      fontFamily: 'var(--font-display)',
+      fontSize: 28,
+      margin: '4px 0 6px'
+    }
+  }, modo === 'recuperar' ? 'Nueva contraseña' : 'Tu cuenta'), /*#__PURE__*/React.createElement("p", {
+    style: {
+      fontFamily: 'var(--font-body)',
+      fontSize: 14,
+      margin: 0,
+      lineHeight: 1.5
+    }
+  }, modo === 'recuperar' ? 'Escribe tu correo y te mandamos un enlace para crear otra.' : 'Es opcional. Puedes pedir igual sin entrar.'), modo !== 'recuperar' && googleDisponible && /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("button", {
+    onClick: () => correr(() => C.conGoogle()),
+    disabled: ocupado,
+    style: {
+      ...estiloPrimario,
+      background: '#FFFFFF',
+      color: 'var(--negro-carbon)',
+      border: '2px solid var(--negro-carbon)'
+    }
+  }, "Seguir con Google"), /*#__PURE__*/React.createElement("div", {
+    "aria-hidden": "true",
+    style: {
+      display: 'flex',
+      alignItems: 'center',
+      gap: 10,
+      margin: '16px 0 0',
+      fontFamily: 'var(--font-body)',
+      fontSize: 12,
+      color: 'var(--gris-tinta, #4A4A4A)'
+    }
+  }, /*#__PURE__*/React.createElement("span", {
+    style: {
+      flex: 1,
+      height: 1,
+      background: 'rgba(26,26,26,.2)'
+    }
+  }), "o con tu correo", /*#__PURE__*/React.createElement("span", {
+    style: {
+      flex: 1,
+      height: 1,
+      background: 'rgba(26,26,26,.2)'
+    }
+  }))), /*#__PURE__*/React.createElement("form", {
+    onSubmit: enviar,
+    noValidate: true
+  }, modo === 'crear' && /*#__PURE__*/React.createElement("label", {
+    style: estiloEtiqueta
+  }, "Tu nombre", /*#__PURE__*/React.createElement("input", {
+    value: nombre,
+    onChange: e => setNombre(e.target.value),
+    autoComplete: "name",
+    maxLength: 60,
+    style: estiloCampo
+  })), /*#__PURE__*/React.createElement("label", {
+    style: estiloEtiqueta
+  }, "Correo", /*#__PURE__*/React.createElement("input", {
+    type: "email",
+    value: correo,
+    onChange: e => setCorreo(e.target.value),
+    autoComplete: "email",
+    inputMode: "email",
+    required: true,
+    style: estiloCampo
+  })), modo !== 'recuperar' && /*#__PURE__*/React.createElement("label", {
+    style: estiloEtiqueta
+  }, "Contrase\xF1a", /*#__PURE__*/React.createElement("input", {
+    type: "password",
+    value: clave,
+    onChange: e => setClave(e.target.value),
+    autoComplete: modo === 'crear' ? 'new-password' : 'current-password',
+    minLength: modo === 'crear' ? 8 : undefined,
+    required: true,
+    style: estiloCampo
+  }), modo === 'crear' && /*#__PURE__*/React.createElement("span", {
+    style: {
+      display: 'block',
+      marginTop: 5,
+      fontWeight: 400,
+      fontSize: 12,
+      letterSpacing: 0,
+      textTransform: 'none'
+    }
+  }, "M\xEDnimo 8 caracteres.")), error && /*#__PURE__*/React.createElement("p", {
+    role: "alert",
+    style: {
+      color: 'var(--rosa-mexicano-texto)',
+      fontFamily: 'var(--font-body)',
+      fontSize: 13,
+      margin: '12px 0 0'
+    }
+  }, error), aviso && /*#__PURE__*/React.createElement("p", {
+    role: "status",
+    style: {
+      fontFamily: 'var(--font-body)',
+      fontSize: 13,
+      margin: '12px 0 0'
+    }
+  }, aviso), /*#__PURE__*/React.createElement("button", {
+    type: "submit",
+    disabled: ocupado,
+    style: estiloPrimario
+  }, ocupado ? /*#__PURE__*/React.createElement("span", {
+    className: "mx-puntos",
+    "aria-label": "Un momento"
+  }, /*#__PURE__*/React.createElement("i", null), /*#__PURE__*/React.createElement("i", null), /*#__PURE__*/React.createElement("i", null)) : etiquetaBoton)), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: 'flex',
+      justifyContent: 'space-between',
+      flexWrap: 'wrap',
+      gap: 6,
+      marginTop: 8
+    }
+  }, modo === 'entrar' && /*#__PURE__*/React.createElement("button", {
+    style: estiloEnlace,
+    onClick: () => {
+      setModo('crear');
+      setError('');
+      setAviso('');
+    }
+  }, "Crear una cuenta"), modo === 'entrar' && /*#__PURE__*/React.createElement("button", {
+    style: estiloEnlace,
+    onClick: () => {
+      setModo('recuperar');
+      setError('');
+      setAviso('');
+    }
+  }, "Olvid\xE9 mi contrase\xF1a"), modo !== 'entrar' && /*#__PURE__*/React.createElement("button", {
+    style: estiloEnlace,
+    onClick: () => {
+      setModo('entrar');
+      setError('');
+      setAviso('');
+    }
+  }, "Ya tengo cuenta")))));
+}
+Object.assign(window, {
+  useCuenta,
+  BotonCuenta,
+  DialogoCuenta
+});
+})();
+
 /* ui_kits/app/AppScreens.jsx */
 (function () {
 const DS = window.MextizzaDesignSystem_8a35ee;

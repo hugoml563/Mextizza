@@ -63,7 +63,7 @@ const TS_POR_ESTADO = {
   entregada: 't_entregada'
 };
 
-const ORDENES_HEADERS = ['folio', 'canal', 'estado', 'cliente_telefono', 'cliente_nombre', 'direccion', 'colonia', 'km', 'pago_metodo', 'pago_estado', 'subtotal', 'total', 't_recibida', 't_confirmada', 't_horno', 't_lista', 't_camino', 't_entregada', 'reparto', 'notas', 'motivo_cancelacion', 'entrega_tipo', 'descuento', 'sello', 'premio', 'consecutivo', 'backflush'];
+const ORDENES_HEADERS = ['folio', 'canal', 'estado', 'cliente_telefono', 'cliente_nombre', 'direccion', 'colonia', 'km', 'pago_metodo', 'pago_estado', 'subtotal', 'total', 't_recibida', 't_confirmada', 't_horno', 't_lista', 't_camino', 't_entregada', 'reparto', 'notas', 'motivo_cancelacion', 'entrega_tipo', 'descuento', 'sello', 'premio', 'consecutivo', 'backflush', 'uid'];
 const ORDEN_ITEMS_HEADERS = ['linea_id', 'folio', 'producto_id', 'producto_nombre', 'cantidad', 'precio_unit', 'complementos_total', 'importe', 'promocion'];
 const ITEM_COMPLEMENTOS_HEADERS = ['linea_id', 'complemento_id', 'complemento_nombre', 'precio'];
 const PRODUCTOS_HEADERS = ['id', 'nombre', 'descripcion', 'categoria', 'precio', 'activo', 'foto'];
@@ -779,6 +779,58 @@ function rotarTokenPublico() {
  * Antes había un solo token para todo: como se publica junto al código del
  * cliente, cualquiera podía descargarlo y listar los datos personales de todos
  * los pedidos del día, o cancelarlos. */
+/* ================================================================ CUENTAS ===
+   La cuenta de cliente es OPCIONAL. Pedir sin cuenta sigue funcionando igual, y
+   asi debe quedarse: cada paso antes de pagar cuesta pedidos.
+
+   El cliente entra con Firebase y manda su token con el pedido. Aqui NO se le
+   cree: se le pregunta a Google si ese token es de verdad, esta vigente y es de
+   este proyecto (accounts:lookup). Un token inventado, vencido o de otro
+   proyecto regresa null, y el pedido entra como invitado en vez de fallar.
+
+   Esta clave de Firebase NO es secreta: es la misma que ya viaja en el sitio.
+   Lo que protege es que Google valida el token, no que nadie conozca la clave. */
+const FIREBASE_API_KEY = 'AIzaSyBeyO3tDxL3Cb6XGe6kX55VPbNpRSQYees';
+
+function usuarioDeToken_(idToken) {
+  if (!idToken || typeof idToken !== 'string' || idToken.length > 4096) return null;
+
+  /* Cada validacion es una llamada a Google de unos cientos de milisegundos.
+     Se recuerda cinco minutos, bastante menos que la hora que vive un token,
+     para que el mismo cliente no la pague en cada pedido. La llave es el hash
+     del token: el token mismo no se guarda en ningun lado. */
+  const cache = CacheService.getScriptCache();
+  const huella = Utilities.base64EncodeWebSafe(Utilities.computeDigest(
+    Utilities.DigestAlgorithm.SHA_256, idToken, Utilities.Charset.UTF_8));
+  const clave = 'cuenta:' + huella;
+  const guardado = cache.get(clave);
+  if (guardado) return JSON.parse(guardado);
+
+  let res;
+  try {
+    res = UrlFetchApp.fetch(
+      'https://identitytoolkit.googleapis.com/v1/accounts:lookup?key=' + FIREBASE_API_KEY, {
+        method: 'post', contentType: 'application/json',
+        payload: JSON.stringify({ idToken: idToken }), muteHttpExceptions: true
+      });
+  } catch (e) {
+    // Sin red hacia Google, el pedido sigue como invitado.
+    return null;
+  }
+  if (res.getResponseCode() !== 200) return null;
+
+  const u = ((JSON.parse(res.getContentText()) || {}).users || [])[0];
+  if (!u || !u.localId || u.disabled) return null;
+
+  const usuario = {
+    uid: String(u.localId),
+    correo: String(u.email || ''),
+    nombre: String(u.displayName || '')
+  };
+  cache.put(clave, JSON.stringify(usuario), 300);
+  return usuario;
+}
+
 function checkToken_(token) {
   const publico = PropertiesService.getScriptProperties().getProperty('TOKEN');
   const admin = PropertiesService.getScriptProperties().getProperty('TOKEN_ADMIN');
@@ -1163,6 +1215,8 @@ function crearOrden_(body, nivel) {
   }
   const now = new Date();
   const telefono = body.cliente && body.cliente.telefono;
+  // Opcional: null es un invitado, no un error.
+  const cuenta = usuarioDeToken_(body.idToken);
 
   /* Los precios salen del CATALOGO, no del cuerpo de la peticion. Antes se
      usaba it.precio_unit tal cual: con recompensas de por medio, confiar en el
@@ -1253,7 +1307,10 @@ function crearOrden_(body, nivel) {
     sello: hayPizza ? 'pendiente' : 'no',
     premio: premio ? premio.tipo : '',
     // El numero de pedido, para el corte. No viaja al cliente.
-    consecutivo: nf.consecutivo
+    consecutivo: nf.consecutivo,
+    /* La cuenta que hizo el pedido, si entro. Vacio es un invitado. De aqui
+       saldra el historial de pedidos y el cobro seguro de premios. */
+    uid: cuenta ? cuenta.uid : ''
   };
   ordenesSh.appendRow(ORDENES_HEADERS.map(function (h) { return row[h]; }));
 

@@ -86,7 +86,33 @@ const ctx = {
   },
   Logger: { log: () => {} },
   ContentService: { createTextOutput: (t) => ({ setMimeType: () => t }), MimeType: { JSON: 'json' } },
+  /* Google validando tokens de Firebase. La prueba decide que contesta, y
+     cuenta cuantas veces se le pregunto para comprobar el cache. */
+  UrlFetchApp: {
+    fetch: (url, opts) => {
+      GOOGLE.llamadas++;
+      const token = JSON.parse(opts.payload).idToken;
+      const u = GOOGLE.cuentas[token];
+      return u
+        ? { getResponseCode: () => 200, getContentText: () => JSON.stringify({ users: [u] }) }
+        : { getResponseCode: () => 400, getContentText: () => '{"error":{"message":"INVALID_ID_TOKEN"}}' };
+    },
+  },
+  CacheService: {
+    getScriptCache: () => ({
+      get: (k) => (k in CACHE ? CACHE[k] : null),
+      put: (k, v) => { CACHE[k] = v; },
+    }),
+  },
 };
+const GOOGLE = { llamadas: 0, cuentas: {} };
+const CACHE = {};
+Object.assign(ctx.Utilities, {
+  DigestAlgorithm: { SHA_256: 'sha256' },
+  Charset: { UTF_8: 'utf8' },
+  computeDigest: (alg, texto) => Array.from(require('crypto').createHash('sha256').update(texto, 'utf8').digest()),
+  base64EncodeWebSafe: (bytes) => Buffer.from(bytes).toString('base64url'),
+});
 vm.createContext(ctx);
 /* El servicio de recoger esta apagado en produccion (PICKUP_ACTIVO = false),
    pero el codigo sigue completo para cuando se reactive. La suite principal lo
@@ -673,6 +699,38 @@ comparar('cerrada, el token publico no pide', intentar('publico', horaCerrada), 
 comparar('cerrada, sin nivel tampoco', intentar(undefined, horaCerrada), 'cerrada');
 comparar('cerrada, la cocina si captura', intentar('admin', horaCerrada), 'paso');
 comparar('abierta, el publico pide normal', intentar('publico', diaAbierto()), 'paso');
+
+console.log('\nCUENTA OPCIONAL');
+GOOGLE.cuentas['token-bueno'] = { localId: 'uid-hugo', email: 'hugo@ejemplo.com', displayName: 'Hugo' };
+GOOGLE.cuentas['token-apagado'] = { localId: 'uid-apagado', disabled: true };
+GOOGLE.llamadas = 0;
+
+comparar('sin token no se le pregunta a Google', [ctx.usuarioDeToken_(undefined), GOOGLE.llamadas], [null, 0]);
+comparar('un token gigante se descarta sin preguntar', [ctx.usuarioDeToken_('x'.repeat(5000)), GOOGLE.llamadas], [null, 0]);
+
+const u1 = ctx.usuarioDeToken_('token-bueno');
+comparar('un token valido da la cuenta', u1 && u1.uid, 'uid-hugo');
+comparar('y trae su correo', u1 && u1.correo, 'hugo@ejemplo.com');
+const llamadasAntes = GOOGLE.llamadas;
+ctx.usuarioDeToken_('token-bueno');
+comparar('el mismo token no vuelve a preguntar: sale del cache', GOOGLE.llamadas, llamadasAntes);
+comparar('el cache guarda la huella, nunca el token', Object.keys(CACHE).some((k) => k.indexOf('token-bueno') !== -1), false);
+
+comparar('un token inventado no da cuenta', ctx.usuarioDeToken_('token-falso'), null);
+comparar('una cuenta desactivada no da cuenta', ctx.usuarioDeToken_('token-apagado'), null);
+
+const cuerpoToken = (token) => ({
+  canal: 'Web', cliente: { telefono: '5512340000', nombre: 'Prueba cuenta' },
+  direccion: 'Calle 1', colonia: 'Lomas Lindas', km: 1, pago_metodo: 'Efectivo',
+  items: [{ producto_id: 'roni', cantidad: 1 }], idToken: token,
+});
+const conCuenta = ctx.crearOrden_(cuerpoToken('token-bueno'), 'admin');
+comparar('el pedido con cuenta guarda el uid', campoDe(conCuenta.folio, 'uid'), 'uid-hugo');
+const conFalso = ctx.crearOrden_(cuerpoToken('token-falso'), 'admin');
+comparar('un token malo NO tumba la venta', !!conFalso.folio, true);
+comparar('y el pedido entra como invitado', campoDe(conFalso.folio, 'uid'), '');
+const sinCuenta = ctx.crearOrden_(cuerpoToken(undefined), 'admin');
+comparar('sin cuenta todo sigue igual que antes', campoDe(sinCuenta.folio, 'uid'), '');
 
 console.log('\n  ' + ok + ' pruebas ok, ' + mal + ' mal\n');
 process.exit(mal ? 1 : 0);

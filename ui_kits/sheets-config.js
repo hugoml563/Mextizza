@@ -79,7 +79,7 @@ if (!window.__mextizzaSheetsConfigLoaded) {
   };
 
   /** lines: el arreglo de líneas del carrito (misma forma que usan CartDrawer/AppCart) */
-  const mextizzaCrearOrden = ({ canal, lines, entrega, estadoInicial, usarPremio }) => {
+  const mextizzaCrearOrden = async ({ canal, lines, entrega, estadoInicial, usarPremio }) => {
     const items = lines.map(l => ({
       producto_id: l.id,
       nombre: l.name,
@@ -106,6 +106,11 @@ if (!window.__mextizzaSheetsConfigLoaded) {
        saltarse nada. */
     const comoCocina = mextizzaCapturaCocina();
 
+    /* Si hay sesion, el pedido viaja con el token de la cuenta y el servidor
+       lo valida con Google. Sin sesion va como siempre: pedir no requiere
+       cuenta, y un token vencido tampoco debe tumbar una venta. */
+    const idToken = window.mextizzaCuenta ? await window.mextizzaCuenta.token() : null;
+
     return mextizzaApiPost('crear_orden', {
       canal,
       cliente: { telefono: entrega.telefono, nombre: entrega.nombre },
@@ -120,7 +125,8 @@ if (!window.__mextizzaSheetsConfigLoaded) {
       estadoInicial,
       /* Cual premio quiere canjear. Es una PETICION, no una orden: el servidor
          solo lo aplica si la tarjeta de ese telefono de verdad lo tiene. */
-      usarPremio
+      usarPremio,
+      idToken: idToken || undefined
     }, comoCocina);
   };
 
