@@ -814,7 +814,11 @@ function usuarioDeToken_(idToken) {
         payload: JSON.stringify({ idToken: idToken }), muteHttpExceptions: true
       });
   } catch (e) {
-    // Sin red hacia Google, el pedido sigue como invitado.
+    /* Sin red hacia Google, el pedido sigue como invitado. Pero queda escrito:
+       si falta el permiso para llamar servicios externos, el error cae aqui
+       mismo, y sin este registro cada pedido con cuenta entraria como invitado
+       sin que nadie se enterara. Se ve en Apps Script, en Ejecuciones. */
+    console.error('No se pudo validar la cuenta con Google: ' + e);
     return null;
   }
   if (res.getResponseCode() !== 200) return null;
