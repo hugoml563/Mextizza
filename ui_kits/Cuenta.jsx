@@ -55,8 +55,8 @@ const estiloEnlace = {
   fontFamily: 'var(--font-body)', fontSize: 13, textDecoration: 'underline'
 };
 
-function DialogoCuenta({ abierto, onCerrar, fijo = true }) {
-  const { usuario, googleDisponible } = useCuenta();
+function DialogoCuenta({ abierto, onCerrar, fijo = true, telefonoSugerido = '' }) {
+  const { usuario, googleDisponible, telefono: ligado, tarjeta, cargandoTelefono } = useCuenta();
   const [modo, setModo] = React.useState('entrar'); // entrar | crear | recuperar
   const [nombre, setNombre] = React.useState('');
   const [correo, setCorreo] = React.useState('');
@@ -64,6 +64,8 @@ function DialogoCuenta({ abierto, onCerrar, fijo = true }) {
   const [error, setError] = React.useState('');
   const [aviso, setAviso] = React.useState('');
   const [ocupado, setOcupado] = React.useState(false);
+  const [telLigar, setTelLigar] = React.useState('');
+  const [folioLigar, setFolioLigar] = React.useState('');
   const caja = React.useRef(null);
   const cerrarRef = React.useRef(null);
 
@@ -71,7 +73,13 @@ function DialogoCuenta({ abierto, onCerrar, fijo = true }) {
     if (!abierto) return;
     // El SDK empieza a bajar mientras la persona decide.
     window.mextizzaCuenta && window.mextizzaCuenta.precargar();
+    // Los sellos cambian con cada entrega: se piden frescos al abrir.
+    if (usuario && window.mextizzaCuenta && window.mextizzaCuenta.refrescarLigado) window.mextizzaCuenta.refrescarLigado();
     setError(''); setAviso(''); setClave('');
+    setTelLigar(String(telefonoSugerido || '').replace(/\D/g, '').slice(0, 10));
+    /* El folio del ultimo pedido hecho en este navegador, si lo hay: casi
+       siempre es justo el que sirve para probar que el numero es suyo. */
+    try { setFolioLigar(localStorage.getItem('mextizza.web.folio') || ''); } catch (e) { setFolioLigar(''); }
     const previo = document.activeElement;
     if (cerrarRef.current) cerrarRef.current.focus();
     const alTeclear = (e) => {
@@ -145,6 +153,55 @@ function DialogoCuenta({ abierto, onCerrar, fijo = true }) {
             <p style={{ fontFamily: 'var(--font-body)', fontSize: 14, margin: 0, color: 'var(--gris-tinta, #4A4A4A)' }}>
               {usuario.conGoogle ? 'Entraste con tu cuenta de Google, ' : 'Entraste con '}{usuario.correo}.
             </p>
+
+            <div style={{ marginTop: 18, paddingTop: 16, borderTop: '2px dashed rgba(26,26,26,.18)' }}>
+              <div style={{ fontFamily: 'var(--font-body)', fontWeight: 600, fontSize: 12, letterSpacing: 1, textTransform: 'uppercase', color: 'var(--rosa-mexicano-texto)' }}>
+                Tu tarjeta
+              </div>
+              {cargandoTelefono && !ligado ? (
+                <p style={{ fontFamily: 'var(--font-body)', fontSize: 14, margin: '8px 0 0' }}>
+                  <span className="mx-puntos" aria-label="Buscando tu tarjeta"><i></i><i></i><i></i></span>
+                </p>
+              ) : ligado ? (
+                <div style={{ fontFamily: 'var(--font-body)', fontSize: 14, lineHeight: 1.5, marginTop: 6 }}>
+                  <div>Ligada al teléfono <b>{ligado.replace(/(\d{3})(\d{3})(\d{4})/, '$1 $2 $3')}</b>.</div>
+                  {tarjeta && (
+                    <div style={{ marginTop: 4 }}>
+                      {tarjeta.dias === 1 ? 'Llevas 1 sello.' : 'Llevas ' + tarjeta.dias + ' sellos.'}
+                      {tarjeta.pizza && tarjeta.brownie ? ' Tienes una Traviesa y un brownie gratis.' : tarjeta.pizza ? ' Tienes una Traviesa gratis.' : tarjeta.brownie ? ' Tienes un brownie gratis.' : ''}
+                    </div>
+                  )}
+                  <div style={{ marginTop: 4, fontSize: 12.5, color: 'var(--gris-tinta, #4A4A4A)' }}>
+                    Tus premios se cobran solos cuando pides con este número y tu cuenta abierta.
+                  </div>
+                </div>
+              ) : (
+                <form onSubmit={(e) => { e.preventDefault(); correr(async () => {
+                  await C.ligar(telLigar, folioLigar);
+                  setAviso('Listo, tu teléfono quedó ligado. Tus premios ya se cobran con tu cuenta.');
+                }); }} noValidate>
+                  <p style={{ fontFamily: 'var(--font-body)', fontSize: 13.5, lineHeight: 1.5, margin: '6px 0 0' }}>
+                    Tus sellos se juntan con tu teléfono. Para cobrar tus premios desde aquí, liga ese número a tu cuenta. Solo se hace una vez.
+                  </p>
+                  <label style={estiloEtiqueta}>Tu teléfono
+                    <input value={telLigar} onChange={(e) => setTelLigar(e.target.value.replace(/\D/g, '').slice(0, 10))}
+                      inputMode="tel" autoComplete="tel-national" placeholder="10 dígitos" style={estiloCampo} />
+                  </label>
+                  <label style={estiloEtiqueta}>Folio de un pedido entregado
+                    <input value={folioLigar} onChange={(e) => setFolioLigar(e.target.value.toUpperCase())}
+                      autoCapitalize="characters" placeholder="MX-XXXXXX" style={estiloCampo} />
+                    <span style={{ display: 'block', marginTop: 5, fontWeight: 400, fontSize: 12, letterSpacing: 0, textTransform: 'none' }}>
+                      Viene en la pantalla de seguimiento de tu pedido. Así sabemos que el número es tuyo.
+                    </span>
+                  </label>
+                  {aviso && <p role="status" style={{ fontFamily: 'var(--font-body)', fontSize: 13, margin: '12px 0 0' }}>{aviso}</p>}
+                  <button type="submit" disabled={ocupado} style={estiloPrimario}>
+                    {ocupado ? <span className="mx-puntos" aria-label="Ligando"><i></i><i></i><i></i></span> : 'Ligar mi teléfono'}
+                  </button>
+                </form>
+              )}
+            </div>
+
             <button onClick={() => correr(() => C.salir())} disabled={ocupado}
               style={{ ...estiloPrimario, background: 'transparent', color: 'var(--negro-carbon)', border: '2px solid var(--negro-carbon)' }}>
               {ocupado ? <span className="mx-puntos" aria-label="Cerrando"><i></i><i></i><i></i></span> : 'Cerrar sesión'}

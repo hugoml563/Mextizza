@@ -220,8 +220,61 @@ const PREMIO_PRODUCTOS = { brownie: 'chocolatoso', pizza: 'traviesa' };
 /* agregado: el id del producto que ESTE componente metio al carrito con el
    boton del premio. Importa para saber que se puede retirar: si el cliente ya
    traia un brownie porque lo queria comprar, apagar el canje no debe quitarselo. */
-function CanjeTarjeta({ tarjeta, lines, valor, onChange, onAgregar, onQuitar, agregado, style }) {
+function CanjeTarjeta({ tarjeta, lines, valor, onChange, onAgregar, onQuitar, agregado, style, telefono, sinCuenta }) {
+  /* Cobrar un premio pide la cuenta duena de ese telefono: el servidor no lo
+     aplica de otro modo. Aqui se refleja lo mismo, para no ofrecer algo que se
+     va a cobrar completo. Y se aprovecha el momento: es cuando alguien tiene
+     mas razones para entrar a su cuenta. */
+  const cuenta = typeof useCuenta === 'function' ? useCuenta() : { usuario: null, telefono: '' };
+  const [dialogo, setDialogo] = React.useState(false);
+  const cerrarDialogo = React.useCallback(() => setDialogo(false), []);
+  const tel = String(telefono || '').replace(/\D/g, '');
+  // La cocina capturando un pedido de WhatsApp no necesita cuenta: el chat ya
+  // prueba de quien es el numero, y el servidor lo acepta con su token.
+  const puedeCobrar = !!sinCuenta || !!(cuenta.usuario && cuenta.telefono && cuenta.telefono === tel);
+  React.useEffect(() => {
+    if (puedeCobrar || !valor) return;
+    // Si se pierde el permiso a medio checkout (cerro sesion, cambio el
+    // telefono), el regalo que se metio al carrito sale con el canje.
+    if (agregado && onQuitar) onQuitar(agregado);
+    if (onChange) onChange(null);
+  }, [puedeCobrar, valor]);
+
   if (!tarjeta) return null;
+
+  if (!puedeCobrar && (tarjeta.pizza || tarjeta.brownie)) {
+    const articulo = tarjeta.pizza && tarjeta.brownie ? 'una Traviesa y un brownie' : tarjeta.pizza ? 'una Traviesa' : 'un brownie';
+    const ajeno = cuenta.usuario && cuenta.telefono && cuenta.telefono !== tel;
+    return (
+      <div style={{
+        border: '2px solid var(--rosa-mexicano)', borderRadius: 'var(--radius-md)',
+        background: 'var(--rosa-tinte)', padding: '12px 14px', ...style,
+      }}>
+        <div style={{
+          fontFamily: 'var(--font-label)', fontSize: 10, letterSpacing: 1.3,
+          textTransform: 'uppercase', color: 'var(--rosa-mexicano-texto)', marginBottom: 6,
+        }}>Tu tarjeta tiene premio</div>
+        <p style={{ fontFamily: 'var(--font-body)', fontSize: 13.5, lineHeight: 1.5, margin: 0, color: 'var(--text-body)' }}>
+          {ajeno
+            ? 'Este teléfono tiene ' + articulo + ' gratis, pero tu cuenta tiene ligado otro número.'
+            : cuenta.usuario
+              ? 'Tienes ' + articulo + ' gratis. Liga este teléfono a tu cuenta para cobrarlo; solo se hace una vez.'
+              : 'Tienes ' + articulo + ' gratis. Entra con tu cuenta para cobrarlo: tus sellos te esperan.'}
+        </p>
+        {!ajeno && (
+          <button type="button" onClick={() => setDialogo(true)} style={{
+            display: 'block', width: '100%', marginTop: 10, padding: '10px 12px', cursor: 'pointer',
+            borderRadius: 'var(--radius-sm)', border: '2px solid var(--rosa-mexicano)',
+            background: 'var(--surface-card)', color: 'var(--rosa-mexicano-texto)',
+            fontFamily: 'var(--font-body)', fontWeight: 700, fontSize: 13, letterSpacing: 0.6, textTransform: 'uppercase',
+          }}>{cuenta.usuario ? 'Ligar mi teléfono' : 'Entrar para cobrarlo'}</button>
+        )}
+        {typeof DialogoCuenta === 'function' && (
+          <DialogoCuenta abierto={dialogo} onCerrar={cerrarDialogo} telefonoSugerido={tel} />
+        )}
+      </div>
+    );
+  }
 
   const enCarrito = (id) => (lines || []).some((l) => l.id === id);
   const disponibles = [];

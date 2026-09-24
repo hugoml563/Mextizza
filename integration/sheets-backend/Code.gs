@@ -68,7 +68,7 @@ const ORDEN_ITEMS_HEADERS = ['linea_id', 'folio', 'producto_id', 'producto_nombr
 const ITEM_COMPLEMENTOS_HEADERS = ['linea_id', 'complemento_id', 'complemento_nombre', 'precio'];
 const PRODUCTOS_HEADERS = ['id', 'nombre', 'descripcion', 'categoria', 'precio', 'activo', 'foto'];
 const COMPLEMENTOS_HEADERS = ['id', 'nombre', 'grupo', 'precio', 'activo'];
-const CLIENTES_HEADERS = ['telefono', 'nombre', 'direccion', 'colonia', 'notas', 'pedidos', 'dias_ciclo', 'ultimo_dia', 'brownie_usado', 'pizza_usada', 'ciclos', 'brownie_guardado'];
+const CLIENTES_HEADERS = ['telefono', 'nombre', 'direccion', 'colonia', 'notas', 'pedidos', 'dias_ciclo', 'ultimo_dia', 'brownie_usado', 'pizza_usada', 'ciclos', 'brownie_guardado', 'uid'];
 const CATERING_HEADERS = ['folio', 'nombre', 'telefono', 'personas', 'fecha_evento', 'notas', 'estado', 'creado_en'];
 
 const INSUMOS_HEADERS = ['id', 'nombre', 'uom', 'categoria', 'tipo', 'costo_promedio', 'stock', 'stock_minimo', 'rinde', 'activo', 'colchon'];
@@ -964,6 +964,12 @@ function doPost(e) {
         requiereAdmin_(nivel);
         result = registrarConteo_(body, leerInsumos_());
         break;
+      case 'ligar_telefono':
+        result = ligarTelefono_(body);
+        break;
+      case 'mi_cuenta':
+        result = miCuenta_(body);
+        break;
       case 'solicitar_catering':
         result = crearSolicitudCatering_(body);
         break;
@@ -1205,6 +1211,125 @@ function estaAbierto_(ahora) {
   return HORARIO.dias.indexOf(dia) !== -1 && hora >= HORARIO.desde && hora < HORARIO.hasta;
 }
 
+/* ======================================================= TARJETA Y CUENTA ===
+   Los sellos se juntan por TELEFONO, con cuenta o sin ella. Ganar un sello no
+   se puede robar: quien pide con el numero de otro paga su pizza y el sello se
+   lo regala a ese otro.
+
+   Lo que si se podia robar era COBRAR. Bastaba saber el telefono de alguien
+   para pedir con su brownie gratis. Por eso cobrar un premio en la web o la
+   app pide una cuenta, y que esa cuenta sea la duena del telefono.
+
+   Un telefono se liga a una cuenta una sola vez, probando que es tuyo con el
+   folio de un pedido entregado a ese numero. El folio solo lo ve quien hizo el
+   pedido, y su parte aleatoria no se adivina. Es la prueba mas barata que hay:
+   un SMS cuesta, y este no.
+
+   Por WhatsApp no hace falta nada de esto: la cocina aplica el premio desde el
+   modo captura, y el chat ya prueba de quien es el numero. */
+
+const LIGAR_INTENTOS_MAX = 5;
+
+const soloDigitos_ = (v) => String(v == null ? '' : v).replace(/\D/g, '');
+
+/* El uid dueno de un telefono, o '' si nadie lo ha ligado. */
+function duenoDeTelefono_(telefono) {
+  const tel = soloDigitos_(telefono);
+  if (!tel) return '';
+  const data = sheet_(SHEETS.clientes).getDataRange().getValues();
+  const cUid = CLIENTES_HEADERS.indexOf('uid');
+  for (let r = 1; r < data.length; r++) {
+    if (soloDigitos_(data[r][0]) === tel) return String(data[r][cUid] || '');
+  }
+  return '';
+}
+
+/* El telefono que tiene ligado una cuenta, o '' si todavia ninguno. */
+function telefonoDeCuenta_(uid) {
+  if (!uid) return '';
+  const data = sheet_(SHEETS.clientes).getDataRange().getValues();
+  const cUid = CLIENTES_HEADERS.indexOf('uid');
+  for (let r = 1; r < data.length; r++) {
+    if (String(data[r][cUid] || '') === uid) return soloDigitos_(data[r][0]);
+  }
+  return '';
+}
+
+/* Liga un telefono a la cuenta de quien lo pide. Todos los rechazos dicen que
+   hacer, porque del otro lado hay alguien con un premio esperando. */
+function ligarTelefono_(body) {
+  const cuenta = usuarioDeToken_(body.idToken);
+  if (!cuenta) throw new Error('Entra con tu cuenta para ligar tu teléfono.');
+
+  const tel = soloDigitos_(body.telefono);
+  if (tel.length !== 10) throw new Error('Escribe tu teléfono a 10 dígitos.');
+  const folio = String(body.folio || '').trim().toUpperCase();
+  if (!folio) throw new Error('Escribe el folio de uno de tus pedidos.');
+
+  /* Un folio tiene seis caracteres al azar: adivinarlo a dos segundos por
+     intento no es realista. Aun asi se corta a los cinco fallos por hora, para
+     que nadie lo intente siquiera. */
+  const cache = CacheService.getScriptCache();
+  const claveIntentos = 'ligar:' + cuenta.uid;
+  const fallos = Number(cache.get(claveIntentos)) || 0;
+  if (fallos >= LIGAR_INTENTOS_MAX) {
+    throw new Error('Demasiados intentos. Espera una hora o escríbenos por WhatsApp.');
+  }
+  const fallar = (mensaje) => {
+    cache.put(claveIntentos, String(fallos + 1), 3600);
+    throw new Error(mensaje);
+  };
+
+  const ya = telefonoDeCuenta_(cuenta.uid);
+  if (ya === tel) return { telefono: tel, tarjeta: premiosDe_(leerTarjeta_(tel), premiosReservados_(tel)) };
+  if (ya) throw new Error('Tu cuenta ya tiene otro teléfono ligado. Si cambiaste de número, escríbenos por WhatsApp.');
+
+  const dueno = duenoDeTelefono_(tel);
+  if (dueno && dueno !== cuenta.uid) {
+    // Cuenta como fallo: si no, se podria probar numero por numero cuales
+    // tienen cuenta.
+    fallar('Ese teléfono ya está ligado a otra cuenta. Si es tuyo, escríbenos por WhatsApp.');
+  }
+
+  // El folio tiene que ser de un pedido ENTREGADO a ese mismo telefono.
+  const ordenes = sheet_(SHEETS.ordenes).getDataRange().getValues();
+  const cTel = ORDENES_HEADERS.indexOf('cliente_telefono');
+  const cEstado = ORDENES_HEADERS.indexOf('estado');
+  let valido = false;
+  for (let r = 1; r < ordenes.length; r++) {
+    if (String(ordenes[r][0] || '').trim().toUpperCase() !== folio) continue;
+    valido = soloDigitos_(ordenes[r][cTel]) === tel && String(ordenes[r][cEstado]) === 'entregada';
+    break;
+  }
+  if (!valido) {
+    fallar('Ese folio no coincide con un pedido entregado a ese teléfono. Revísalo en la pantalla de seguimiento.');
+  }
+
+  const sh = sheet_(SHEETS.clientes);
+  const data = sh.getDataRange().getValues();
+  const cUid = CLIENTES_HEADERS.indexOf('uid');
+  for (let r = 1; r < data.length; r++) {
+    if (soloDigitos_(data[r][0]) !== tel) continue;
+    sh.getRange(r + 1, cUid + 1).setValue(cuenta.uid);
+    cache.put(claveIntentos, '0', 60);
+    return { telefono: tel, tarjeta: premiosDe_(leerTarjeta_(tel), premiosReservados_(tel)) };
+  }
+  // Un pedido entregado siempre deja renglon de cliente; si no esta, algo raro paso.
+  throw new Error('No encontramos tu tarjeta. Escríbenos por WhatsApp.');
+}
+
+/* Lo que la pantalla de cuenta necesita saber: que telefono tiene ligado y
+   como va su tarjeta. */
+function miCuenta_(body) {
+  const cuenta = usuarioDeToken_(body.idToken);
+  if (!cuenta) throw new Error('Entra con tu cuenta.');
+  const tel = telefonoDeCuenta_(cuenta.uid);
+  return {
+    telefono: tel,
+    tarjeta: tel ? premiosDe_(leerTarjeta_(tel), premiosReservados_(tel)) : null
+  };
+}
+
 function crearOrden_(body, nivel) {
   /* El horario es una regla para los clientes, no para la cocina. Ricardo
      recibe pedidos por telefono y por WhatsApp antes de abrir, y el sistema
@@ -1260,7 +1385,13 @@ function crearOrden_(body, nivel) {
   });
   if (!lineas.length) throw new Error('El pedido va vacio');
 
-  const premio = aplicarPromos_(lineas, telefono, body.usarPremio, now);
+  /* Cobrar un premio de la tarjeta: la cocina (token de administrador, que
+     solo vive en su navegador) o la cuenta duena de ese telefono. El canal
+     WhatsApp con token publico NO basta: cualquiera puede escribir ese canal
+     en la peticion. El 2x1 no pasa por aqui, lo decide el reloj. */
+  const puedeCobrar = nivel === 'admin' ||
+    !!(cuenta && telefono && duenoDeTelefono_(telefono) === cuenta.uid);
+  const premio = aplicarPromos_(lineas, telefono, puedeCobrar ? body.usarPremio : null, now);
 
   const nf = nextFolio_();
   const folio = nf.folio;
@@ -1331,6 +1462,8 @@ function crearOrden_(body, nivel) {
 
   return {
     folio: folio, premio: premio, tarjeta: tarjeta,
+    // Se pidio un premio sin la cuenta duena del telefono: se cobro completo.
+    premioBloqueado: !!(body.usarPremio && !puedeCobrar),
     selloPendiente: hayPizza,
     entrega_tipo: row.entrega_tipo,
     descuento: descuento,

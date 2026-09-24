@@ -324,7 +324,7 @@ function CartDrawer({ open, lines, onClose, onQty, step, setStep, canal = 'Web',
             <>
               <DeliveryForm compact attempted={attempted} onValidChange={setReady} onDataChange={setEntrega} />
               <Aviso2x1 activo={typeof mextizzaEs2x1 === 'function' && mextizzaEs2x1()} style={{ marginTop: 12 }} />
-              <CanjeTarjeta tarjeta={tarjetaPrevia} lines={lines} valor={usarPremio}
+              <CanjeTarjeta tarjeta={tarjetaPrevia} lines={lines} valor={usarPremio} telefono={tel10} sinCuenta={comoCocina}
                 onChange={setUsarPremio} onAgregar={agregarPremio} onQuitar={quitarPremio}
                 agregado={premioAgregado} style={{ marginTop: 12 }} />
               {tarjetaPrevia && <TarjetaPremios tarjeta={tarjetaPrevia} style={{ marginTop: 12 }} />}

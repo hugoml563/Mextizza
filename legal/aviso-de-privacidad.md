@@ -29,6 +29,12 @@ recabamos:
 - Las indicaciones que nos dejes para la entrega
 - El historial de tus pedidos, para la tarjeta de recompensas
 
+Si decides **crear una cuenta** (es opcional; puedes pedir sin ella), además
+recabamos tu correo electrónico, tu nombre y un identificador de la cuenta.
+Si entras con Google, recibimos de Google tu nombre y tu correo; no vemos tu
+contraseña. Si ligas tu teléfono a la cuenta para cobrar premios, guardamos
+la relación entre los dos.
+
 **No recabamos datos sensibles**, ni datos financieros o patrimoniales. No
 guardamos números de tarjeta: los pagos con tarjeta los procesa **Mercado
 Pago** y nosotros solo vemos si el pedido quedó pagado o no.
@@ -66,6 +72,9 @@ Los compartimos únicamente con:
   datos se almacenan en sus servidores, que están fuera de México. Al hacer un
   pedido aceptas esta transferencia internacional, que es necesaria para
   prestarte el servicio.
+- **Google (Firebase Authentication)**, si creas una cuenta: guarda tu correo,
+  tu nombre y tu contraseña cifrada, o tu inicio de sesión con Google, en
+  servidores fuera de México.
 - **Mercado Pago**, cuando eliges pagar con tarjeta. Tus datos de pago los
   recibe y trata directamente Mercado Pago conforme a su propio aviso de
   privacidad; nosotros no los vemos ni los guardamos.

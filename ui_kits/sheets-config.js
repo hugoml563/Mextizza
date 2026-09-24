@@ -162,6 +162,18 @@ if (!window.__mextizzaSheetsConfigLoaded) {
   const mextizzaInvConteo = ({ insumo_id, contado, nota }) =>
     mextizzaApiPost('inv_conteo', { insumo_id, contado, nota }, true);
 
+  /* Acciones de la cuenta: sin sesion no hay nada que mandar. El servidor
+     valida el token con Google; aqui solo se adjunta. */
+  const conCuenta = async (action, extra) => {
+    const idToken = window.mextizzaCuenta ? await window.mextizzaCuenta.token() : null;
+    if (!idToken) throw new Error('Entra con tu cuenta.');
+    return mextizzaApiPost(action, { ...extra, idToken });
+  };
+  /** Liga un telefono a la cuenta, probando que es suyo con el folio de un pedido entregado. */
+  const mextizzaLigarTelefono = ({ telefono, folio }) => conCuenta('ligar_telefono', { telefono, folio });
+  /** El telefono ligado a la cuenta y su tarjeta. */
+  const mextizzaMiCuenta = () => conCuenta('mi_cuenta', {});
+
   const mextizzaSolicitarCatering = ({ nombre, telefono, personas, fecha_evento, notas }) =>
     mextizzaApiPost('solicitar_catering', { nombre, telefono, personas, fecha_evento, notas });
 
@@ -175,5 +187,5 @@ if (!window.__mextizzaSheetsConfigLoaded) {
 
   const mextizzaTarjeta = (telefono) => mextizzaApiGet('tarjeta', { telefono: telefono || '' });
 
-  Object.assign(window, { mextizzaPickup, mextizzaTarjeta, mextizzaCrearOrden, mextizzaAvanzarEstado, mextizzaCancelarOrden, mextizzaEstadoOrden, mextizzaEstadoPorTelefono, mextizzaCancelarPorCliente, mextizzaListarAbiertas, mextizzaListarHoy, mextizzaSolicitarCatering, mextizzaTokenAdmin, mextizzaGuardarTokenAdmin, mextizzaOlvidarTokenAdmin, mextizzaCapturaCocina, mextizzaInvEstado, mextizzaInvCompra, mextizzaInvLote, mextizzaInvMerma, mextizzaInvConteo });
+  Object.assign(window, { mextizzaPickup, mextizzaTarjeta, mextizzaCrearOrden, mextizzaAvanzarEstado, mextizzaCancelarOrden, mextizzaEstadoOrden, mextizzaEstadoPorTelefono, mextizzaCancelarPorCliente, mextizzaListarAbiertas, mextizzaListarHoy, mextizzaSolicitarCatering, mextizzaTokenAdmin, mextizzaGuardarTokenAdmin, mextizzaOlvidarTokenAdmin, mextizzaCapturaCocina, mextizzaInvEstado, mextizzaInvCompra, mextizzaInvLote, mextizzaInvMerma, mextizzaInvConteo, mextizzaLigarTelefono, mextizzaMiCuenta });
 }

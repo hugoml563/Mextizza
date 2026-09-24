@@ -183,6 +183,21 @@ function entregar(folio) {
   throw new Error('no llegue a entregada con ' + folio);
 }
 
+/* Canjear un premio exige la cuenta duena del telefono. Las pruebas de la
+   matematica de premios no son sobre ligar cuentas (eso se prueba aparte, con
+   folios de verdad), asi que aqui se liga directo en la hoja. */
+function asegurarCuenta(tel) {
+  const token = 'tok-' + tel;
+  GOOGLE.cuentas[token] = { localId: 'uid-' + tel, email: tel + '@prueba.mx' };
+  const filas = hojas[SHEETS.clientes].filas;
+  const cUid = CLIENTES_HEADERS.indexOf('uid');
+  let fila = filas.find((f, i) => i > 0 && String(f[0]) === String(tel));
+  if (!fila) { fila = [tel]; filas.push(fila); }
+  while (fila.length <= cUid) fila.push('');
+  fila[cUid] = 'uid-' + tel;
+  return token;
+}
+
 function pedir(items, opts) {
   opts = opts || {};
   if (opts.cuando) RELOJ = opts.cuando;
@@ -194,6 +209,7 @@ function pedir(items, opts) {
     items: items,
     usarPremio: opts.usarPremio,
     entrega_tipo: opts.entrega_tipo,
+    idToken: (opts.usarPremio && !opts.invitado) ? asegurarCuenta(tel) : undefined,
   });
   if (opts.entregar !== false) entregar(r.folio);
   // r.tarjeta viene del momento de pedir; se reemplaza por como quedo despues.
@@ -760,6 +776,84 @@ comparar('a las 10:30 pm de CDMX sigue en el tablero el pedido de las 9', folios
 RELOJ = new Date(Date.UTC(2026, 8, 17, 6 + 17));   // jueves 5 pm CDMX
 comparar('al dia siguiente de CDMX ya no aparece', ctx.listarHoy_().map((o) => o.folio).includes(deLaNoche.folio), false);
 if (tzAntes === undefined) delete process.env.TZ; else process.env.TZ = tzAntes;
+}
+
+console.log('\nCOBRAR UN PREMIO PIDE LA CUENTA DUENA DEL TELEFONO');
+{
+  // Junta cuatro sellos entregados en dias distintos y devuelve sus folios.
+  const juntar4 = (tel) => {
+    const folios = [];
+    let g = 0;
+    while (tarjetaDe(tel).dias < 4) {
+      if (++g > 40) throw new Error('no llegue a 4 sellos con ' + tel);
+      const d = DIA(cursor++);
+      if (!ctx.estaAbierto_(d)) continue;
+      folios.push(pedir([{ producto_id: 'roni', cantidad: 1 }], { cuando: d, tel }).folio);
+    }
+    return folios;
+  };
+  const TEL_K = '5544443333';
+  const foliosK = juntar4(TEL_K);
+  comparar('con 4 sellos la tarjeta tiene brownie', tarjetaDe(TEL_K).brownie, true);
+
+  const conBrownie = [{ producto_id: 'roni', cantidad: 1 }, { producto_id: 'chocolatoso', cantidad: 1 }];
+  const pedirCon = (tel, token, nivel, canal) => ctx.crearOrden_({
+    canal: canal || 'Web', cliente: { telefono: tel, nombre: 'Prueba premio' },
+    direccion: 'Calle 1', colonia: 'Lomas Lindas', km: 1, pago_metodo: 'Efectivo',
+    items: conBrownie, usarPremio: 'brownie', idToken: token,
+  }, nivel);
+
+  RELOJ = diaAbierto();
+  const invitado = pedirCon(TEL_K);
+  comparar('un invitado no cobra el premio aunque sepa el telefono', invitado.premio, null);
+  comparar('y el servidor dice por que', invitado.premioBloqueado, true);
+  comparar('se cobra completo', campoDe(invitado.folio, 'total'), campoDe(invitado.folio, 'subtotal'));
+
+  GOOGLE.cuentas['tok-k'] = { localId: 'uid-k', email: 'k@prueba.mx' };
+  comparar('con cuenta pero sin ligar el telefono, tampoco', pedirCon(TEL_K, 'tok-k').premio, null);
+  comparar('escribir canal WhatsApp en la peticion no basta', pedirCon(TEL_K, undefined, undefined, 'WhatsApp').premio, null);
+  comparar('la tarjeta sigue intacta despues de los intentos', tarjetaDe(TEL_K).brownie, true);
+
+  const ligar = (token, tel, folio) => {
+    try { return ctx.ligarTelefono_({ idToken: token, telefono: tel, folio }); }
+    catch (e) { return String(e.message || e); }
+  };
+  comparar('sin cuenta no se liga', /Entra con tu cuenta/.test(ligar(undefined, TEL_K, foliosK[0])), true);
+  comparar('con un pedido que no se ha entregado, no', /no coincide/.test(ligar('tok-k', TEL_K, invitado.folio)), true);
+  const folioAjeno = pedir([{ producto_id: 'roni', cantidad: 1 }], { cuando: diaAbierto(), tel: '5544442222' }).folio;
+  comparar('con el folio de otro telefono, no', /no coincide/.test(ligar('tok-k', TEL_K, folioAjeno)), true);
+
+  const ligado = ligar('tok-k', TEL_K, '  ' + foliosK[0].toLowerCase() + ' ');
+  comparar('con el folio de un pedido entregado a ese numero, si', ligado && ligado.telefono, TEL_K);
+  comparar('sin importar mayusculas ni espacios', typeof ligado, 'object');
+  comparar('queda escrito en la hoja de clientes', ctx.duenoDeTelefono_(TEL_K), 'uid-k');
+  comparar('repetirlo no hace dano', ligar('tok-k', TEL_K, foliosK[1]).telefono, TEL_K);
+
+  GOOGLE.cuentas['tok-intruso'] = { localId: 'uid-intruso' };
+  comparar('otra cuenta no se puede quedar con ese telefono', /ligado a otra cuenta/.test(ligar('tok-intruso', TEL_K, foliosK[1])), true);
+  comparar('y una cuenta con telefono no liga un segundo', /ya tiene otro/.test(ligar('tok-k', '5544442222', folioAjeno)), true);
+
+  RELOJ = diaAbierto();
+  const cobrado = pedirCon(TEL_K, 'tok-k');
+  comparar('ya ligado, el premio se cobra', cobrado.premio && cobrado.premio.tipo, 'tarjeta:brownie');
+  comparar('sin aviso de bloqueo', cobrado.premioBloqueado, false);
+
+  const mia = ctx.miCuenta_({ idToken: 'tok-k' });
+  comparar('mi cuenta dice el telefono y trae la tarjeta', [mia.telefono, !!mia.tarjeta], [TEL_K, true]);
+  comparar('una cuenta sin ligar no ve tarjeta', ctx.miCuenta_({ idToken: 'tok-intruso' }).telefono, '');
+
+  const TEL_W = '5544441111';
+  juntar4(TEL_W);
+  RELOJ = diaAbierto();
+  const cocina = pedirCon(TEL_W, undefined, 'admin', 'WhatsApp');
+  comparar('la cocina lo aplica sin cuenta: el chat ya prueba de quien es el numero',
+    cocina.premio && cocina.premio.tipo, 'tarjeta:brownie');
+
+  /* Un folio tiene seis caracteres al azar y cada intento tarda segundos; aun
+     asi se corta a los cinco fallos, para que nadie lo intente. */
+  GOOGLE.cuentas['tok-bruto'] = { localId: 'uid-bruto' };
+  for (let i = 0; i < 5; i++) ligar('tok-bruto', TEL_W, 'MX-NOEXISTE' + i);
+  comparar('al sexto intento fallido se planta', /Demasiados intentos/.test(ligar('tok-bruto', TEL_W, 'MX-OTRO')), true);
 }
 
 console.log('\n  ' + ok + ' pruebas ok, ' + mal + ' mal\n');

@@ -915,9 +915,85 @@ function CanjeTarjeta({
   onAgregar,
   onQuitar,
   agregado,
-  style
+  style,
+  telefono,
+  sinCuenta
 }) {
+  /* Cobrar un premio pide la cuenta duena de ese telefono: el servidor no lo
+     aplica de otro modo. Aqui se refleja lo mismo, para no ofrecer algo que se
+     va a cobrar completo. Y se aprovecha el momento: es cuando alguien tiene
+     mas razones para entrar a su cuenta. */
+  const cuenta = typeof useCuenta === 'function' ? useCuenta() : {
+    usuario: null,
+    telefono: ''
+  };
+  const [dialogo, setDialogo] = React.useState(false);
+  const cerrarDialogo = React.useCallback(() => setDialogo(false), []);
+  const tel = String(telefono || '').replace(/\D/g, '');
+  // La cocina capturando un pedido de WhatsApp no necesita cuenta: el chat ya
+  // prueba de quien es el numero, y el servidor lo acepta con su token.
+  const puedeCobrar = !!sinCuenta || !!(cuenta.usuario && cuenta.telefono && cuenta.telefono === tel);
+  React.useEffect(() => {
+    if (puedeCobrar || !valor) return;
+    // Si se pierde el permiso a medio checkout (cerro sesion, cambio el
+    // telefono), el regalo que se metio al carrito sale con el canje.
+    if (agregado && onQuitar) onQuitar(agregado);
+    if (onChange) onChange(null);
+  }, [puedeCobrar, valor]);
   if (!tarjeta) return null;
+  if (!puedeCobrar && (tarjeta.pizza || tarjeta.brownie)) {
+    const articulo = tarjeta.pizza && tarjeta.brownie ? 'una Traviesa y un brownie' : tarjeta.pizza ? 'una Traviesa' : 'un brownie';
+    const ajeno = cuenta.usuario && cuenta.telefono && cuenta.telefono !== tel;
+    return /*#__PURE__*/React.createElement("div", {
+      style: {
+        border: '2px solid var(--rosa-mexicano)',
+        borderRadius: 'var(--radius-md)',
+        background: 'var(--rosa-tinte)',
+        padding: '12px 14px',
+        ...style
+      }
+    }, /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontFamily: 'var(--font-label)',
+        fontSize: 10,
+        letterSpacing: 1.3,
+        textTransform: 'uppercase',
+        color: 'var(--rosa-mexicano-texto)',
+        marginBottom: 6
+      }
+    }, "Tu tarjeta tiene premio"), /*#__PURE__*/React.createElement("p", {
+      style: {
+        fontFamily: 'var(--font-body)',
+        fontSize: 13.5,
+        lineHeight: 1.5,
+        margin: 0,
+        color: 'var(--text-body)'
+      }
+    }, ajeno ? 'Este teléfono tiene ' + articulo + ' gratis, pero tu cuenta tiene ligado otro número.' : cuenta.usuario ? 'Tienes ' + articulo + ' gratis. Liga este teléfono a tu cuenta para cobrarlo; solo se hace una vez.' : 'Tienes ' + articulo + ' gratis. Entra con tu cuenta para cobrarlo: tus sellos te esperan.'), !ajeno && /*#__PURE__*/React.createElement("button", {
+      type: "button",
+      onClick: () => setDialogo(true),
+      style: {
+        display: 'block',
+        width: '100%',
+        marginTop: 10,
+        padding: '10px 12px',
+        cursor: 'pointer',
+        borderRadius: 'var(--radius-sm)',
+        border: '2px solid var(--rosa-mexicano)',
+        background: 'var(--surface-card)',
+        color: 'var(--rosa-mexicano-texto)',
+        fontFamily: 'var(--font-body)',
+        fontWeight: 700,
+        fontSize: 13,
+        letterSpacing: 0.6,
+        textTransform: 'uppercase'
+      }
+    }, cuenta.usuario ? 'Ligar mi teléfono' : 'Entrar para cobrarlo'), typeof DialogoCuenta === 'function' && /*#__PURE__*/React.createElement(DialogoCuenta, {
+      abierto: dialogo,
+      onCerrar: cerrarDialogo,
+      telefonoSugerido: tel
+    }));
+  }
   const enCarrito = id => (lines || []).some(l => l.id === id);
   const disponibles = [];
   if (tarjeta.pizza) disponibles.push({
@@ -1346,11 +1422,15 @@ const estiloEnlace = {
 function DialogoCuenta({
   abierto,
   onCerrar,
-  fijo = true
+  fijo = true,
+  telefonoSugerido = ''
 }) {
   const {
     usuario,
-    googleDisponible
+    googleDisponible,
+    telefono: ligado,
+    tarjeta,
+    cargandoTelefono
   } = useCuenta();
   const [modo, setModo] = React.useState('entrar'); // entrar | crear | recuperar
   const [nombre, setNombre] = React.useState('');
@@ -1359,15 +1439,27 @@ function DialogoCuenta({
   const [error, setError] = React.useState('');
   const [aviso, setAviso] = React.useState('');
   const [ocupado, setOcupado] = React.useState(false);
+  const [telLigar, setTelLigar] = React.useState('');
+  const [folioLigar, setFolioLigar] = React.useState('');
   const caja = React.useRef(null);
   const cerrarRef = React.useRef(null);
   React.useEffect(() => {
     if (!abierto) return;
     // El SDK empieza a bajar mientras la persona decide.
     window.mextizzaCuenta && window.mextizzaCuenta.precargar();
+    // Los sellos cambian con cada entrega: se piden frescos al abrir.
+    if (usuario && window.mextizzaCuenta && window.mextizzaCuenta.refrescarLigado) window.mextizzaCuenta.refrescarLigado();
     setError('');
     setAviso('');
     setClave('');
+    setTelLigar(String(telefonoSugerido || '').replace(/\D/g, '').slice(0, 10));
+    /* El folio del ultimo pedido hecho en este navegador, si lo hay: casi
+       siempre es justo el que sirve para probar que el numero es suyo. */
+    try {
+      setFolioLigar(localStorage.getItem('mextizza.web.folio') || '');
+    } catch (e) {
+      setFolioLigar('');
+    }
     const previo = document.activeElement;
     if (cerrarRef.current) cerrarRef.current.focus();
     const alTeclear = e => {
@@ -1486,7 +1578,104 @@ function DialogoCuenta({
       margin: 0,
       color: 'var(--gris-tinta, #4A4A4A)'
     }
-  }, usuario.conGoogle ? 'Entraste con tu cuenta de Google, ' : 'Entraste con ', usuario.correo, "."), /*#__PURE__*/React.createElement("button", {
+  }, usuario.conGoogle ? 'Entraste con tu cuenta de Google, ' : 'Entraste con ', usuario.correo, "."), /*#__PURE__*/React.createElement("div", {
+    style: {
+      marginTop: 18,
+      paddingTop: 16,
+      borderTop: '2px dashed rgba(26,26,26,.18)'
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontFamily: 'var(--font-body)',
+      fontWeight: 600,
+      fontSize: 12,
+      letterSpacing: 1,
+      textTransform: 'uppercase',
+      color: 'var(--rosa-mexicano-texto)'
+    }
+  }, "Tu tarjeta"), cargandoTelefono && !ligado ? /*#__PURE__*/React.createElement("p", {
+    style: {
+      fontFamily: 'var(--font-body)',
+      fontSize: 14,
+      margin: '8px 0 0'
+    }
+  }, /*#__PURE__*/React.createElement("span", {
+    className: "mx-puntos",
+    "aria-label": "Buscando tu tarjeta"
+  }, /*#__PURE__*/React.createElement("i", null), /*#__PURE__*/React.createElement("i", null), /*#__PURE__*/React.createElement("i", null))) : ligado ? /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontFamily: 'var(--font-body)',
+      fontSize: 14,
+      lineHeight: 1.5,
+      marginTop: 6
+    }
+  }, /*#__PURE__*/React.createElement("div", null, "Ligada al tel\xE9fono ", /*#__PURE__*/React.createElement("b", null, ligado.replace(/(\d{3})(\d{3})(\d{4})/, '$1 $2 $3')), "."), tarjeta && /*#__PURE__*/React.createElement("div", {
+    style: {
+      marginTop: 4
+    }
+  }, tarjeta.dias === 1 ? 'Llevas 1 sello.' : 'Llevas ' + tarjeta.dias + ' sellos.', tarjeta.pizza && tarjeta.brownie ? ' Tienes una Traviesa y un brownie gratis.' : tarjeta.pizza ? ' Tienes una Traviesa gratis.' : tarjeta.brownie ? ' Tienes un brownie gratis.' : ''), /*#__PURE__*/React.createElement("div", {
+    style: {
+      marginTop: 4,
+      fontSize: 12.5,
+      color: 'var(--gris-tinta, #4A4A4A)'
+    }
+  }, "Tus premios se cobran solos cuando pides con este n\xFAmero y tu cuenta abierta.")) : /*#__PURE__*/React.createElement("form", {
+    onSubmit: e => {
+      e.preventDefault();
+      correr(async () => {
+        await C.ligar(telLigar, folioLigar);
+        setAviso('Listo, tu teléfono quedó ligado. Tus premios ya se cobran con tu cuenta.');
+      });
+    },
+    noValidate: true
+  }, /*#__PURE__*/React.createElement("p", {
+    style: {
+      fontFamily: 'var(--font-body)',
+      fontSize: 13.5,
+      lineHeight: 1.5,
+      margin: '6px 0 0'
+    }
+  }, "Tus sellos se juntan con tu tel\xE9fono. Para cobrar tus premios desde aqu\xED, liga ese n\xFAmero a tu cuenta. Solo se hace una vez."), /*#__PURE__*/React.createElement("label", {
+    style: estiloEtiqueta
+  }, "Tu tel\xE9fono", /*#__PURE__*/React.createElement("input", {
+    value: telLigar,
+    onChange: e => setTelLigar(e.target.value.replace(/\D/g, '').slice(0, 10)),
+    inputMode: "tel",
+    autoComplete: "tel-national",
+    placeholder: "10 d\xEDgitos",
+    style: estiloCampo
+  })), /*#__PURE__*/React.createElement("label", {
+    style: estiloEtiqueta
+  }, "Folio de un pedido entregado", /*#__PURE__*/React.createElement("input", {
+    value: folioLigar,
+    onChange: e => setFolioLigar(e.target.value.toUpperCase()),
+    autoCapitalize: "characters",
+    placeholder: "MX-XXXXXX",
+    style: estiloCampo
+  }), /*#__PURE__*/React.createElement("span", {
+    style: {
+      display: 'block',
+      marginTop: 5,
+      fontWeight: 400,
+      fontSize: 12,
+      letterSpacing: 0,
+      textTransform: 'none'
+    }
+  }, "Viene en la pantalla de seguimiento de tu pedido. As\xED sabemos que el n\xFAmero es tuyo.")), aviso && /*#__PURE__*/React.createElement("p", {
+    role: "status",
+    style: {
+      fontFamily: 'var(--font-body)',
+      fontSize: 13,
+      margin: '12px 0 0'
+    }
+  }, aviso), /*#__PURE__*/React.createElement("button", {
+    type: "submit",
+    disabled: ocupado,
+    style: estiloPrimario
+  }, ocupado ? /*#__PURE__*/React.createElement("span", {
+    className: "mx-puntos",
+    "aria-label": "Ligando"
+  }, /*#__PURE__*/React.createElement("i", null), /*#__PURE__*/React.createElement("i", null), /*#__PURE__*/React.createElement("i", null)) : 'Ligar mi teléfono'))), /*#__PURE__*/React.createElement("button", {
     onClick: () => correr(() => C.salir()),
     disabled: ocupado,
     style: {
@@ -2786,6 +2975,7 @@ function AppCart({
     tarjeta: tarjetaPrevia,
     lines: lines,
     valor: usarPremio,
+    telefono: tel10,
     onChange: setUsarPremio,
     onAgregar: agregarPremio,
     onQuitar: quitarPremio,

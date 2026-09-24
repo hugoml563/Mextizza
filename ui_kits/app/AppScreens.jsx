@@ -459,7 +459,7 @@ function AppCart({ lines, onQty, onConfirm, tab, onTab, count, inicialCliente, o
             <div style={{ fontFamily: 'var(--font-label)', fontSize: 10, letterSpacing: 1, textTransform: 'uppercase', color: 'var(--rosa-mexicano-texto)', marginBottom: 12 }}>Entrega y pago</div>
             <DeliveryForm compact attempted={attempted} inicial={inicialCliente} onValidChange={setReady} onDataChange={setEntrega} />
             <Aviso2x1 activo={typeof mextizzaEs2x1 === 'function' && mextizzaEs2x1()} style={{ marginTop: 12 }} />
-            <CanjeTarjeta tarjeta={tarjetaPrevia} lines={lines} valor={usarPremio}
+            <CanjeTarjeta tarjeta={tarjetaPrevia} lines={lines} valor={usarPremio} telefono={tel10}
               onChange={setUsarPremio} onAgregar={agregarPremio} onQuitar={quitarPremio}
               agregado={premioAgregado} style={{ marginTop: 12 }} />
             {tarjetaPrevia && <TarjetaPremios tarjeta={tarjetaPrevia} style={{ marginTop: 12 }} />}

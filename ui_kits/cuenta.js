@@ -69,6 +69,9 @@ if (!window.__mextizzaCuentaLoaded) {
   };
 
   let usuario = null;
+  /* El telefono ligado a la cuenta y su tarjeta. Se piden al servidor al
+     entrar: con eso el checkout sabe si esta persona puede cobrar sus premios. */
+  let ligado = { telefono: '', tarjeta: null, cargando: false };
   // Sin bandera no hay sesion que restaurar: se sabe desde ya que es invitado.
   let listo = !leerBandera();
   const oyentes = new Set();
@@ -81,6 +84,9 @@ if (!window.__mextizzaCuentaLoaded) {
       correo: usuario.email || '',
       conGoogle: (usuario.providerData || []).some(p => p && p.providerId === 'google.com')
     } : null,
+    telefono: ligado.telefono,
+    tarjeta: ligado.tarjeta,
+    cargandoTelefono: ligado.cargando,
     // Una app vieja, instalada antes del plugin, no ofrece Google en vez de
     // fallar al tocarlo: esa persona puede entrar con su correo.
     googleDisponible: !esApp() || !!pluginSocial()
@@ -109,8 +115,11 @@ if (!window.__mextizzaCuentaLoaded) {
         return new Promise((ok) => {
           let primera = true;
           auth.onAuthStateChanged((u) => {
+            const antes = usuario && usuario.uid;
             usuario = u || null;
             listo = true;
+            if (!u) ligado = { telefono: '', tarjeta: null, cargando: false };
+            else if (u.uid !== antes) refrescarLigado();
             // Si la sesion guardada ya no existe, se apaga la bandera para no
             // volver a cargar el SDK de gusto en la proxima visita.
             ponerBandera(!!u);
@@ -126,6 +135,16 @@ if (!window.__mextizzaCuentaLoaded) {
         throw e;
       });
     return cargando;
+  }
+
+  function refrescarLigado() {
+    if (!usuario || typeof window.mextizzaMiCuenta !== 'function') return Promise.resolve();
+    ligado = Object.assign({}, ligado, { cargando: true });
+    avisar();
+    return window.mextizzaMiCuenta()
+      .then((r) => { ligado = { telefono: r.telefono || '', tarjeta: r.tarjeta || null, cargando: false }; })
+      .catch(() => { ligado = Object.assign({}, ligado, { cargando: false }); })
+      .then(avisar);
   }
 
   /* Los codigos de Firebase traducidos a algo que un cliente entienda. El
@@ -154,6 +173,8 @@ if (!window.__mextizzaCuentaLoaded) {
     'auth/internal-error': 'Google no respondió bien. Vuelve a probar en un momento.'
   };
   const mensajeDeError = (e) => {
+    // Los rechazos del servidor ya vienen redactados para el cliente.
+    if (e && e.code === 'servidor') return e.message;
     const c = (e && (e.code || e.message)) || '';
     // Cerrar la pantalla de Google en Android no es un error que haya que contar.
     if (/cancel/i.test(String((e && e.message) || ''))) return '';
@@ -228,6 +249,25 @@ if (!window.__mextizzaCuentaLoaded) {
         try { await iniciarSocial(); await pluginSocial().logout({ provider: 'google' }); } catch (e) {}
       }
     },
+
+    /* Liga el telefono con el folio de un pedido entregado. Solo se hace una
+       vez; despues de esto, los premios de ese numero se cobran con la cuenta. */
+    async ligar(telefono, folio) {
+      if (typeof window.mextizzaLigarTelefono !== 'function') {
+        const e = new Error(); e.code = 'sdk'; throw e;
+      }
+      try {
+        const r = await window.mextizzaLigarTelefono({ telefono, folio });
+        ligado = { telefono: r.telefono || '', tarjeta: r.tarjeta || null, cargando: false };
+        avisar();
+      } catch (err) {
+        const e = new Error(String(err && err.message || err).replace(/^(Error:\s*)+/, ''));
+        e.code = 'servidor';
+        throw e;
+      }
+    },
+
+    refrescarLigado,
 
     /* El token que el servidor valida con Google. Null si no hay sesion: la
        cuenta es opcional, asi que "sin token" es un caso normal, no un error. */

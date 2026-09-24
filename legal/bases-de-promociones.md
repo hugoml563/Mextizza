@@ -43,6 +43,16 @@ pedido entregado** que incluya al menos una pizza pagada.
   se hace. Un pedido cancelado no suma.
 - La tarjeta se identifica con tu número de teléfono.
 
+**Cómo se cobra un premio:**
+
+- Los sellos se acumulan con tu teléfono, tengas cuenta o no.
+- Para cobrar un premio en el sitio o en la aplicación necesitas **entrar con
+  tu cuenta** y **ligarle tu teléfono una sola vez**, comprobando que es tuyo
+  con el folio de un pedido que ya te entregamos.
+- Un teléfono solo puede estar ligado a una cuenta, y una cuenta a un teléfono.
+  Si cambiaste de número o el tuyo aparece ligado a otra cuenta, escríbenos.
+- En pedidos por WhatsApp, el premio lo aplicamos nosotros desde la cocina.
+
 **Premios:**
 
 | Sello | Premio |
