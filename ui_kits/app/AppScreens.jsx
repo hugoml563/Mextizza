@@ -650,6 +650,7 @@ function AppPerfil({ tab, onTab, count, cliente, folio, onVerPedido, onBorrarDat
       </div>
 
       <div style={{ flex: 1, overflowY: 'auto', padding: '18px 20px 24px', background: 'var(--surface-card)' }}>
+        {typeof PanelCuentaApp === 'function' && <PanelCuentaApp />}
         {folio && (
           <FramedPanel variant="paper" style={{ marginBottom: 20 }}>
             <div style={{ fontFamily: 'var(--font-label)', fontSize: 10, letterSpacing: 1, textTransform: 'uppercase', color: 'var(--rosa-mexicano-texto)' }}>Tu último pedido</div>

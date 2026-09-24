@@ -68,8 +68,18 @@ try {
   corre(GRADLE, TAREA, { cwd: ANDROID });
 } catch (e) {
   console.log('');
-  console.log('  Gradle no pudo limpiar sus intermedios. Borro app/build y repito.');
+  console.log('  Gradle no pudo limpiar sus intermedios. Borro app/build y los de los plugins, y repito.');
   fs.rmSync(path.join(ANDROID, 'app', 'build'), { recursive: true, force: true });
+  /* Los plugins de Capacitor compilan dentro de node_modules, y el bloqueo de
+     Windows puede caer ahi igual que en la app: paso con el de login la
+     primera vez. Se limpian todos los que tengan carpeta android/build. */
+  for (const dir of ['@capacitor', '@capgo']) {
+    const base = path.join(RAIZ, 'node_modules', dir);
+    if (!fs.existsSync(base)) continue;
+    for (const pkg of fs.readdirSync(base)) {
+      fs.rmSync(path.join(base, pkg, 'android', 'build'), { recursive: true, force: true });
+    }
+  }
   corre(GRADLE, TAREA, { cwd: ANDROID });
 }
 

@@ -45,6 +45,24 @@ if (!window.__mextizzaCuentaLoaded) {
   const esApp = () => !!(window.Capacitor && window.Capacitor.isNativePlatform &&
     window.Capacitor.isNativePlatform());
 
+  /* En la app, Google se hace con la pantalla nativa de Android (Credential
+     Manager), via @capgo/capacitor-social-login. El plugin solo entrega el
+     token de Google; la sesion la sigue llevando el mismo Firebase que usa la
+     web, asi hay un solo lugar donde vive la cuenta. */
+  const pluginSocial = () => (window.Capacitor && window.Capacitor.Plugins &&
+    window.Capacitor.Plugins.SocialLogin) || null;
+  let socialIniciado = null;
+  function iniciarSocial() {
+    if (!socialIniciado) {
+      // El ID de cliente WEB, no el de Android: asi lo exige Credential
+      // Manager. El de Android solo tiene que existir con la huella del APK.
+      socialIniciado = pluginSocial().initialize({
+        google: { webClientId: MEXTIZZA_GOOGLE_WEB_CLIENT_ID, mode: 'online' }
+      }).catch((e) => { socialIniciado = null; throw e; });
+    }
+    return socialIniciado;
+  }
+
   const leerBandera = () => { try { return !!localStorage.getItem(BANDERA); } catch (e) { return false; } };
   const ponerBandera = (si) => {
     try { si ? localStorage.setItem(BANDERA, '1') : localStorage.removeItem(BANDERA); } catch (e) {}
@@ -63,9 +81,9 @@ if (!window.__mextizzaCuentaLoaded) {
       correo: usuario.email || '',
       conGoogle: (usuario.providerData || []).some(p => p && p.providerId === 'google.com')
     } : null,
-    // Google en la app necesita el plugin nativo, que todavia no llega. Hasta
-    // entonces el boton no se ofrece ahi en vez de fallar al tocarlo.
-    googleDisponible: !esApp()
+    // Una app vieja, instalada antes del plugin, no ofrece Google en vez de
+    // fallar al tocarlo: esa persona puede entrar con su correo.
+    googleDisponible: !esApp() || !!pluginSocial()
   });
   const avisar = () => { const e = estado(); oyentes.forEach(f => { try { f(e); } catch (x) {} }); };
 
@@ -128,10 +146,13 @@ if (!window.__mextizzaCuentaLoaded) {
     'auth/user-disabled': 'Esta cuenta está desactivada. Escríbenos por WhatsApp.',
     'auth/account-exists-with-different-credential':
       'Ese correo ya tiene cuenta con otro método. Entra con tu contraseña.',
-    'sdk': 'No se pudo abrir el inicio de sesión. Revisa tu conexión y vuelve a probar.'
+    'sdk': 'No se pudo abrir el inicio de sesión. Revisa tu conexión y vuelve a probar.',
+    'google-no-disponible': 'Esta versión de la app no trae el inicio con Google. Actualízala o entra con tu correo.'
   };
   const mensajeDeError = (e) => {
     const c = (e && (e.code || e.message)) || '';
+    // Cerrar la pantalla de Google en Android no es un error que haya que contar.
+    if (/cancel/i.test(String((e && e.message) || ''))) return '';
     return c in MENSAJES ? MENSAJES[c] : 'Algo salió mal. Vuelve a probar en un momento.';
   };
 
@@ -144,6 +165,18 @@ if (!window.__mextizzaCuentaLoaded) {
     precargar() { return cargarSdk().catch(() => null); },
 
     async conGoogle() {
+      if (esApp()) {
+        const plugin = pluginSocial();
+        if (!plugin) { const e = new Error(); e.code = 'google-no-disponible'; throw e; }
+        await iniciarSocial();
+        const r = await plugin.login({ provider: 'google', options: {} });
+        const idToken = r && r.result && r.result.idToken;
+        if (!idToken) { const e = new Error(); e.code = 'auth/popup-closed-by-user'; throw e; }
+        const authApp = await cargarSdk();
+        await authApp.signInWithCredential(
+          window.firebase.auth.GoogleAuthProvider.credential(idToken));
+        return;
+      }
       const auth = await cargarSdk();
       // Ventana emergente, no redireccion: la redireccion falla en Safari y en
       // navegadores que bloquean almacenamiento de terceros, porque el sitio no
@@ -180,6 +213,9 @@ if (!window.__mextizzaCuentaLoaded) {
     async salir() {
       const auth = await cargarSdk();
       await auth.signOut();
+      if (esApp() && pluginSocial()) {
+        try { await iniciarSocial(); await pluginSocial().logout({ provider: 'google' }); } catch (e) {}
+      }
     },
 
     /* El token que el servidor valida con Google. Null si no hay sesion: la

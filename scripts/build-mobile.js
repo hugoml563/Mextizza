@@ -31,6 +31,7 @@ html = html
   .replaceAll('src="../menu-data.js"', 'src="ui_kits/menu-data.js"')
   .replaceAll('src="../delivery-zone.js"', 'src="ui_kits/delivery-zone.js"')
   .replaceAll('src="../sheets-config.js"', 'src="ui_kits/sheets-config.js"')
+  .replaceAll('src="../cuenta.js"', 'src="ui_kits/cuenta.js"')
   .replaceAll('src="../scroll-a-faltante.js"', 'src="ui_kits/scroll-a-faltante.js"')
   .replaceAll('src="bundle.build.js"', 'src="ui_kits/app/bundle.build.js"')
   // React viaja DENTRO del APK. Antes se pedia a unpkg.com en cada arranque en
@@ -130,6 +131,7 @@ copyFile('_ds_bundle.js');
 copyFile('ui_kits/menu-data.js');
 copyFile('ui_kits/delivery-zone.js');
 copyFile('ui_kits/sheets-config.js');
+copyFile('ui_kits/cuenta.js');
 copyFile('ui_kits/scroll-a-faltante.js');
 copyFile('ui_kits/app/bundle.build.js');
 
@@ -137,6 +139,11 @@ copyFile('ui_kits/app/bundle.build.js');
 // (verificado por hash), pero ahora sin depender de una red ajena.
 fs.mkdirSync(path.join(outDir, 'vendor'), { recursive: true });
 copyDir(path.join(root, 'vendor', 'fonts'), path.join(outDir, 'vendor', 'fonts'));
+/* Firebase viaja dentro del APK igual que React: la cuenta tiene que poder
+   abrir aunque no haya red para bajar el SDK en ese momento. */
+for (const f of fs.readdirSync(path.join(root, 'vendor')).filter((n) => /^firebase-.*\.js$/.test(n))) {
+  fs.copyFileSync(path.join(root, 'vendor', f), path.join(outDir, 'vendor', f));
+}
 for (const [origen, nombre] of [
   ['react/umd/react.production.min.js', 'react.production.min.js'],
   ['react-dom/umd/react-dom.production.min.js', 'react-dom.production.min.js'],
@@ -152,5 +159,18 @@ const { construirFuentes } = require('./build-fonts.js');
 construirFuentes()
   .then((r) => console.log('  fuentes: ' + r.archivos + ' archivos, ' + r.kb + ' KB, servidas localmente'))
   .catch((e) => console.warn('  AVISO fuentes: ' + e.message + ' (queda el @import remoto)'));
+
+/* Todo lo que la pagina de la app pide tiene que venir dentro del APK. Los
+   archivos se copian uno por uno, y cuenta.js se quedo fuera la primera vez:
+   el telefono habria pedido un archivo que no existe, y el boton de cuenta
+   habria abierto un dialogo muerto sin que nada avisara. Ahora el build se
+   detiene antes de que eso llegue a un telefono. */
+const faltan = [...html.matchAll(/<script[^>]*\ssrc="([^"]+)"/g)]
+  .map((m) => m[1])
+  .filter((src) => !/^https?:/.test(src))
+  .filter((src) => !fs.existsSync(path.join(outDir, src)));
+if (faltan.length) {
+  throw new Error('La app pide archivos que no se copiaron a mobile-www/: ' + faltan.join(', '));
+}
 
 console.log('Built mobile-www/ from ui_kits/app/mobile.html');

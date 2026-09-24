@@ -1235,7 +1235,8 @@ Object.assign(window, {
 /* ui_kits/Cuenta.jsx */
 (function () {
 const {
-  Icon
+  Icon,
+  Button
 } = window.MextizzaDesignSystem_8a35ee;
 
 /* Cuenta opcional: el boton del encabezado y el dialogo para entrar.
@@ -1643,10 +1644,78 @@ function DialogoCuenta({
     }
   }, "Ya tengo cuenta")))));
 }
+
+/* La cuenta en la pestana Perfil de la app. Va arriba de "tus datos de
+   entrega", que siguen guardados solo en el telefono: la cuenta no los sube a
+   ningun lado, solo identifica a quien pide. */
+function PanelCuentaApp() {
+  const {
+    usuario
+  } = useCuenta();
+  const [abierto, setAbierto] = React.useState(false);
+  const cerrar = React.useCallback(() => setAbierto(false), []);
+  return /*#__PURE__*/React.createElement("div", {
+    style: {
+      marginBottom: 22
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontFamily: 'var(--font-label)',
+      fontSize: 10,
+      letterSpacing: 1,
+      textTransform: 'uppercase',
+      color: 'var(--rosa-mexicano-texto)',
+      marginBottom: 8
+    }
+  }, "Tu cuenta"), usuario ? /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontFamily: 'var(--font-body)',
+      fontWeight: 800,
+      fontSize: 17
+    }
+  }, "Hola, ", primerNombre(usuario)), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontFamily: 'var(--font-body)',
+      fontSize: 12.5,
+      color: 'var(--text-muted)',
+      marginTop: 2,
+      wordBreak: 'break-word'
+    }
+  }, usuario.correo), /*#__PURE__*/React.createElement(Button, {
+    tone: "outline",
+    size: "md",
+    block: true,
+    icon: "user",
+    style: {
+      marginTop: 12
+    },
+    onClick: () => setAbierto(true)
+  }, "Ver mi cuenta")) : /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("p", {
+    style: {
+      fontFamily: 'var(--font-body)',
+      fontSize: 13,
+      lineHeight: 1.5,
+      color: 'var(--text-muted)',
+      margin: 0
+    }
+  }, "Es opcional. Puedes pedir igual sin entrar."), /*#__PURE__*/React.createElement(Button, {
+    size: "md",
+    block: true,
+    icon: "user",
+    style: {
+      marginTop: 12
+    },
+    onClick: () => setAbierto(true)
+  }, "Entrar o crear cuenta")), /*#__PURE__*/React.createElement(DialogoCuenta, {
+    abierto: abierto,
+    onCerrar: cerrar
+  }));
+}
 Object.assign(window, {
   useCuenta,
   BotonCuenta,
-  DialogoCuenta
+  DialogoCuenta,
+  PanelCuentaApp
 });
 })();
 
@@ -3091,7 +3160,7 @@ function AppPerfil({
       padding: '18px 20px 24px',
       background: 'var(--surface-card)'
     }
-  }, folio && /*#__PURE__*/React.createElement(FramedPanel, {
+  }, typeof PanelCuentaApp === 'function' && /*#__PURE__*/React.createElement(PanelCuentaApp, null), folio && /*#__PURE__*/React.createElement(FramedPanel, {
     variant: "paper",
     style: {
       marginBottom: 20
