@@ -741,5 +741,26 @@ comparar('lo que captura la cocina no se liga a su cuenta', campoDe(capturaAdmin
 const capturaWhats = ctx.crearOrden_(Object.assign(cuerpoToken('token-bueno'), { canal: 'WhatsApp' }));
 comparar('ni aunque llegue por el canal WhatsApp sin token de admin', campoDe(capturaWhats.folio, 'uid'), '');
 
+console.log('\nEL DIA ES EL DE CDMX, NO EL DE QUIEN CREO EL SCRIPT');
+{
+/* Hugo esta en otra zona horaria, dos horas adelante de la cocina, y el
+   script hereda la suya. Se reproduce poniendo el reloj de Node en esa zona. */
+const tzAntes = process.env.TZ;
+process.env.TZ = 'America/New_York';
+const MIE = (h, m) => new Date(Date.UTC(2026, 8, 16, h + 6, m || 0));   // miercoles, hora CDMX
+RELOJ = MIE(21);
+const deLaNoche = ctx.crearOrden_({
+  canal: 'Web', cliente: { telefono: '5512349999', nombre: 'Prueba hora' },
+  direccion: 'Calle 1', colonia: 'Lomas Lindas', km: 1, pago_metodo: 'Efectivo',
+  items: [{ producto_id: 'roni', cantidad: 1 }],
+});
+RELOJ = MIE(22, 30);   // en Nueva York ya es jueves
+const folios = ctx.listarHoy_().map((o) => o.folio);
+comparar('a las 10:30 pm de CDMX sigue en el tablero el pedido de las 9', folios.includes(deLaNoche.folio), true);
+RELOJ = new Date(Date.UTC(2026, 8, 17, 6 + 17));   // jueves 5 pm CDMX
+comparar('al dia siguiente de CDMX ya no aparece', ctx.listarHoy_().map((o) => o.folio).includes(deLaNoche.folio), false);
+if (tzAntes === undefined) delete process.env.TZ; else process.env.TZ = tzAntes;
+}
+
 console.log('\n  ' + ok + ' pruebas ok, ' + mal + ' mal\n');
 process.exit(mal ? 1 : 0);

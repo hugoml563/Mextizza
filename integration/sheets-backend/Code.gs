@@ -1677,12 +1677,17 @@ function listarAbiertas_() {
 /** Arma TODAS las órdenes de hoy (cualquier estado), para el corte del día y las pestañas
  *  de Entregadas/Canceladas del Centro de Ventas. */
 function listarHoy_() {
-  const hoy = new Date();
-  hoy.setHours(0, 0, 0, 0);
+  /* "Hoy" es el dia de CDMX, que es donde esta la cocina. Antes se tomaba la
+     medianoche del reloj del script, que hereda la zona horaria de la cuenta
+     de Google de quien lo creo, no la de la cocina. Con esa cuenta dos horas
+     adelante, a las 10 de la noche de CDMX el tablero daba el dia por
+     terminado: en la ultima hora de servicio se borraban de la tablet los
+     pedidos que seguian en el horno. */
+  const hoy = hoyCDMX_();
   const ordenes = rowsAsObjects_(sheet_(SHEETS.ordenes)).filter(o => {
     if (!o.folio || !o.t_recibida) return false;
     const t = new Date(o.t_recibida);
-    return t >= hoy;
+    return !isNaN(t) && hoyCDMX_(t) === hoy;
   });
   return armarOrdenes_(ordenes);
 }
