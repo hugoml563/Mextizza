@@ -147,13 +147,24 @@ if (!window.__mextizzaCuentaLoaded) {
     'auth/account-exists-with-different-credential':
       'Ese correo ya tiene cuenta con otro método. Entra con tu contraseña.',
     'sdk': 'No se pudo abrir el inicio de sesión. Revisa tu conexión y vuelve a probar.',
-    'google-no-disponible': 'Esta versión de la app no trae el inicio con Google. Actualízala o entra con tu correo.'
+    'google-no-disponible': 'Esta versión de la app no trae el inicio con Google. Actualízala o entra con tu correo.',
+    'auth/unauthorized-domain': 'Desde esta dirección no se puede entrar con Google. Abre mextizza.com e inténtalo ahí.',
+    'auth/operation-not-allowed': 'Ese método de entrada no está activado. Escríbenos por WhatsApp.',
+    'auth/web-storage-unsupported': 'Tu navegador no deja guardar la sesión. Revisa que no estés en modo privado.',
+    'auth/internal-error': 'Google no respondió bien. Vuelve a probar en un momento.'
   };
   const mensajeDeError = (e) => {
     const c = (e && (e.code || e.message)) || '';
     // Cerrar la pantalla de Google en Android no es un error que haya que contar.
     if (/cancel/i.test(String((e && e.message) || ''))) return '';
-    return c in MENSAJES ? MENSAJES[c] : 'Algo salió mal. Vuelve a probar en un momento.';
+    if (c in MENSAJES) return MENSAJES[c];
+    /* Lo no previsto se muestra con su codigo. "Algo salio mal" a secas no le
+       dice nada al cliente ni a quien lo tiene que arreglar: la primera vez que
+       fallo el login de Google, ese mensaje fue todo lo que hubo para
+       diagnosticarlo. */
+    try { console.error('Cuenta Mextizza:', e); } catch (x) {}
+    const codigo = String(c).slice(0, 80);
+    return 'Algo salió mal' + (codigo ? ' (' + codigo + ')' : '') + '. Vuelve a probar en un momento.';
   };
 
   const mextizzaCuenta = {
