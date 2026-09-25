@@ -828,6 +828,9 @@ console.log('\nCOBRAR UN PREMIO PIDE LA CUENTA DUENA DEL TELEFONO');
   comparar('sin importar mayusculas ni espacios', typeof ligado, 'object');
   comparar('queda escrito en la hoja de clientes', ctx.duenoDeTelefono_(TEL_K), 'uid-k');
   comparar('repetirlo no hace dano', ligar('tok-k', TEL_K, foliosK[1]).telefono, TEL_K);
+  comparar('los pedidos que hizo sin cuenta pasan a su cuenta',
+    foliosK.map((f) => campoDe(f, 'uid')), foliosK.map(() => 'uid-k'));
+  comparar('el de otro telefono no', campoDe(folioAjeno, 'uid'), '');
 
   GOOGLE.cuentas['tok-intruso'] = { localId: 'uid-intruso' };
   comparar('otra cuenta no se puede quedar con ese telefono', /ligado a otra cuenta/.test(ligar('tok-intruso', TEL_K, foliosK[1])), true);
@@ -841,6 +844,29 @@ console.log('\nCOBRAR UN PREMIO PIDE LA CUENTA DUENA DEL TELEFONO');
   const mia = ctx.miCuenta_({ idToken: 'tok-k' });
   comparar('mi cuenta dice el telefono y trae la tarjeta', [mia.telefono, !!mia.tarjeta], [TEL_K, true]);
   comparar('una cuenta sin ligar no ve tarjeta', ctx.miCuenta_({ idToken: 'tok-intruso' }).telefono, '');
+
+  // Una cuenta ligada antes de que existiera la herencia: la funcion manual
+  // le recoge sus pedidos, sin pisar uno que ya trae otra cuenta.
+  const TEL_V = '5544440000';
+  const foliosV = [
+    pedir([{ producto_id: 'roni', cantidad: 1 }], { cuando: diaAbierto(), tel: TEL_V }).folio,
+    pedir([{ producto_id: 'roni', cantidad: 1 }], { cuando: diaAbierto(), tel: TEL_V }).folio,
+  ];
+  {
+    const filasO = hojas[SHEETS.ordenes].filas;
+    const cUidO = ORDENES_HEADERS.indexOf('uid');
+    filasO.find((f) => f[0] === foliosV[1])[cUidO] = 'uid-otro';
+    const filasC = hojas[SHEETS.clientes].filas;
+    const cUidC = CLIENTES_HEADERS.indexOf('uid');
+    let fila = filasC.find((f, i) => i > 0 && String(f[0]) === TEL_V);
+    if (!fila) { fila = [TEL_V]; filasC.push(fila); }
+    while (fila.length <= cUidC) fila.push('');
+    fila[cUidC] = 'uid-v';
+  }
+  ctx.heredarPedidosDeCuentas();
+  comparar('la funcion manual asigna los pedidos de cuentas ya ligadas', campoDe(foliosV[0], 'uid'), 'uid-v');
+  comparar('sin pisar un pedido que ya traia otra cuenta', campoDe(foliosV[1], 'uid'), 'uid-otro');
+  comparar('correrla dos veces no cambia nada', ctx.heredarPedidosDeCuentas(), 0);
 
   const TEL_W = '5544441111';
   juntar4(TEL_W);

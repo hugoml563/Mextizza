@@ -1255,6 +1255,43 @@ function telefonoDeCuenta_(uid) {
   return '';
 }
 
+/* Los pedidos de un telefono pasan a la cuenta que lo ligo. Ligar ya probo
+   que el numero es suyo, asi que su historial tambien lo es: incluidos los que
+   hizo sin haber entrado y los que la cocina capturo por WhatsApp (esos se
+   guardan sin uid a proposito, porque la cuenta abierta es la de quien
+   captura). Un pedido que ya trae otra cuenta no se toca. Devuelve cuantos
+   cambio. */
+function heredarPedidos_(tel, uid, ordenes) {
+  const sh = sheet_(SHEETS.ordenes);
+  const filas = ordenes || sh.getDataRange().getValues();
+  const cTel = ORDENES_HEADERS.indexOf('cliente_telefono');
+  const cUid = ORDENES_HEADERS.indexOf('uid');
+  let n = 0;
+  for (let r = 1; r < filas.length; r++) {
+    if (soloDigitos_(filas[r][cTel]) !== tel || String(filas[r][cUid] || '')) continue;
+    sh.getRange(r + 1, cUid + 1).setValue(uid);
+    filas[r][cUid] = uid;
+    n++;
+  }
+  return n;
+}
+
+/* Para correr UNA vez a mano desde el editor, despues de pegar esta version:
+   las cuentas que se ligaron antes de que existiera heredarPedidos_ recogen
+   sus pedidos. Se puede repetir sin dano. */
+function heredarPedidosDeCuentas() {
+  const clientes = sheet_(SHEETS.clientes).getDataRange().getValues();
+  const cUid = CLIENTES_HEADERS.indexOf('uid');
+  const ordenes = sheet_(SHEETS.ordenes).getDataRange().getValues();
+  let n = 0;
+  for (let r = 1; r < clientes.length; r++) {
+    const uid = String(clientes[r][cUid] || '');
+    if (uid) n += heredarPedidos_(soloDigitos_(clientes[r][0]), uid, ordenes);
+  }
+  console.log('Pedidos asignados a su cuenta: ' + n);
+  return n;
+}
+
 /* Liga un telefono a la cuenta de quien lo pide. Todos los rechazos dicen que
    hacer, porque del otro lado hay alguien con un premio esperando. */
 function ligarTelefono_(body) {
@@ -1311,6 +1348,7 @@ function ligarTelefono_(body) {
   for (let r = 1; r < data.length; r++) {
     if (soloDigitos_(data[r][0]) !== tel) continue;
     sh.getRange(r + 1, cUid + 1).setValue(cuenta.uid);
+    heredarPedidos_(tel, cuenta.uid, ordenes);
     cache.put(claveIntentos, '0', 60);
     return { telefono: tel, tarjeta: premiosDe_(leerTarjeta_(tel), premiosReservados_(tel)) };
   }
