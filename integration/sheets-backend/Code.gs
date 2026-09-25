@@ -1181,10 +1181,42 @@ function tienePizzaPagada_(lineas) {
   return lineas.some(function (l) { return esPizza_(l) && !l.promocion; });
 }
 
+/* Solo claves propias del catalogo. Una busqueda simple aceptaba nombres como
+   'constructor' o '__proto__', que existen en cualquier objeto de JavaScript. */
+function delCatalogo_(tabla, id) {
+  const clave = String(id);
+  return Object.prototype.hasOwnProperty.call(tabla, clave) ? tabla[clave] : null;
+}
+
 function precioProducto_(id) {
-  const p = CATALOGO.productos[String(id)];
+  const p = delCatalogo_(CATALOGO.productos, id);
   if (!p) throw new Error('Producto desconocido: ' + id);
   return p;
+}
+
+/* Los canales que existen. Lo que manda el navegador se ajusta a uno de estos;
+   cualquier otra cosa queda como Web. Antes se guardaba tal cual, y un valor
+   que empezara con '=' entraba al Sheet como formula viva, junto a los datos de
+   todos los clientes. */
+const CANALES = ['Web', 'App', 'WhatsApp', 'Mostrador'];
+function canalValido_(canal) {
+  const c = String(canal || '').trim().toLowerCase();
+  for (let i = 0; i < CANALES.length; i++) {
+    if (CANALES[i].toLowerCase() === c) return CANALES[i];
+  }
+  return 'Web';
+}
+
+/* Unidades por renglon: enteras, de 1 a 20. Con decimales (1.01) el 2x1 y la
+   regla de premios contaban dos pizzas y cobraban centavos. Sin cantidad, 1. */
+const CANTIDAD_MAX = 20;
+function cantidadValida_(valor) {
+  if (valor === undefined || valor === null || valor === '') return 1;
+  const n = Number(valor);
+  if (!Number.isInteger(n) || n < 1 || n > CANTIDAD_MAX) {
+    throw new Error('Cantidad inválida: usa un número entero de 1 a ' + CANTIDAD_MAX + '.');
+  }
+  return n;
 }
 
 /* El horario tambien se valida AQUI, no solo en el navegador.
@@ -1411,7 +1443,7 @@ function crearOrden_(body, nivel) {
      cocina (token de administrador o canal WhatsApp), la cuenta que venga es
      la de quien captura, no la del cliente: se ignora. Si no, los sellos del
      cliente acabarian en la cuenta de Ricardo. */
-  const capturaCocina = nivel === 'admin' || body.canal === 'WhatsApp';
+  const capturaCocina = nivel === 'admin' || canalValido_(body.canal) === 'WhatsApp';
   const cuenta = capturaCocina ? null : usuarioDeToken_(body.idToken);
 
   /* Los precios salen del CATALOGO, no del cuerpo de la peticion. Antes se
@@ -1427,7 +1459,7 @@ function crearOrden_(body, nivel) {
        hacer alguien manipulando ese campo es pagar de mas. El producto, que es
        donde esta el dinero, si se cotiza siempre contra el catalogo. */
     const addons = (it.addons || []).map(function (a) {
-      const c = a.id ? CATALOGO.complementos[String(a.id)] : null;
+      const c = a.id ? delCatalogo_(CATALOGO.complementos, a.id) : null;
       if (a.id && !c) throw new Error('Complemento desconocido: ' + a.id);
       return {
         id: a.id ? String(a.id) : '',
@@ -1439,7 +1471,7 @@ function crearOrden_(body, nivel) {
       producto_id: String(it.producto_id),
       nombre: prod.nombre,
       cat: prod.cat,
-      cantidad: Math.max(1, Number(it.cantidad) || 1),
+      cantidad: cantidadValida_(it.cantidad),
       precio_unit: prod.precio,
       complementos: addons,
       complementosTotal: addons.reduce(function (t, a) { return t + a.precio; }, 0),
@@ -1491,13 +1523,14 @@ function crearOrden_(body, nivel) {
 
   const ordenesSh = sheet_(SHEETS.ordenes);
   const row = {
-    folio: folio, canal: body.canal, estado: estado,
+    folio: folio, canal: canalValido_(body.canal), estado: estado,
     cliente_telefono: textoSeguro_(telefono),
     cliente_nombre: textoSeguro_(body.cliente && body.cliente.nombre),
     // En pickup no hay direccion que guardar: la del cliente no hace falta.
     direccion: pickup ? '' : textoSeguro_(body.direccion),
     colonia: pickup ? '' : textoSeguro_(body.colonia),
-    km: pickup ? '' : body.km,
+    // Siempre numero: como texto crudo podia entrar al Sheet como formula.
+    km: pickup ? '' : (isFinite(Number(body.km)) && body.km !== '' && body.km != null ? Math.round(Number(body.km) * 100) / 100 : ''),
     pago_metodo: textoSeguro_(body.pago_metodo), pago_estado: 'pendiente',
     subtotal: subtotal, total: total, reparto: 0,
     notas: textoSeguro_(body.notas), motivo_cancelacion: '',
