@@ -63,6 +63,7 @@ function DialogoCuenta({ abierto, onCerrar, fijo = true, telefonoSugerido = '' }
   const [clave, setClave] = React.useState('');
   const [error, setError] = React.useState('');
   const [aviso, setAviso] = React.useState('');
+  const [avisoCorreo, setAvisoCorreo] = React.useState('');
   const [ocupado, setOcupado] = React.useState(false);
   const [telLigar, setTelLigar] = React.useState('');
   const [folioLigar, setFolioLigar] = React.useState('');
@@ -75,7 +76,7 @@ function DialogoCuenta({ abierto, onCerrar, fijo = true, telefonoSugerido = '' }
     window.mextizzaCuenta && window.mextizzaCuenta.precargar();
     // Los sellos cambian con cada entrega: se piden frescos al abrir.
     if (usuario && window.mextizzaCuenta && window.mextizzaCuenta.refrescarLigado) window.mextizzaCuenta.refrescarLigado();
-    setError(''); setAviso(''); setClave('');
+    setError(''); setAviso(''); setAvisoCorreo(''); setClave('');
     setTelLigar(String(telefonoSugerido || '').replace(/\D/g, '').slice(0, 10));
     /* El folio del ultimo pedido hecho en este navegador, si lo hay: casi
        siempre es justo el que sirve para probar que el numero es suyo. */
@@ -116,7 +117,9 @@ function DialogoCuenta({ abierto, onCerrar, fijo = true, telefonoSugerido = '' }
     if (modo === 'crear') return correr(() => C.registrar(nombre, correo, clave));
     return correr(async () => {
       await C.recuperar(correo);
-      setAviso('Te mandamos un correo para crear una contraseña nueva. Si no llega en unos minutos, revisa en spam.');
+      /* Firebase no dice si el correo existe (asi nadie puede averiguar quien
+         tiene cuenta), asi que el mensaje cubre los casos en que no llega. */
+      setAviso('Si ese correo tiene cuenta con contraseña, te llega un correo de Mextizza en unos minutos. Revisa también en spam. Si te registraste con Google, no tienes contraseña: entra con el botón de Google.');
     });
   };
 
@@ -153,6 +156,24 @@ function DialogoCuenta({ abierto, onCerrar, fijo = true, telefonoSugerido = '' }
             <p style={{ fontFamily: 'var(--font-body)', fontSize: 14, margin: 0, color: 'var(--gris-tinta, #4A4A4A)' }}>
               {usuario.conGoogle ? 'Entraste con tu cuenta de Google, ' : 'Entraste con '}{usuario.correo}.
             </p>
+            {usuario.porVerificar && (
+              <div style={{ marginTop: 12, padding: '10px 12px', borderRadius: 'var(--radius-sm)', background: 'var(--dorado-tinte)', border: '1.5px solid var(--dorado-masa)' }}>
+                <p style={{ fontFamily: 'var(--font-body)', fontSize: 13, lineHeight: 1.5, margin: 0 }}>
+                  Te mandamos un correo para confirmar que es tuyo. Ábrelo y toca el enlace; si no lo ves, revisa en spam.
+                </p>
+                <div style={{ display: 'flex', gap: 14, flexWrap: 'wrap' }}>
+                  <button style={estiloEnlace} disabled={ocupado} onClick={() => correr(async () => {
+                    const listo = await C.revisarVerificacion();
+                    setAvisoCorreo(listo ? 'Listo, tu correo quedó confirmado.' : 'Todavía no aparece confirmado. Toca el enlace del correo y vuelve a intentar.');
+                  })}>Ya lo confirmé</button>
+                  <button style={estiloEnlace} disabled={ocupado} onClick={() => correr(async () => {
+                    await C.reenviarVerificacion();
+                    setAvisoCorreo('Te lo volvimos a mandar.');
+                  })}>Reenviar correo</button>
+                </div>
+              </div>
+            )}
+            {avisoCorreo && <p role="status" style={{ fontFamily: 'var(--font-body)', fontSize: 13, margin: '8px 0 0' }}>{avisoCorreo}</p>}
 
             <div style={{ marginTop: 18, paddingTop: 16, borderTop: '2px dashed rgba(26,26,26,.18)' }}>
               {/* Con la tarjeta dibujada, el titulo lo trae ella. */}

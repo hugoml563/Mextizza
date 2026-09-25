@@ -82,7 +82,10 @@ if (!window.__mextizzaCuentaLoaded) {
       uid: usuario.uid,
       nombre: usuario.displayName || '',
       correo: usuario.email || '',
-      conGoogle: (usuario.providerData || []).some(p => p && p.providerId === 'google.com')
+      conGoogle: (usuario.providerData || []).some(p => p && p.providerId === 'google.com'),
+      // Google ya viene verificado; solo las cuentas con contraseña esperan el correo.
+      porVerificar: !usuario.emailVerified &&
+        (usuario.providerData || []).some(p => p && p.providerId === 'password')
     } : null,
     telefono: ligado.telefono,
     tarjeta: ligado.tarjeta,
@@ -235,6 +238,27 @@ if (!window.__mextizzaCuentaLoaded) {
         usuario = auth.currentUser;
         avisar();
       }
+      /* El correo para confirmar que la direccion es suya. Sin eso, recuperar
+         la contrasena puede terminar en un buzon ajeno. Si no sale, la cuenta
+         se crea igual: se puede reenviar desde la ventana de la cuenta. */
+      try { await cred.user.sendEmailVerification(); } catch (e) {}
+    },
+
+    async reenviarVerificacion() {
+      const auth = await cargarSdk();
+      if (!auth.currentUser) return;
+      await auth.currentUser.sendEmailVerification();
+    },
+
+    /* Firebase no avisa cuando alguien confirma su correo en otra pestana: hay
+       que volver a preguntar. Devuelve si ya quedo verificado. */
+    async revisarVerificacion() {
+      const auth = await cargarSdk();
+      if (!auth.currentUser) return false;
+      await auth.currentUser.reload();
+      usuario = auth.currentUser;
+      avisar();
+      return !!usuario.emailVerified;
     },
 
     async recuperar(correo) {
