@@ -2903,7 +2903,7 @@ function DialogoCuenta({
       lineHeight: 1.5,
       margin: '6px 0 0'
     }
-  }, "Tus sellos se juntan con tu tel\xE9fono. Para cobrar tus premios desde aqu\xED, liga ese n\xFAmero a tu cuenta. Solo se hace una vez."), /*#__PURE__*/React.createElement("label", {
+  }, "Tus sellos se juntan con tu tel\xE9fono. Si pides con tu cuenta abierta, se liga solo cuando te entregamos. Si ya hab\xEDas pedido sin cuenta, l\xEDgalo aqu\xED una vez."), /*#__PURE__*/React.createElement("label", {
     style: estiloEtiqueta
   }, "Tu tel\xE9fono", /*#__PURE__*/React.createElement("input", {
     value: telLigar,

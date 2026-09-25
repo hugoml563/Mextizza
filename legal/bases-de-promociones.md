@@ -47,7 +47,11 @@ pedido entregado** que incluya al menos una pizza pagada.
 
 - Los sellos se acumulan con tu teléfono, tengas cuenta o no.
 - Para cobrar un premio en el sitio o en la aplicación necesitas **entrar con
-  tu cuenta** y **ligarle tu teléfono una sola vez**, comprobando que es tuyo
+  tu cuenta** y que tu teléfono esté **ligado a ella**.
+- Si haces un pedido con tu cuenta abierta, el teléfono de ese pedido se liga
+  a tu cuenta cuando te lo entregamos, siempre que no esté ligado a otra cuenta
+  y tu cuenta no tenga ya otro teléfono.
+- Si pediste sin cuenta, puedes ligarlo una sola vez comprobando que es tuyo
   con el folio de un pedido que ya te entregamos.
 - Un teléfono solo puede estar ligado a una cuenta, y una cuenta a un teléfono.
   Si cambiaste de número o el tuyo aparece ligado a otra cuenta, escríbenos.

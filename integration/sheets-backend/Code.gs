@@ -1276,6 +1276,31 @@ function heredarPedidos_(tel, uid, ordenes) {
   return n;
 }
 
+/* Al entregar un pedido hecho con la sesion abierta, su telefono se liga solo a
+   esa cuenta. Ligar a mano pide el folio de un pedido entregado para probar que
+   el numero es tuyo; quien pidio con su cuenta ya tiene ese folio en pantalla,
+   asi que pedirselo no agrega seguridad, solo un paso.
+
+   Mismas reglas que ligar a mano: si el telefono ya es de otra cuenta, o la
+   cuenta ya tiene un telefono, no se toca nada. Los pedidos que captura la
+   cocina se guardan sin uid, asi que nunca ligan. Devuelve si ligo. */
+function ligarAlEntregar_(telefono, uid) {
+  const tel = soloDigitos_(telefono);
+  if (!uid || tel.length !== 10) return false;
+  if (telefonoDeCuenta_(uid)) return false;
+  const sh = sheet_(SHEETS.clientes);
+  const data = sh.getDataRange().getValues();
+  const cUid = CLIENTES_HEADERS.indexOf('uid');
+  for (let r = 1; r < data.length; r++) {
+    if (soloDigitos_(data[r][0]) !== tel) continue;
+    if (String(data[r][cUid] || '')) return false;
+    sh.getRange(r + 1, cUid + 1).setValue(uid);
+    heredarPedidos_(tel, uid);
+    return true;
+  }
+  return false;
+}
+
 /* Para correr UNA vez a mano desde el editor, despues de pegar esta version:
    las cuentas que se ligaron antes de que existiera heredarPedidos_ recogen
    sus pedidos. Se puede repetir sin dano. */
@@ -1753,6 +1778,15 @@ function avanzarEstado_(body) {
       String(row[ORDENES_HEADERS.indexOf('premio')] || ''),
       new Date(), true);
     sh.getRange(index, ORDENES_HEADERS.indexOf('sello') + 1).setValue('contado');
+  }
+
+  if (nuevo === 'entregada' && row[ORDENES_HEADERS.indexOf('uid')]) {
+    // Ligar es un extra: si falla, el pedido se entrega igual.
+    try {
+      ligarAlEntregar_(row[ORDENES_HEADERS.indexOf('cliente_telefono')], String(row[ORDENES_HEADERS.indexOf('uid')]));
+    } catch (e) {
+      console.error('No se pudo ligar el telefono al entregar ' + body.folio + ': ' + e);
+    }
   }
 
   if (nuevo === 'entregada') {

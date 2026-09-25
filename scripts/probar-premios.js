@@ -882,5 +882,55 @@ console.log('\nCOBRAR UN PREMIO PIDE LA CUENTA DUENA DEL TELEFONO');
   comparar('al sexto intento fallido se planta', /Demasiados intentos/.test(ligar('tok-bruto', TEL_W, 'MX-OTRO')), true);
 }
 
+console.log('\nAL ENTREGAR, EL TELEFONO SE LIGA SOLO A LA CUENTA QUE PIDIO');
+{
+  const pedirComo = (tel, token, extra) => {
+    RELOJ = diaAbierto();
+    const nivel = extra && extra.nivel;
+    const cuerpo = Object.assign({
+      canal: 'Web', cliente: { telefono: tel, nombre: 'Prueba ligar' },
+      direccion: 'Calle 1', colonia: 'Lomas Lindas', km: 1, pago_metodo: 'Efectivo',
+      items: [{ producto_id: 'roni', cantidad: 1 }], idToken: token,
+    }, extra || {});
+    delete cuerpo.nivel;
+    return ctx.crearOrden_(cuerpo, nivel);
+  };
+
+  const TEL_N = '5544449999';
+  GOOGLE.cuentas['tok-nuevo'] = { localId: 'uid-nuevo', email: 'nuevo@prueba.mx' };
+  const primero = pedirComo(TEL_N, 'tok-nuevo');
+  comparar('el pedido lleva la cuenta desde que se hace', campoDe(primero.folio, 'uid'), 'uid-nuevo');
+  comparar('pero el telefono todavia no se liga: falta entregar', ctx.duenoDeTelefono_(TEL_N), '');
+  entregar(primero.folio);
+  comparar('al entregarse, el telefono queda ligado a esa cuenta', ctx.duenoDeTelefono_(TEL_N), 'uid-nuevo');
+  comparar('y la cuenta ve su telefono', ctx.miCuenta_({ idToken: 'tok-nuevo' }).telefono, TEL_N);
+
+  const TEL_M = '5544448888';
+  entregar(pedirComo(TEL_M, 'tok-nuevo').folio);
+  comparar('una cuenta con telefono no se liga un segundo', ctx.duenoDeTelefono_(TEL_M), '');
+  comparar('y sigue con el suyo', ctx.miCuenta_({ idToken: 'tok-nuevo' }).telefono, TEL_N);
+
+  GOOGLE.cuentas['tok-otro2'] = { localId: 'uid-otro2' };
+  entregar(pedirComo(TEL_N, 'tok-otro2').folio);
+  comparar('un telefono que ya es de otra cuenta no cambia de dueno', ctx.duenoDeTelefono_(TEL_N), 'uid-nuevo');
+  comparar('ni la otra cuenta se queda con el', ctx.miCuenta_({ idToken: 'tok-otro2' }).telefono, '');
+
+  const TEL_C = '5544447777';
+  GOOGLE.cuentas['tok-cocina'] = { localId: 'uid-cocina' };
+  entregar(pedirComo(TEL_C, 'tok-cocina', { canal: 'WhatsApp', nivel: 'admin' }).folio);
+  comparar('lo que captura la cocina no liga nada', ctx.duenoDeTelefono_(TEL_C), '');
+  comparar('ni a la cuenta de quien captura', ctx.miCuenta_({ idToken: 'tok-cocina' }).telefono, '');
+
+  const TEL_X = '5544446666';
+  GOOGLE.cuentas['tok-cancela'] = { localId: 'uid-cancela' };
+  const cancelado = pedirComo(TEL_X, 'tok-cancela');
+  ctx.cancelarOrden_({ folio: cancelado.folio, motivo: 'prueba' });
+  comparar('un pedido cancelado no liga', ctx.duenoDeTelefono_(TEL_X), '');
+
+  const TEL_I = '5544445555';
+  entregar(pedirComo(TEL_I, undefined).folio);
+  comparar('un pedido de invitado no liga', ctx.duenoDeTelefono_(TEL_I), '');
+}
+
 console.log('\n  ' + ok + ' pruebas ok, ' + mal + ' mal\n');
 process.exit(mal ? 1 : 0);

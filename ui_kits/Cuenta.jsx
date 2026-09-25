@@ -183,7 +183,7 @@ function DialogoCuenta({ abierto, onCerrar, fijo = true, telefonoSugerido = '' }
                   setAviso('Listo, tu teléfono quedó ligado. Tus premios ya se cobran con tu cuenta.');
                 }); }} noValidate>
                   <p style={{ fontFamily: 'var(--font-body)', fontSize: 13.5, lineHeight: 1.5, margin: '6px 0 0' }}>
-                    Tus sellos se juntan con tu teléfono. Para cobrar tus premios desde aquí, liga ese número a tu cuenta. Solo se hace una vez.
+                    Tus sellos se juntan con tu teléfono. Si pides con tu cuenta abierta, se liga solo cuando te entregamos. Si ya habías pedido sin cuenta, lígalo aquí una vez.
                   </p>
                   <label style={estiloEtiqueta}>Tu teléfono
                     <input value={telLigar} onChange={(e) => setTelLigar(e.target.value.replace(/\D/g, '').slice(0, 10))}
