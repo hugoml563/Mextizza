@@ -42,7 +42,7 @@ function inyectarCSS() {
 }
 
 /* Una casilla. `estado`: 'vacia' | 'sellada' | 'nueva'. */
-function Casilla({ n, estado, premio, listo }) {
+function Casilla({ n, estado, premio, listo, compacto }) {
   const pendiente = estado === 'pendiente';
   const sellada = estado !== 'vacia' && !pendiente;
   const esPremio = !!premio;
@@ -66,7 +66,7 @@ function Casilla({ n, estado, premio, listo }) {
           <span
             className={estado === 'nueva' ? 'mx-sello-nuevo' : undefined}
             style={{
-              fontFamily: 'var(--font-label)', fontSize: 13, fontWeight: 400,
+              fontFamily: 'var(--font-label)', fontSize: compacto ? 11 : 13, fontWeight: 400,
               letterSpacing: 0.5, lineHeight: 1,
               color: esPremio ? 'var(--rosa-mexicano-texto)' : 'var(--negro-carbon)',
               // Los sellos de verdad no caen derechos.
@@ -88,7 +88,7 @@ function Casilla({ n, estado, premio, listo }) {
         )}
         {listo && (
           <span className="mx-premio-listo" aria-hidden="true" style={{
-            position: 'absolute', inset: -5, borderRadius: '50%',
+            position: 'absolute', inset: compacto ? -3 : -5, borderRadius: '50%',
             border: '2px solid ' + acento, pointerEvents: 'none',
           }} />
         )}
@@ -111,7 +111,9 @@ function Casilla({ n, estado, premio, listo }) {
 /* pendiente: este pedido sellara un dia CUANDO SE ENTREGUE. Se dibuja la
    casilla que viene, en punteado, en vez de darla por ganada: el sello se otorga
    al entregar, y un pedido cancelado no cuenta. */
-function TarjetaPremios({ tarjeta, animarUltimo = false, pendiente = false, titulo, style }) {
+/* compacto: los nueve dias en una sola fila, como tarjeta de sellos. Cabe en
+   el dialogo de la cuenta sin volverlo una pantalla larga. */
+function TarjetaPremios({ tarjeta, animarUltimo = false, pendiente = false, titulo, style, compacto = false }) {
   React.useEffect(inyectarCSS, []);
   if (!tarjeta) return null;
 
@@ -124,7 +126,7 @@ function TarjetaPremios({ tarjeta, animarUltimo = false, pendiente = false, titu
   for (let n = 1; n <= DIAS_TARJETA; n++) {
     const sellada = n <= llenas;
     casillas.push(
-      <Casilla key={n} n={n} premio={premios[n]}
+      <Casilla key={n} n={n} premio={premios[n]} compacto={compacto}
         estado={sellada
           ? (animarUltimo && n === llenas ? 'nueva' : 'sellada')
           : (pendiente && n === llenas + 1 ? 'pendiente' : 'vacia')}
@@ -169,7 +171,7 @@ function TarjetaPremios({ tarjeta, animarUltimo = false, pendiente = false, titu
   }
 
   return (
-    <FramedPanel variant="object" style={{ position: 'relative', ...style }}>
+    <FramedPanel variant="object" style={{ position: 'relative', ...(compacto ? { padding: '18px 12px 12px' } : null), ...style }}>
       <TapeStripe position="top" height={4} />
       <div style={{ padding: '4px 2px 2px' }}>
         <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 10, marginBottom: 12 }}>
@@ -182,14 +184,17 @@ function TarjetaPremios({ tarjeta, animarUltimo = false, pendiente = false, titu
           )}
         </div>
 
-        <div style={{
+        <div role="img" aria-label={'Tarjeta con ' + llenas + ' de ' + DIAS_TARJETA + ' sellos'} style={compacto ? {
+          display: 'grid', gridTemplateColumns: 'repeat(' + DIAS_TARJETA + ', 1fr)',
+          gap: 5, paddingBottom: 2,
+        } : {
           display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)',
           gap: 12, maxWidth: 236, margin: '0 auto',
         }}>{casillas}</div>
 
         <p style={{
           fontFamily: 'var(--font-body)', fontSize: 13, lineHeight: 1.45,
-          color: 'var(--text-body)', textAlign: 'center', margin: '16px 0 0',
+          color: 'var(--text-body)', textAlign: 'center', margin: compacto ? '12px 0 0' : '16px 0 0',
         }}>{mensaje}</p>
 
         {extra > 0 && (

@@ -665,7 +665,8 @@ function Casilla({
   n,
   estado,
   premio,
-  listo
+  listo,
+  compacto
 }) {
   const pendiente = estado === 'pendiente';
   const sellada = estado !== 'vacia' && !pendiente;
@@ -693,7 +694,7 @@ function Casilla({
     className: estado === 'nueva' ? 'mx-sello-nuevo' : undefined,
     style: {
       fontFamily: 'var(--font-label)',
-      fontSize: 13,
+      fontSize: compacto ? 11 : 13,
       fontWeight: 400,
       letterSpacing: 0.5,
       lineHeight: 1,
@@ -724,7 +725,7 @@ function Casilla({
     "aria-hidden": "true",
     style: {
       position: 'absolute',
-      inset: -5,
+      inset: compacto ? -3 : -5,
       borderRadius: '50%',
       border: '2px solid ' + acento,
       pointerEvents: 'none'
@@ -753,12 +754,15 @@ function Casilla({
 /* pendiente: este pedido sellara un dia CUANDO SE ENTREGUE. Se dibuja la
    casilla que viene, en punteado, en vez de darla por ganada: el sello se otorga
    al entregar, y un pedido cancelado no cuenta. */
+/* compacto: los nueve dias en una sola fila, como tarjeta de sellos. Cabe en
+   el dialogo de la cuenta sin volverlo una pantalla larga. */
 function TarjetaPremios({
   tarjeta,
   animarUltimo = false,
   pendiente = false,
   titulo,
-  style
+  style,
+  compacto = false
 }) {
   React.useEffect(inyectarCSS, []);
   if (!tarjeta) return null;
@@ -776,6 +780,7 @@ function TarjetaPremios({
       key: n,
       n: n,
       premio: premios[n],
+      compacto: compacto,
       estado: sellada ? animarUltimo && n === llenas ? 'nueva' : 'sellada' : pendiente && n === llenas + 1 ? 'pendiente' : 'vacia',
       listo: n === CASILLA_BROWNIE && tarjeta.brownie || n === CASILLA_PIZZA && tarjeta.pizza
     }));
@@ -834,6 +839,9 @@ function TarjetaPremios({
     variant: "object",
     style: {
       position: 'relative',
+      ...(compacto ? {
+        padding: '18px 12px 12px'
+      } : null),
       ...style
     }
   }, /*#__PURE__*/React.createElement(TapeStripe, {
@@ -862,7 +870,14 @@ function TarjetaPremios({
   }, titulo || 'Tu tarjeta'), tarjeta.ciclos > 0 && /*#__PURE__*/React.createElement(Badge, {
     tone: "dorado"
   }, tarjeta.ciclos === 1 ? '1 tarjeta llena' : tarjeta.ciclos + ' tarjetas llenas')), /*#__PURE__*/React.createElement("div", {
-    style: {
+    role: "img",
+    "aria-label": 'Tarjeta con ' + llenas + ' de ' + DIAS_TARJETA + ' sellos',
+    style: compacto ? {
+      display: 'grid',
+      gridTemplateColumns: 'repeat(' + DIAS_TARJETA + ', 1fr)',
+      gap: 5,
+      paddingBottom: 2
+    } : {
       display: 'grid',
       gridTemplateColumns: 'repeat(3, 1fr)',
       gap: 12,
@@ -876,7 +891,7 @@ function TarjetaPremios({
       lineHeight: 1.45,
       color: 'var(--text-body)',
       textAlign: 'center',
-      margin: '16px 0 0'
+      margin: compacto ? '12px 0 0' : '16px 0 0'
     }
   }, mensaje), extra > 0 && /*#__PURE__*/React.createElement("p", {
     style: {
@@ -1585,7 +1600,7 @@ function DialogoCuenta({
       paddingTop: 16,
       borderTop: '2px dashed rgba(26,26,26,.18)'
     }
-  }, /*#__PURE__*/React.createElement("div", {
+  }, !(ligado && tarjeta) && /*#__PURE__*/React.createElement("div", {
     style: {
       fontFamily: 'var(--font-body)',
       fontWeight: 600,
@@ -1610,11 +1625,13 @@ function DialogoCuenta({
       lineHeight: 1.5,
       marginTop: 6
     }
-  }, /*#__PURE__*/React.createElement("div", null, "Ligada al tel\xE9fono ", /*#__PURE__*/React.createElement("b", null, ligado.replace(/(\d{3})(\d{3})(\d{4})/, '$1 $2 $3')), "."), tarjeta && /*#__PURE__*/React.createElement("div", {
+  }, tarjeta && typeof TarjetaPremios === 'function' && /*#__PURE__*/React.createElement(TarjetaPremios, {
+    tarjeta: tarjeta,
+    compacto: true,
     style: {
-      marginTop: 4
+      margin: '0 0 12px'
     }
-  }, tarjeta.dias === 1 ? 'Llevas 1 sello.' : 'Llevas ' + tarjeta.dias + ' sellos.', tarjeta.pizza && tarjeta.brownie ? ' Tienes una Traviesa y un brownie gratis.' : tarjeta.pizza ? ' Tienes una Traviesa gratis.' : tarjeta.brownie ? ' Tienes un brownie gratis.' : ''), /*#__PURE__*/React.createElement("div", {
+  }), /*#__PURE__*/React.createElement("div", null, "Ligada al tel\xE9fono ", /*#__PURE__*/React.createElement("b", null, ligado.replace(/(\d{3})(\d{3})(\d{4})/, '$1 $2 $3')), "."), /*#__PURE__*/React.createElement("div", {
     style: {
       marginTop: 4,
       fontSize: 12.5,

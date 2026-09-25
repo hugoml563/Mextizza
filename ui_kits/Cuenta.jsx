@@ -155,22 +155,24 @@ function DialogoCuenta({ abierto, onCerrar, fijo = true, telefonoSugerido = '' }
             </p>
 
             <div style={{ marginTop: 18, paddingTop: 16, borderTop: '2px dashed rgba(26,26,26,.18)' }}>
-              <div style={{ fontFamily: 'var(--font-body)', fontWeight: 600, fontSize: 12, letterSpacing: 1, textTransform: 'uppercase', color: 'var(--rosa-mexicano-texto)' }}>
-                Tu tarjeta
-              </div>
+              {/* Con la tarjeta dibujada, el titulo lo trae ella. */}
+              {!(ligado && tarjeta) && (
+                <div style={{ fontFamily: 'var(--font-body)', fontWeight: 600, fontSize: 12, letterSpacing: 1, textTransform: 'uppercase', color: 'var(--rosa-mexicano-texto)' }}>
+                  Tu tarjeta
+                </div>
+              )}
               {cargandoTelefono && !ligado ? (
                 <p style={{ fontFamily: 'var(--font-body)', fontSize: 14, margin: '8px 0 0' }}>
                   <span className="mx-puntos" aria-label="Buscando tu tarjeta"><i></i><i></i><i></i></span>
                 </p>
               ) : ligado ? (
                 <div style={{ fontFamily: 'var(--font-body)', fontSize: 14, lineHeight: 1.5, marginTop: 6 }}>
-                  <div>Ligada al teléfono <b>{ligado.replace(/(\d{3})(\d{3})(\d{4})/, '$1 $2 $3')}</b>.</div>
-                  {tarjeta && (
-                    <div style={{ marginTop: 4 }}>
-                      {tarjeta.dias === 1 ? 'Llevas 1 sello.' : 'Llevas ' + tarjeta.dias + ' sellos.'}
-                      {tarjeta.pizza && tarjeta.brownie ? ' Tienes una Traviesa y un brownie gratis.' : tarjeta.pizza ? ' Tienes una Traviesa gratis.' : tarjeta.brownie ? ' Tienes un brownie gratis.' : ''}
-                    </div>
+                  {/* La tarjeta dibujada: de un vistazo se ve cuanto falta
+                      para el brownie y para la Traviesa. */}
+                  {tarjeta && typeof TarjetaPremios === 'function' && (
+                    <TarjetaPremios tarjeta={tarjeta} compacto style={{ margin: '0 0 12px' }} />
                   )}
+                  <div>Ligada al teléfono <b>{ligado.replace(/(\d{3})(\d{3})(\d{4})/, '$1 $2 $3')}</b>.</div>
                   <div style={{ marginTop: 4, fontSize: 12.5, color: 'var(--gris-tinta, #4A4A4A)' }}>
                     Tus premios se cobran solos cuando pides con este número y tu cuenta abierta.
                   </div>
