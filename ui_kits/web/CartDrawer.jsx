@@ -319,6 +319,18 @@ function CartDrawer({ open, lines, onClose, onQty, step, setStep, canal = 'Web',
               Tu pedido está vacío. Agrega algo del menú.
             </p>
           ))}
+          {/* En celular el boton Seguir sale del encabezado cuando no hay un
+              pedido en curso. Quien perdio su folio lo busca desde aqui. */}
+          {step === 'cart' && lines.length === 0 && (
+            <button onClick={() => setStep(folio ? 'done' : 'buscar')} style={{
+              display: 'flex', alignItems: 'center', gap: 8, marginTop: 14, padding: '10px 0', minHeight: 44,
+              background: 'none', border: 'none', cursor: 'pointer', color: 'var(--terracota-horno)',
+              fontFamily: 'var(--font-body)', fontWeight: 600, fontSize: 13, letterSpacing: 0.5
+            }}>
+              <Icon name="clock" size={16} />
+              ¿Ya pediste? Sigue tu pedido
+            </button>
+          )}
 
           {step === 'checkout' && (
             <>

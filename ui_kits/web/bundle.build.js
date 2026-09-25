@@ -96,6 +96,14 @@ const webShell = {
 /* `cinta` es el anuncio de promocion. Va DENTRO del encabezado para que quede
    pegado arriba junto con el, y despues de la cinta de colores — que se ancla
    al borde inferior de su propio contenedor, no del encabezado entero. */
+/* Lo que dice la franja de seguimiento en celular, segun el estado. */
+function textoPedidoActivo(p) {
+  if (!p) return '';
+  if (p.estado === 'horno') return 'Tu pizza está en el horno';
+  if (p.estado === 'lista') return p.pickup ? 'Tu pedido está listo para recoger' : 'Tu pedido está listo';
+  if (p.estado === 'camino') return 'Tu pedido va en camino';
+  return 'Recibimos tu pedido';
+}
 function WebHeader({
   count,
   onCart,
@@ -104,7 +112,8 @@ function WebHeader({
   folio,
   onSeguir,
   cinta,
-  onCuenta
+  onCuenta,
+  pedidoActivo
 }) {
   return /*#__PURE__*/React.createElement("header", {
     style: {
@@ -168,6 +177,7 @@ function WebHeader({
       paddingBottom: 2
     }
   }, l)), /*#__PURE__*/React.createElement("button", {
+    className: "web-header-seguir",
     onClick: onSeguir,
     "aria-label": "Seguir mi pedido",
     style: {
@@ -216,7 +226,40 @@ function WebHeader({
   }), /*#__PURE__*/React.createElement("span", null, count ? count : 'Pedido')))), /*#__PURE__*/React.createElement(TapeStripe, {
     position: "bottom",
     height: 4
-  })), cinta);
+  })), pedidoActivo && /*#__PURE__*/React.createElement("button", {
+    className: "franja-pedido",
+    onClick: onSeguir,
+    style: {
+      alignItems: 'center',
+      gap: 8,
+      width: '100%',
+      minHeight: 44,
+      padding: '8px 24px',
+      background: 'var(--blanco-hueso)',
+      border: 'none',
+      borderBottom: '2px solid var(--terracota-horno)',
+      color: 'var(--terracota-horno)',
+      cursor: 'pointer',
+      textAlign: 'left',
+      fontFamily: 'var(--font-body)',
+      fontWeight: 600,
+      fontSize: 13,
+      letterSpacing: 0.5
+    }
+  }, /*#__PURE__*/React.createElement(Icon, {
+    name: "clock",
+    size: 16
+  }), /*#__PURE__*/React.createElement("span", {
+    style: {
+      flex: 1
+    }
+  }, textoPedidoActivo(pedidoActivo)), /*#__PURE__*/React.createElement("span", {
+    style: {
+      fontSize: 12,
+      letterSpacing: 1,
+      textTransform: 'uppercase'
+    }
+  }, "Ver")), cinta);
 }
 function WebHero({
   onNav
@@ -2400,6 +2443,7 @@ function BotonCuenta({
     usuario
   } = useCuenta();
   return /*#__PURE__*/React.createElement("button", {
+    className: "boton-cuenta",
     onClick: onAbrir,
     "aria-label": usuario ? 'Mi cuenta' : 'Entrar a mi cuenta',
     style: {
@@ -3434,7 +3478,28 @@ function CartDrawer({
       color: 'var(--text-muted)',
       paddingTop: 8
     }
-  }, "Tu pedido est\xE1 vac\xEDo. Agrega algo del men\xFA.")), step === 'checkout' && /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement(DeliveryForm, {
+  }, "Tu pedido est\xE1 vac\xEDo. Agrega algo del men\xFA.")), step === 'cart' && lines.length === 0 && /*#__PURE__*/React.createElement("button", {
+    onClick: () => setStep(folio ? 'done' : 'buscar'),
+    style: {
+      display: 'flex',
+      alignItems: 'center',
+      gap: 8,
+      marginTop: 14,
+      padding: '10px 0',
+      minHeight: 44,
+      background: 'none',
+      border: 'none',
+      cursor: 'pointer',
+      color: 'var(--terracota-horno)',
+      fontFamily: 'var(--font-body)',
+      fontWeight: 600,
+      fontSize: 13,
+      letterSpacing: 0.5
+    }
+  }, /*#__PURE__*/React.createElement(Icon, {
+    name: "clock",
+    size: 16
+  }), "\xBFYa pediste? Sigue tu pedido"), step === 'checkout' && /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement(DeliveryForm, {
     compact: true,
     attempted: attempted,
     onValidChange: setReady,
@@ -3885,6 +3950,38 @@ function Site() {
       folio ? localStorage.setItem(FOLIO_KEY, folio) : localStorage.removeItem(FOLIO_KEY);
     } catch (e) {}
   }, [folio]);
+  /* Si el ultimo pedido sigue en curso. En celular es lo que decide si se ve
+     la franja de seguimiento. Se vuelve a preguntar cada minuto mientras siga
+     en curso; entregado o cancelado ya no se consulta. */
+  const [pedidoActivo, setPedidoActivo] = React.useState(null);
+  React.useEffect(() => {
+    setPedidoActivo(null);
+    if (!folio || typeof mextizzaEstadoOrden !== 'function') return;
+    let vivo = true,
+      id = null;
+    const leer = async () => {
+      try {
+        const r = await mextizzaEstadoOrden(folio);
+        const o = r && r.orden;
+        const enCurso = !!o && o.estado !== 'entregada' && o.estado !== 'cancelada';
+        if (!vivo) return;
+        setPedidoActivo(enCurso ? {
+          estado: o.estado,
+          pickup: !!o.pickup
+        } : null);
+        if (!enCurso && id) {
+          clearInterval(id);
+          id = null;
+        }
+      } catch (e) {/* sin red se queda como estaba */}
+    };
+    leer();
+    id = setInterval(leer, 60000);
+    return () => {
+      vivo = false;
+      if (id) clearInterval(id);
+    };
+  }, [folio]);
   const [open, setOpen] = React.useState(false);
   const [cuenta, setCuenta] = React.useState(false);
   const cerrarCuenta = React.useCallback(() => setCuenta(false), []);
@@ -3986,6 +4083,7 @@ function Site() {
       setStep('cart');
     },
     folio: folio,
+    pedidoActivo: pedidoActivo,
     onSeguir: () => {
       setOpen(true);
       setStep(folio ? 'done' : 'buscar');

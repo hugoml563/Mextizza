@@ -1340,6 +1340,7 @@ function BotonCuenta({
     usuario
   } = useCuenta();
   return /*#__PURE__*/React.createElement("button", {
+    className: "boton-cuenta",
     onClick: onAbrir,
     "aria-label": usuario ? 'Mi cuenta' : 'Entrar a mi cuenta',
     style: {

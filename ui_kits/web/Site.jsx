@@ -10,6 +10,28 @@ function Site(){
   const FOLIO_KEY='mextizza.web.folio';
   const [folio,setFolio]=React.useState(()=>{ try{return localStorage.getItem(FOLIO_KEY)||null;}catch(e){return null;} });
   React.useEffect(()=>{ try{ folio?localStorage.setItem(FOLIO_KEY,folio):localStorage.removeItem(FOLIO_KEY); }catch(e){} },[folio]);
+  /* Si el ultimo pedido sigue en curso. En celular es lo que decide si se ve
+     la franja de seguimiento. Se vuelve a preguntar cada minuto mientras siga
+     en curso; entregado o cancelado ya no se consulta. */
+  const [pedidoActivo,setPedidoActivo]=React.useState(null);
+  React.useEffect(()=>{
+    setPedidoActivo(null);
+    if(!folio||typeof mextizzaEstadoOrden!=='function') return;
+    let vivo=true, id=null;
+    const leer=async()=>{
+      try{
+        const r=await mextizzaEstadoOrden(folio);
+        const o=r&&r.orden;
+        const enCurso=!!o&&o.estado!=='entregada'&&o.estado!=='cancelada';
+        if(!vivo) return;
+        setPedidoActivo(enCurso?{estado:o.estado,pickup:!!o.pickup}:null);
+        if(!enCurso&&id){clearInterval(id);id=null;}
+      }catch(e){ /* sin red se queda como estaba */ }
+    };
+    leer();
+    id=setInterval(leer,60000);
+    return ()=>{vivo=false;if(id)clearInterval(id);};
+  },[folio]);
   const [open,setOpen]=React.useState(false);
   const [cuenta,setCuenta]=React.useState(false);
   const cerrarCuenta=React.useCallback(()=>setCuenta(false),[]);
@@ -63,7 +85,7 @@ function Site(){
   return <>
     {modoCaptura && <div style={{background:'#1A1A1A',color:'#F5F0E8',textAlign:'center',padding:'8px 12px',fontFamily:'var(--font-label)',fontSize:11,letterSpacing:1,textTransform:'uppercase'}}>Modo captura · WhatsApp — este pedido se registra como canal WhatsApp</div>}
     <WebHeader count={count} view={view} onNav={nav} onCart={()=>{setOpen(true);setStep('cart');}}
-      folio={folio} onSeguir={()=>{setOpen(true);setStep(folio?'done':'buscar');}}
+      folio={folio} pedidoActivo={pedidoActivo} onSeguir={()=>{setOpen(true);setStep(folio?'done':'buscar');}}
       onCuenta={()=>setCuenta(true)}
       /* Dentro del encabezado, para que quede a la vista mientras se navega: es
          lo primero que ve quien llega y ahi todavia puede decidir pedir dos

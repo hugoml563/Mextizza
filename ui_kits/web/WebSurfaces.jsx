@@ -27,7 +27,16 @@ const webShell = {
 /* `cinta` es el anuncio de promocion. Va DENTRO del encabezado para que quede
    pegado arriba junto con el, y despues de la cinta de colores — que se ancla
    al borde inferior de su propio contenedor, no del encabezado entero. */
-function WebHeader({ count, onCart, onNav, view, folio, onSeguir, cinta, onCuenta }) {
+/* Lo que dice la franja de seguimiento en celular, segun el estado. */
+function textoPedidoActivo(p) {
+  if (!p) return '';
+  if (p.estado === 'horno') return 'Tu pizza está en el horno';
+  if (p.estado === 'lista') return p.pickup ? 'Tu pedido está listo para recoger' : 'Tu pedido está listo';
+  if (p.estado === 'camino') return 'Tu pedido va en camino';
+  return 'Recibimos tu pedido';
+}
+
+function WebHeader({ count, onCart, onNav, view, folio, onSeguir, cinta, onCuenta, pedidoActivo }) {
   return (
     <header style={{
       background: 'rgba(245,240,232,0.82)', backdropFilter: 'blur(10px) saturate(140%)', WebkitBackdropFilter: 'blur(10px) saturate(140%)',
@@ -47,7 +56,7 @@ function WebHeader({ count, onCart, onNav, view, folio, onSeguir, cinta, onCuent
             }}>{l}</a>
           ))}
           {(
-            <button onClick={onSeguir} aria-label="Seguir mi pedido" style={{
+            <button className="web-header-seguir" onClick={onSeguir} aria-label="Seguir mi pedido" style={{
               display: 'flex', alignItems: 'center', gap: 7, background: 'transparent',
               border: '2px solid var(--terracota-horno)', borderRadius: 'var(--radius-sm)', padding: '9px 13px',
               color: 'var(--terracota-horno)', cursor: 'pointer',
@@ -71,6 +80,21 @@ function WebHeader({ count, onCart, onNav, view, folio, onSeguir, cinta, onCuent
       </div>
       <TapeStripe position="bottom" height={4} />
       </div>
+      {/* Solo en celular (la regla vive en index.html): ahi Seguir sale del
+          encabezado y aparece aqui, y solo mientras hay un pedido en curso.
+          Es cuando de verdad importa; el resto del tiempo no ocupa lugar. */}
+      {pedidoActivo && (
+        <button className="franja-pedido" onClick={onSeguir} style={{
+          alignItems: 'center', gap: 8, width: '100%', minHeight: 44, padding: '8px 24px',
+          background: 'var(--blanco-hueso)', border: 'none', borderBottom: '2px solid var(--terracota-horno)',
+          color: 'var(--terracota-horno)', cursor: 'pointer', textAlign: 'left',
+          fontFamily: 'var(--font-body)', fontWeight: 600, fontSize: 13, letterSpacing: 0.5
+        }}>
+          <Icon name="clock" size={16} />
+          <span style={{ flex: 1 }}>{textoPedidoActivo(pedidoActivo)}</span>
+          <span style={{ fontSize: 12, letterSpacing: 1, textTransform: 'uppercase' }}>Ver</span>
+        </button>
+      )}
       {cinta}
     </header>
   );

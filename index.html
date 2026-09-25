@@ -13,6 +13,7 @@ body{background:var(--surface-page)}
   .web-process-grid{grid-template-columns:1fr !important}
   .web-footer-grid{grid-template-columns:1fr !important;gap:32px !important}
 }
+.franja-pedido{display:none}
 @media (max-width: 640px) {
   /* El header se partia en tres filas y ocupaba 173px, el 21% de la pantalla,
      antes de que empezara el contenido. Los tres enlaces de ancla se ocultan en
@@ -24,6 +25,14 @@ body{background:var(--surface-page)}
   /* La cuenta queda como icono: con texto, cuatro botones ya no caben en una
      fila de 327px. El nombre sigue en su aria-label. */
   .cuenta-texto{display:none}
+  /* Tres cajas con marco peleaban por la atencion y ninguna ganaba. En celular
+     solo Pedido lleva peso; la cuenta queda como icono sin marco, con los
+     44px de area de toque, y Seguir se va a la franja de abajo, que solo sale
+     con un pedido en curso. */
+  .web-header-nav{gap:4px !important}
+  .web-header-seguir{display:none !important}
+  .boton-cuenta{border:none !important;min-width:44px;min-height:44px;justify-content:center;padding:0 !important}
+  .franja-pedido{display:flex !important}
   /* Lado a lado en una columna de 327px, ambos botones partian su etiqueta en
      dos lineas. Apilados ocupan el ancho completo y dan mejor area de toque. */
   .web-hero-cta{flex-direction:column;align-items:stretch}

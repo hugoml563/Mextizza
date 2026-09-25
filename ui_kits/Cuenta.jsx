@@ -22,7 +22,7 @@ const primerNombre = (u) => String((u && (u.nombre || u.correo)) || '').split(/[
 function BotonCuenta({ onAbrir }) {
   const { usuario } = useCuenta();
   return (
-    <button onClick={onAbrir} aria-label={usuario ? 'Mi cuenta' : 'Entrar a mi cuenta'} style={{
+    <button className="boton-cuenta" onClick={onAbrir} aria-label={usuario ? 'Mi cuenta' : 'Entrar a mi cuenta'} style={{
       display: 'flex', alignItems: 'center', gap: 7, background: 'transparent',
       border: 'var(--border-frame)', borderRadius: 'var(--radius-sm)', padding: '9px 12px',
       color: 'var(--negro-carbon)', cursor: 'pointer', maxWidth: 160,
