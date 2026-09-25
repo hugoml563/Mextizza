@@ -7,28 +7,37 @@ const { FramedPanel, TapeStripe, Badge } = window.MextizzaDesignSystem_8a35ee;
    lo que el servidor contesta, para que la tarjeta nunca prometa un premio que
    la caja no va a dar.
 
-   Nueve casillas, la 4 y la 9 marcadas. Si alguien acumula de mas antes de
-   canjear, las casillas se llenan y los dias extra se dicen aparte: el ciclo
+   Nueve rebanadas, la 4 y la 9 marcadas. Si alguien acumula de mas antes de
+   canjear, la pizza se completa y los dias extra se dicen aparte: el ciclo
    resta 9 al canjear, no se va a cero, asi que esos dias no se pierden. */
 
 const DIAS_TARJETA = 9;
 const CASILLA_BROWNIE = 4;
 const CASILLA_PIZZA = 9;
 
-/* El sello nuevo cae con un golpe seco, como un sello de tinta de verdad: entra
-   grande y girado, y se asienta. Los demas ya estaban ahi, no se animan. */
+/* La tarjeta es una pizza de nueve rebanadas: cada dia con pedido entregado
+   hornea una. Completar la pizza es ganarse una, asi que el dibujo cuenta la
+   promocion sin tener que leerla. La rebanada 4 trae el brownie.
+
+   La rebanada nueva sale del horno: entra chica, rebota y echa vapor. Las
+   demas ya estaban ahi, no se animan. */
 const CSS_TARJETA = [
-  '@keyframes mxsello{',
-  '0%{opacity:0;transform:scale(2.1) rotate(-24deg)}',
-  '55%{opacity:1;transform:scale(.92) rotate(3deg)}',
-  '75%{transform:scale(1.04) rotate(-1deg)}',
-  '100%{opacity:1;transform:scale(1) rotate(0deg)}}',
+  '@keyframes mxrebanada{',
+  '0%{opacity:0;transform:scale(.35)}',
+  '60%{opacity:1;transform:scale(1.12)}',
+  '80%{transform:scale(.96)}',
+  '100%{opacity:1;transform:scale(1)}}',
+  '@keyframes mxvapor{0%{opacity:0;transform:translateY(4px)}25%{opacity:.85}100%{opacity:0;transform:translateY(-22px)}}',
   '@keyframes mxbrillo{0%{opacity:0}35%{opacity:.55}100%{opacity:0}}',
-  '.mx-sello-nuevo{animation:mxsello .58s cubic-bezier(.2,.9,.3,1.4) both}',
+  '.mx-rebanada-nueva{transform-box:fill-box;transform-origin:center;animation:mxrebanada .7s cubic-bezier(.2,.9,.3,1.3) both}',
+  '.mx-vapor{transform-box:fill-box;animation:mxvapor 1.6s ease-out .45s both}',
+  '.mx-vapor+.mx-vapor{animation-delay:.7s}',
   '.mx-premio-listo{animation:mxbrillo 1.9s ease-in-out infinite}',
-  /* Quien pidio menos movimiento ve el sello aparecer, sin el golpe ni el brillo. */
+  /* Quien pidio menos movimiento ve la rebanada aparecer, sin rebote, vapor
+     ni brillo. */
   '@media (prefers-reduced-motion:reduce){',
-  '.mx-sello-nuevo{animation:none}',
+  '.mx-rebanada-nueva{animation:none}',
+  '.mx-vapor{display:none}',
   '.mx-premio-listo{animation:none;opacity:.4}}',
 ].join('');
 
@@ -41,168 +50,224 @@ function inyectarCSS() {
   document.head.appendChild(s);
 }
 
-/* Una casilla. `estado`: 'vacia' | 'sellada' | 'nueva'. */
-function Casilla({ n, estado, premio, listo, compacto }) {
-  const pendiente = estado === 'pendiente';
-  const sellada = estado !== 'vacia' && !pendiente;
-  const esPremio = !!premio;
-  const acento = 'var(--rosa-mexicano)';
+/* Colores de la pizza. Los que la marca ya tiene salen de sus tokens; el queso
+   y la albahaca no existen como token porque solo viven aqui. */
+const PZ_QUESO = '#F4CD5E';
+const PZ_ALBAHACA = '#3E7B3A';
+const PZ_CHOCOLATE = '#5B3A26';
+const PZ = { c: 100, plato: 97, borde: 92, queso: 79 };
+
+function pzPunto(grados, r) {
+  const a = grados * Math.PI / 180;
+  return [PZ.c + r * Math.cos(a), PZ.c + r * Math.sin(a)];
+}
+
+// Rebanada k (0 = la de las doce), del centro hasta el radio r.
+function pzRebanada(k, r) {
+  const a0 = -90 + k * (360 / DIAS_TARJETA);
+  const a1 = a0 + 360 / DIAS_TARJETA;
+  const [x0, y0] = pzPunto(a0, r);
+  const [x1, y1] = pzPunto(a1, r);
+  return 'M' + PZ.c + ' ' + PZ.c + ' L' + x0.toFixed(2) + ' ' + y0.toFixed(2) +
+    ' A' + r + ' ' + r + ' 0 0 1 ' + x1.toFixed(2) + ' ' + y1.toFixed(2) + 'Z';
+}
+
+const pzMitad = (k) => -90 + k * (360 / DIAS_TARJETA) + 180 / DIAS_TARJETA;
+
+/* Los ingredientes de una rebanada horneada. Cada una los lleva un poco movidos
+   para que la pizza no se vea hecha en serie. */
+function Ingredientes({ k }) {
+  const m = pzMitad(k);
+  const mov = ((k * 37) % 11) - 5;
+  const [p1x, p1y] = pzPunto(m + mov, 56);
+  const [p2x, p2y] = pzPunto(m - 9 - mov / 2, 32);
+  const [hx, hy] = pzPunto(m + 11 - mov / 2, 70);
+  const pepe = { fill: 'var(--terracota-horno)' };
+  return (
+    <g>
+      <circle cx={p1x} cy={p1y} r={8.5} style={pepe} />
+      <circle cx={p1x - 2} cy={p1y - 2} r={2.2} style={{ fill: '#FFFFFF', opacity: 0.18 }} />
+      <circle cx={p2x} cy={p2y} r={6} style={pepe} />
+      <ellipse cx={hx} cy={hy} rx={6.5} ry={3} transform={'rotate(' + (m + 30) + ' ' + hx + ' ' + hy + ')'}
+        style={{ fill: PZ_ALBAHACA }} />
+    </g>
+  );
+}
+
+/* La pizza. llenas: rebanadas horneadas. nueva: la ultima sale del horno.
+   pendiente: la que sigue se marca, porque este pedido la hornea al llegar.
+   listos: premios disponibles, que brillan. */
+function PizzaSellos({ llenas, nueva, pendiente, listos, tam }) {
+  const rebanadas = [];
+  for (let k = 0; k < DIAS_TARJETA; k++) {
+    const dia = k + 1;
+    const horneada = dia <= llenas;
+    const esPremio = dia === CASILLA_BROWNIE || dia === CASILLA_PIZZA;
+    const listo = (dia === CASILLA_BROWNIE && listos.brownie) || (dia === CASILLA_PIZZA && listos.pizza);
+    const espera = pendiente && dia === llenas + 1;
+
+    if (horneada) {
+      rebanadas.push(
+        <g key={k} className={nueva && dia === llenas ? 'mx-rebanada-nueva' : undefined}>
+          <path d={pzRebanada(k, PZ.borde)} style={{ fill: 'var(--dorado-masa)', stroke: 'var(--negro-carbon)', strokeWidth: 1.5, strokeLinejoin: 'round' }} />
+          <path d={pzRebanada(k, PZ.queso)} style={{ fill: PZ_QUESO }} />
+          <Ingredientes k={k} />
+          {esPremio && <path d={pzRebanada(k, PZ.borde)} style={{ fill: 'none', stroke: 'var(--rosa-mexicano)', strokeWidth: 3, strokeLinejoin: 'round' }} />}
+          {listo && <path className="mx-premio-listo" d={pzRebanada(k, PZ.borde)} style={{ fill: 'none', stroke: 'var(--rosa-mexicano)', strokeWidth: 7, strokeLinejoin: 'round' }} />}
+        </g>
+      );
+    } else {
+      const [tx, ty] = pzPunto(pzMitad(k), 60);
+      rebanadas.push(
+        <g key={k}>
+          <path d={pzRebanada(k, PZ.borde)} style={{
+            fill: espera ? 'var(--dorado-tinte)' : 'var(--blanco-hueso)',
+            stroke: esPremio ? 'var(--rosa-mexicano)' : espera ? 'var(--negro-carbon)' : 'var(--hueso-linea)',
+            strokeWidth: esPremio ? 2 : 1.5, strokeDasharray: '4 4', strokeLinejoin: 'round',
+          }} />
+          {espera && <path className="mx-premio-listo" d={pzRebanada(k, PZ.borde)} style={{ fill: 'var(--dorado-masa)' }} />}
+          <text x={tx} y={ty + 7} textAnchor="middle" style={{
+            fontFamily: 'var(--font-label)', fontSize: 19,
+            fill: esPremio ? 'var(--rosa-mexicano-texto)' : 'var(--text-muted)',
+          }}>{dia}</text>
+        </g>
+      );
+    }
+  }
+
+  // El vapor sale de la rebanada recien horneada.
+  let vapor = null;
+  if (nueva && llenas > 0) {
+    const [vx, vy] = pzPunto(pzMitad(llenas - 1), 46);
+    vapor = [-7, 5].map((dx, i) => (
+      <path key={i} className="mx-vapor" d={'M' + (vx + dx) + ' ' + (vy - 4) + ' q-5 -7 0 -13 q5 -6 0 -13'}
+        style={{ fill: 'none', stroke: '#FFFFFF', strokeWidth: 2.5, strokeLinecap: 'round' }} />
+    ));
+  }
+
+  // Marcas afuera del plato: un cuadrito de brownie en la 4, una rebanada en la 9.
+  const [bx, by] = pzPunto(pzMitad(CASILLA_BROWNIE - 1), PZ.plato + 4);
+  const [px, py] = pzPunto(pzMitad(CASILLA_PIZZA - 1), PZ.plato + 4);
 
   return (
-    <div style={{ position: 'relative', paddingBottom: esPremio ? 15 : 0 }}>
-      <div style={{
-        aspectRatio: '1 / 1', borderRadius: '50%',
-        display: 'flex', alignItems: 'center', justifyContent: 'center',
-        border: sellada
-          ? '2px solid ' + (esPremio ? acento : 'var(--negro-carbon)')
-          : pendiente ? '2px dashed var(--negro-carbon)'
-          : '2px dashed ' + (esPremio ? acento : 'var(--hueso-linea)'),
-        background: sellada ? (esPremio ? 'var(--rosa-tinte)' : 'var(--hueso-hondo)') : 'transparent',
-        // Doble anillo: la casilla de premio se ve distinta aun sin leer nada.
-        boxShadow: esPremio ? 'inset 0 0 0 3px var(--surface-card)' : 'none',
-        position: 'relative',
-      }}>
-        {sellada && (
-          <span
-            className={estado === 'nueva' ? 'mx-sello-nuevo' : undefined}
-            style={{
-              fontFamily: 'var(--font-label)', fontSize: compacto ? 11 : 13, fontWeight: 400,
-              letterSpacing: 0.5, lineHeight: 1,
-              color: esPremio ? 'var(--rosa-mexicano-texto)' : 'var(--negro-carbon)',
-              // Los sellos de verdad no caen derechos.
-              transform: 'rotate(' + (((n * 37) % 11) - 5) + 'deg)',
-              display: 'block',
-            }}>{n}</span>
-        )}
-        {pendiente && (
-          <span className="mx-premio-listo" style={{
-            fontFamily: 'var(--font-label)', fontSize: 13, letterSpacing: 0.5,
-            color: 'var(--negro-carbon)', opacity: 0.55,
-          }}>{n}</span>
-        )}
-        {!sellada && !pendiente && esPremio && (
-          <span style={{
-            fontFamily: 'var(--font-label)', fontSize: 12, letterSpacing: 0.5,
-            color: acento, opacity: 0.75,
-          }}>{n}</span>
-        )}
-        {listo && (
-          <span className="mx-premio-listo" aria-hidden="true" style={{
-            position: 'absolute', inset: compacto ? -3 : -5, borderRadius: '50%',
-            border: '2px solid ' + acento, pointerEvents: 'none',
-          }} />
-        )}
-      </div>
-      {esPremio && (
-        <span style={{
-          position: 'absolute', left: 0, right: 0, bottom: 0, textAlign: 'center',
-          fontFamily: 'var(--font-label)', fontSize: 8.5, letterSpacing: 0.8,
-          textTransform: 'uppercase', color: acento, whiteSpace: 'nowrap',
-        }}>{premio}</span>
-      )}
-    </div>
+    <svg viewBox="-14 -14 228 228" width={tam} height={tam} aria-hidden="true" style={{ display: 'block', flex: 'none', overflow: 'visible' }}>
+      <circle cx={PZ.c} cy={PZ.c} r={PZ.plato} style={{ fill: 'var(--hueso-hondo)', stroke: 'var(--negro-carbon)', strokeWidth: 2 }} />
+      {rebanadas}
+      {vapor}
+      <circle cx={PZ.c} cy={PZ.c} r={21} style={{ fill: 'var(--blanco-hueso)', stroke: 'var(--negro-carbon)', strokeWidth: 1.5 }} />
+      <text x={PZ.c} y={PZ.c + 6} textAnchor="middle" style={{ fontFamily: 'var(--font-label)', fontSize: 16, fill: 'var(--negro-carbon)' }}>
+        {llenas}/{DIAS_TARJETA}
+      </text>
+      <rect x={bx - 8} y={by - 8} width={16} height={16} rx={3} transform={'rotate(12 ' + bx + ' ' + by + ')'}
+        style={{ fill: PZ_CHOCOLATE, stroke: 'var(--rosa-mexicano)', strokeWidth: 2 }} />
+      <path d={'M' + (px - 8) + ' ' + (py - 7) + ' L' + (px + 8) + ' ' + (py - 7) + ' L' + px + ' ' + (py + 9) + 'Z'}
+        style={{ fill: PZ_QUESO, stroke: 'var(--rosa-mexicano)', strokeWidth: 2, strokeLinejoin: 'round' }} />
+    </svg>
   );
+}
+
+/* Si este telefono tiene mas rebanadas que la ultima vez que se vio su tarjeta
+   en este navegador. El sello se gana al entregar, cuando nadie esta mirando;
+   asi la rebanada sale del horno la siguiente vez que el cliente abre su
+   tarjeta. La primera vez no se anima nada: no hay con que comparar. Al
+   canjear la pizza la cuenta baja y tampoco se anima. */
+function useRebanadaNueva(telefono, dias) {
+  const [nueva, setNueva] = React.useState(false);
+  React.useEffect(() => {
+    const tel = String(telefono || '').replace(/\D/g, '');
+    if (tel.length !== 10 || !(dias >= 0)) { setNueva(false); return; }
+    const clave = 'mextizza.tarjeta.vista.' + tel;
+    let antes = null;
+    try { const v = localStorage.getItem(clave); antes = v === null ? null : Number(v); } catch (e) {}
+    setNueva(antes !== null && dias > antes);
+    try { localStorage.setItem(clave, String(dias)); } catch (e) {}
+  }, [telefono, dias]);
+  return nueva;
 }
 
 /* tarjeta: lo que contesta el servidor —
      { dias, brownie, pizza, faltanBrownie, faltanPizza, ciclos }
-   animarUltimo: sella el dia recien ganado con el golpe. Se usa al confirmar un
+   animarUltimo: la ultima rebanada sale del horno. Se usa al confirmar un
    pedido; en el carrito la tarjeta se pinta quieta. */
-/* pendiente: este pedido sellara un dia CUANDO SE ENTREGUE. Se dibuja la
-   casilla que viene, en punteado, en vez de darla por ganada: el sello se otorga
-   al entregar, y un pedido cancelado no cuenta. */
-/* compacto: los nueve dias en una sola fila, como tarjeta de sellos. Cabe en
-   el dialogo de la cuenta sin volverlo una pantalla larga. */
-function TarjetaPremios({ tarjeta, animarUltimo = false, pendiente = false, titulo, style, compacto = false }) {
+/* pendiente: este pedido sellara un dia CUANDO SE ENTREGUE. Se marca la
+   rebanada que viene en vez de darla por horneada: el sello se otorga al
+   entregar, y un pedido cancelado no cuenta. */
+/* compacto: la pizza chica a un lado y el mensaje al otro. Cabe en el dialogo
+   de la cuenta sin volverlo una pantalla larga. */
+/* telefono: con el, la rebanada ganada desde la ultima visita sale del horno. */
+function TarjetaPremios({ tarjeta, animarUltimo = false, pendiente = false, titulo, style, compacto = false, telefono }) {
   React.useEffect(inyectarCSS, []);
+  const dias = Math.max(0, Number(tarjeta && tarjeta.dias) || 0);
+  const recienHorneada = useRebanadaNueva(pendiente ? '' : telefono, tarjeta ? dias : -1);
   if (!tarjeta) return null;
 
-  const dias = Math.max(0, Number(tarjeta.dias) || 0);
   const llenas = Math.min(dias, DIAS_TARJETA);
   const extra = Math.max(0, dias - DIAS_TARJETA);
-  const premios = { [CASILLA_BROWNIE]: 'brownie', [CASILLA_PIZZA]: 'pizza' };
-
-  const casillas = [];
-  for (let n = 1; n <= DIAS_TARJETA; n++) {
-    const sellada = n <= llenas;
-    casillas.push(
-      <Casilla key={n} n={n} premio={premios[n]} compacto={compacto}
-        estado={sellada
-          ? (animarUltimo && n === llenas ? 'nueva' : 'sellada')
-          : (pendiente && n === llenas + 1 ? 'pendiente' : 'vacia')}
-        listo={(n === CASILLA_BROWNIE && tarjeta.brownie) || (n === CASILLA_PIZZA && tarjeta.pizza)} />
-    );
-  }
-
-  // Un solo renglon, el que importa ahora mismo.
-  if (pendiente) {
-    return (
-      <FramedPanel variant="object" style={{ position: 'relative', ...style }}>
-        <TapeStripe position="top" height={4} />
-        <div style={{ padding: '4px 2px 2px' }}>
-          <div style={{
-            fontFamily: 'var(--font-label)', fontSize: 10.5, letterSpacing: 1.4,
-            textTransform: 'uppercase', color: 'var(--text-muted)', marginBottom: 12,
-          }}>{titulo || 'Tu tarjeta'}</div>
-          <div style={{
-            display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)',
-            gap: 12, maxWidth: 236, margin: '0 auto',
-          }}>{casillas}</div>
-          <p style={{
-            fontFamily: 'var(--font-body)', fontSize: 13, lineHeight: 1.45,
-            color: 'var(--text-body)', textAlign: 'center', margin: '16px 0 0',
-          }}>Tu día {Math.min(dias + 1, DIAS_TARJETA)} se sella cuando te entreguemos este pedido.</p>
-        </div>
-      </FramedPanel>
-    );
-  }
 
   let mensaje;
-  if (tarjeta.pizza) mensaje = 'Tienes una Traviesa gratis esperándote.';
+  if (pendiente) mensaje = 'Tu rebanada ' + Math.min(dias + 1, DIAS_TARJETA) + ' se hornea cuando te entreguemos este pedido.';
+  else if (tarjeta.pizza) mensaje = 'Pizza completa: tu Traviesa gratis te está esperando.';
   else if (tarjeta.brownie) mensaje = 'Tienes un brownie gratis esperándote.';
   else if (tarjeta.faltanBrownie > 0) {
     mensaje = tarjeta.faltanBrownie === 1
-      ? 'Un día más y el brownie es tuyo.'
-      : 'Faltan ' + tarjeta.faltanBrownie + ' días para tu brownie.';
+      ? 'Una rebanada más y el brownie es tuyo.'
+      : 'Faltan ' + tarjeta.faltanBrownie + ' rebanadas para tu brownie.';
   } else {
     mensaje = tarjeta.faltanPizza === 1
-      ? 'Un día más y la Traviesa es tuya.'
-      : 'Faltan ' + tarjeta.faltanPizza + ' días para tu Traviesa gratis.';
+      ? 'Una rebanada más y la Traviesa es tuya.'
+      : 'Faltan ' + tarjeta.faltanPizza + ' rebanadas para tu Traviesa gratis.';
   }
 
+  const descripcion = 'Pizza con ' + llenas + ' de ' + DIAS_TARJETA + ' rebanadas horneadas. ' +
+    'La rebanada ' + CASILLA_BROWNIE + ' trae un brownie y la ' + CASILLA_PIZZA + ' completa tu Traviesa gratis.';
+
+  const leyenda = (
+    <p style={{
+      fontFamily: 'var(--font-body)', fontSize: 11.5, lineHeight: 1.4, color: 'var(--text-muted)',
+      margin: '6px 0 0', textAlign: compacto ? 'left' : 'center',
+    }}>
+      Cada día con pizza, una rebanada. Completa la pizza y te regalamos una.
+    </p>
+  );
+
+  const textoMensaje = (
+    <p style={{
+      fontFamily: 'var(--font-body)', fontSize: 13.5, lineHeight: 1.45, color: 'var(--text-body)',
+      margin: compacto ? 0 : '14px 0 0', textAlign: compacto ? 'left' : 'center',
+    }}>{mensaje}</p>
+  );
+
   return (
-    <FramedPanel variant="object" style={{ position: 'relative', ...(compacto ? { padding: '18px 12px 12px' } : null), ...style }}>
+    <FramedPanel variant="object" style={{ position: 'relative', ...(compacto ? { padding: '18px 14px 14px' } : null), ...style }}>
       <TapeStripe position="top" height={4} />
       <div style={{ padding: '4px 2px 2px' }}>
-        <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 10, marginBottom: 12 }}>
+        <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 10, marginBottom: compacto ? 10 : 12 }}>
           <span style={{
             fontFamily: 'var(--font-label)', fontSize: 10.5, letterSpacing: 1.4,
             textTransform: 'uppercase', color: 'var(--text-muted)',
           }}>{titulo || 'Tu tarjeta'}</span>
-          {tarjeta.ciclos > 0 && (
-            <Badge tone="dorado">{tarjeta.ciclos === 1 ? '1 tarjeta llena' : tarjeta.ciclos + ' tarjetas llenas'}</Badge>
+          {tarjeta.ciclos > 0 && !pendiente && (
+            <Badge tone="dorado">{tarjeta.ciclos === 1 ? '1 pizza completa' : tarjeta.ciclos + ' pizzas completas'}</Badge>
           )}
         </div>
 
-        <div role="img" aria-label={'Tarjeta con ' + llenas + ' de ' + DIAS_TARJETA + ' sellos'} style={compacto ? {
-          display: 'grid', gridTemplateColumns: 'repeat(' + DIAS_TARJETA + ', 1fr)',
-          gap: 5, paddingBottom: 2,
-        } : {
-          display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)',
-          gap: 12, maxWidth: 236, margin: '0 auto',
-        }}>{casillas}</div>
+        <div role="img" aria-label={descripcion} style={compacto
+          ? { display: 'flex', alignItems: 'center', gap: 14 }
+          : { display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+          <PizzaSellos llenas={llenas} nueva={animarUltimo || recienHorneada} pendiente={pendiente}
+            listos={{ brownie: !!tarjeta.brownie, pizza: !!tarjeta.pizza }} tam={compacto ? 116 : 176} />
+          {compacto && <div style={{ minWidth: 0 }}>{textoMensaje}{leyenda}</div>}
+        </div>
 
-        <p style={{
-          fontFamily: 'var(--font-body)', fontSize: 13, lineHeight: 1.45,
-          color: 'var(--text-body)', textAlign: 'center', margin: compacto ? '12px 0 0' : '16px 0 0',
-        }}>{mensaje}</p>
+        {!compacto && textoMensaje}
+        {!compacto && !pendiente && leyenda}
 
         {extra > 0 && (
           <p style={{
             fontFamily: 'var(--font-body)', fontSize: 11.5, color: 'var(--text-muted)',
             textAlign: 'center', margin: '5px 0 0',
           }}>
-            {extra === 1 ? 'Llevas 1 día extra guardado.' : 'Llevas ' + extra + ' días extra guardados.'} No se pierden.
+            {extra === 1 ? 'Llevas 1 rebanada extra guardada.' : 'Llevas ' + extra + ' rebanadas extra guardadas.'} No se pierden.
           </p>
         )}
       </div>

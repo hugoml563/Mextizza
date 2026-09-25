@@ -339,7 +339,7 @@ function CartDrawer({ open, lines, onClose, onQty, step, setStep, canal = 'Web',
               <CanjeTarjeta tarjeta={tarjetaPrevia} lines={lines} valor={usarPremio} telefono={tel10} sinCuenta={comoCocina}
                 onChange={setUsarPremio} onAgregar={agregarPremio} onQuitar={quitarPremio}
                 agregado={premioAgregado} style={{ marginTop: 12 }} />
-              {tarjetaPrevia && <TarjetaPremios tarjeta={tarjetaPrevia} style={{ marginTop: 12 }} />}
+              {tarjetaPrevia && <TarjetaPremios tarjeta={tarjetaPrevia} telefono={tel10} style={{ marginTop: 12 }} />}
               {error && <StatusNote tone="block" title="Ups" style={{ marginTop: 12 }}>{error}</StatusNote>}
             </>
           )}

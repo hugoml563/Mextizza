@@ -170,7 +170,7 @@ function DialogoCuenta({ abierto, onCerrar, fijo = true, telefonoSugerido = '' }
                   {/* La tarjeta dibujada: de un vistazo se ve cuanto falta
                       para el brownie y para la Traviesa. */}
                   {tarjeta && typeof TarjetaPremios === 'function' && (
-                    <TarjetaPremios tarjeta={tarjeta} compacto style={{ margin: '0 0 12px' }} />
+                    <TarjetaPremios tarjeta={tarjeta} telefono={ligado} compacto style={{ margin: '0 0 12px' }} />
                   )}
                   <div>Ligada al teléfono <b>{ligado.replace(/(\d{3})(\d{3})(\d{4})/, '$1 $2 $3')}</b>.</div>
                   <div style={{ marginTop: 4, fontSize: 12.5, color: 'var(--gris-tinta, #4A4A4A)' }}>
