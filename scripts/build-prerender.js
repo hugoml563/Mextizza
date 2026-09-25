@@ -22,6 +22,11 @@ global.window = {};
 require(path.join(RAIZ, 'ui_kits', 'menu-data.js'));
 require(path.join(RAIZ, 'ui_kits', 'delivery-zone.js'));
 const { MEXTIZZA_MENU, MEXTIZZA_FACTS, MEXTIZZA_SOCIAL, MEXTIZZA_ZONE } = global.window;
+// menu-data.js declara el 2x1 con const: no queda en window, se lee del archivo.
+const promos = {
+  dia: (fs.readFileSync(path.join(RAIZ, 'ui_kits', 'menu-data.js'), 'utf8')
+    .match(/enMinuscula:\s*'([^']+)'/) || [])[1] || 'miércoles',
+};
 
 // Falla ruidosamente en vez de escribir "[object Object]" en la pagina:
 // varios campos de MEXTIZZA_FACTS son objetos, no cadenas.
@@ -115,6 +120,9 @@ function generar() {
     ' — de ' + cat.min + ' a ' + cat.max + ' personas, con el horno en sitio.</li>');
   p.push('<li><a href="/pizza-del-mes/">La pizza del mes</a>' +
     ' — la rotativa que cambia con una combinación mexicana distinta.</li>');
+  // /promociones/ solo aparecia en el sitemap: sin enlaces, Google la valora menos.
+  p.push('<li><a href="/promociones/">Promociones y tarjeta de recompensas</a>' +
+    ' — el 2x1 de los ' + promos.dia + ' y la pizza que se arma rebanada por rebanada.</li>');
   p.push('</ul>');
 
   // La version rastreable no tenia ninguna imagen. Ruta absoluta a proposito:

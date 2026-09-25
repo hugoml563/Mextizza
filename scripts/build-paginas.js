@@ -50,6 +50,16 @@ const wa = (msg) => 'https://wa.me/' + MEXTIZZA_FACTS.whatsapp + '?text=' + enco
 /* `imagen` deja que una pagina comparta su propia foto. Sin esto, mandar la
    pizza del mes por WhatsApp mostraba la tarjeta generica del logo, que no
    antoja nada. */
+/* Las paginas interiores solo enlazaban a la portada. Un bloque comun con las
+   demas le ayuda a Google a entender el sitio y reparte relevancia entre ellas;
+   cada pagina se omite a si misma. */
+const OTRAS_PAGINAS = [
+  ['pizza-a-domicilio-atizapan', 'Pizza a domicilio en Atizapán'],
+  ['pizza-del-mes', 'La pizza del mes'],
+  ['promociones', 'Promociones y tarjeta de recompensas'],
+  ['catering-pizza-horno-de-lena', 'Catering con horno en tu evento'],
+];
+
 function documento({ slug, title, description, jsonld, cuerpo, imagen }) {
   const url = SITIO + '/' + slug + '/';
   return `<!doctype html>
@@ -113,6 +123,11 @@ ${cuerpo}
   <a href="${wa('Hola, quiero hacer un pedido en Mextizza.')}">WhatsApp</a> ·
   <a href="${esc(MEXTIZZA_SOCIAL.instagram)}">Instagram</a> ·
   <a href="/">mextizza.com</a>
+  <nav aria-label="Más de Mextizza" style="margin-top:14px">
+    <b>También en Mextizza:</b>
+    ${OTRAS_PAGINAS.filter(([s]) => s !== slug)
+      .map(([s, t]) => `<a href="/${s}/">${esc(t)}</a>`).join(' · ')}
+  </nav>
 </div>
 </div>
 </body>
@@ -299,26 +314,8 @@ guardamos "por si alguien la pide".</p>
    entonces el sitio anuncia una cosa y la caja aplica otra. Eso es exactamente
    lo que PROFECO sanciona, y ademas es la clase de error que nadie nota hasta
    que un cliente reclama con la pagina abierta. */
-const codeGs = fs.readFileSync(
-  path.join(RAIZ, 'integration', 'sheets-backend', 'Code.gs'), 'utf8');
-
-function constanteNumerica(nombre) {
-  const m = codeGs.match(new RegExp('const\\s+' + nombre + '\\s*=\\s*(\\d+)\\s*;'));
-  if (!m) throw new Error('No se encontro ' + nombre + ' en Code.gs');
-  return Number(m[1]);
-}
-
-const DIA_2X1 = constanteNumerica('DIA_2X1');
-const HORA_2X1 = constanteNumerica('HORA_2X1');
-
-const bloquePremios = codeGs.match(/const PREMIOS = \{([\s\S]*?)\};/);
-if (!bloquePremios) throw new Error('No se encontro PREMIOS en Code.gs');
-const premios = {};
-for (const linea of bloquePremios[1].split('\n')) {
-  const m = linea.match(/(\w+)\s*:\s*\{\s*dia:\s*(\d+),\s*producto:\s*'([^']+)'/);
-  if (m) premios[m[1]] = { dia: Number(m[2]), producto: m[3] };
-}
-if (!premios.brownie || !premios.pizza) throw new Error('PREMIOS incompleto');
+const { DIA_2X1, HORA_2X1, PREMIOS: premios, hora12 } = require('./promos-codegs');
+const { fechaDe } = require('./lastmod');
 
 // Que el servidor y el sitio no se hayan separado ya.
 if (MEXTIZZA_2X1.dia !== DIA_2X1 || MEXTIZZA_2X1.desde !== HORA_2X1) {
@@ -333,9 +330,9 @@ const nombreProducto = (id) => {
   return p.name;
 };
 
-const hora12 = (h) => (h > 12 ? h - 12 : h) + ':00 ' + (h >= 12 ? 'pm' : 'am');
 const DIA_NOMBRE = MEXTIZZA_2X1.enMinuscula;
 
+let promosFinal;
 const promos = documento({
   slug: 'promociones',
   title: 'Promociones y tarjeta de recompensas | Mextizza',
@@ -347,13 +344,14 @@ const promos = documento({
     description: 'Bases de las promociones vigentes de Mextizza.',
     url: SITIO + '/promociones/',
     isPartOf: { '@type': 'WebSite', name: 'Mextizza', url: SITIO + '/' },
+    // El mismo @id que declara la portada: estas bases son de ese restaurante.
+    about: { '@id': SITIO + '/#restaurant' },
   },
   cuerpo: `
 <h1>Promociones</h1>
 <p>Aquí están las reglas completas de lo que anunciamos. Si algo de lo que
 prometemos no está escrito en esta página, dínoslo y lo arreglamos.</p>
-<p class="dato">Última actualización: ${new Date().toLocaleDateString('es-MX',
-  { day: 'numeric', month: 'long', year: 'numeric' })}</p>
+<p class="dato">Última actualización: __FECHA_PROMOS__</p>
 
 <h2>2x1 de los ${DIA_NOMBRE}</h2>
 <p>Todos los <b>${DIA_NOMBRE} a partir de las ${hora12(HORA_2X1)}</b>, hora del
@@ -420,6 +418,14 @@ rel="noopener">profeco.gob.mx</a> o al Teléfono del Consumidor 55 5568 8722.</p
 });
 
 
+{
+  const fecha = fechaDe('/promociones/', promos, 'promociones/index.html');
+  const [a, m, d] = fecha.split('-').map(Number);
+  const legible = new Date(Date.UTC(a, m - 1, d, 12)).toLocaleDateString('es-MX',
+    { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC' });
+  promosFinal = promos.replace('__FECHA_PROMOS__', legible);
+}
+
 const p404 = `<!doctype html>
 <html lang="es">
 <head>
@@ -459,7 +465,7 @@ for (const [slug, html] of [
   ['pizza-a-domicilio-atizapan', p1],
   ['catering-pizza-horno-de-lena', p2],
   ['pizza-del-mes', p3],
-  ['promociones', promos],
+  ['promociones', promosFinal],
 ]) {
   const dir = path.join(RAIZ, slug);
   fs.mkdirSync(dir, { recursive: true });

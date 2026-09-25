@@ -21,18 +21,35 @@ require(path.join(RAIZ, 'ui_kits', 'menu-data.js'));
 require(path.join(RAIZ, 'ui_kits', 'delivery-zone.js'));
 const { MEXTIZZA_MENU, MEXTIZZA_FACTS, MEXTIZZA_SOCIAL, MEXTIZZA_ZONE } = global.window;
 
-const hoy = new Date().toISOString().slice(0, 10);
+const { DIA_2X1, HORA_2X1, PREMIOS, hora12 } = require('./promos-codegs');
+const { fechaDe } = require('./lastmod');
+const DIAS = ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado'];
+const producto = (id) => {
+  const p = MEXTIZZA_MENU.flatMap((g) => g.items).find((x) => x.id === id);
+  if (!p) throw new Error('Producto desconocido en PREMIOS: ' + id);
+  return p.name;
+};
 
 const PAGINAS = [
-  { ruta: '/', prioridad: '1.0', frecuencia: 'weekly' },
-  { ruta: '/pizza-a-domicilio-atizapan/', prioridad: '0.9', frecuencia: 'monthly' },
-  { ruta: '/catering-pizza-horno-de-lena/', prioridad: '0.8', frecuencia: 'monthly' },
-  { ruta: '/pizza-del-mes/', prioridad: '0.8', frecuencia: 'monthly' },
+  { ruta: '/', prioridad: '1.0', frecuencia: 'weekly', archivo: 'index.html' },
+  { ruta: '/pizza-a-domicilio-atizapan/', prioridad: '0.9', frecuencia: 'monthly', archivo: 'pizza-a-domicilio-atizapan/index.html' },
+  { ruta: '/catering-pizza-horno-de-lena/', prioridad: '0.8', frecuencia: 'monthly', archivo: 'catering-pizza-horno-de-lena/index.html' },
+  { ruta: '/pizza-del-mes/', prioridad: '0.8', frecuencia: 'monthly', archivo: 'pizza-del-mes/index.html' },
   /* Baja prioridad a proposito: no se busca en Google, pero tiene que estar
      indexada y ser citable. Es la pagina a la que se apunta cuando alguien
      pregunta que decia la promocion. */
-  { ruta: '/promociones/', prioridad: '0.4', frecuencia: 'monthly' },
+  { ruta: '/promociones/', prioridad: '0.4', frecuencia: 'monthly', archivo: 'promociones/index.html' },
 ];
+
+/* La fecha real del ultimo cambio de cada pagina, no la del build. La de
+   /promociones/ ya la registro build-paginas.js (sin su renglon de fecha, que
+   si no la cambiaria sola); aqui se lee igual, con la misma huella. */
+for (const p of PAGINAS) {
+  const html = fs.readFileSync(path.join(RAIZ, p.archivo), 'utf8');
+  p.lastmod = p.ruta === '/promociones/'
+    ? fechaDe(p.ruta, html.replace(/(Última actualización: )[^<]*/, '$1__FECHA_PROMOS__'), p.archivo)
+    : fechaDe(p.ruta, html, p.archivo);
+}
 
 // --------------------------------------------------------------- robots.txt
 // El Centro de Ventas es el tablero interno de la cocina y /capturar es el modo
@@ -59,7 +76,7 @@ const sitemap = [
   ...PAGINAS.map((p) => [
     '  <url>',
     '    <loc>' + SITIO + p.ruta + '</loc>',
-    '    <lastmod>' + hoy + '</lastmod>',
+    '    <lastmod>' + p.lastmod + '</lastmod>',
     '    <changefreq>' + p.frecuencia + '</changefreq>',
     '    <priority>' + p.prioridad + '</priority>',
     '  </url>',
@@ -119,6 +136,14 @@ const llms = [
   'De ' + cat.min + ' a ' + cat.max + ' personas, a $' + cat.precio + ' MXN por persona.',
   'Requiere anticipo del ' + cat.anticipo + ' y aviso de ' + cat.aviso + ' como mínimo.',
   '',
+  '## Promociones',
+  '',
+  '- 2x1 los ' + DIAS[DIA_2X1] + ' desde las ' + hora12(HORA_2X1) + ' (hora del centro de México) hasta el cierre: al pedir dos pizzas, la de menor precio sale gratis. Solo pizzas.',
+  '- Tarjeta de recompensas: un sello por cada día con un pedido entregado que incluya una pizza pagada. En el sello ' +
+    PREMIOS.brownie.dia + ' hay un ' + producto(PREMIOS.brownie.producto).toLowerCase() + ' gratis; en el sello ' +
+    PREMIOS.pizza.dia + ', una ' + producto(PREMIOS.pizza.producto) + ' gratis y la tarjeta vuelve a empezar.',
+  '- Las promociones no se acumulan en la misma pizza. Bases completas: ' + SITIO + '/promociones/',
+  '',
   '## Cómo pedir',
   '',
   '- Sitio web: ' + SITIO,
@@ -136,5 +161,6 @@ const llms = [
 fs.writeFileSync(path.join(RAIZ, 'llms.txt'), llms);
 
 console.log('  robots.txt    ' + robots.split('\n').length + ' líneas, 3 rutas internas excluidas');
-console.log('  sitemap.xml   ' + PAGINAS.length + ' páginas, lastmod ' + hoy);
+console.log('  sitemap.xml   ' + PAGINAS.length + ' páginas, lastmod real: ' +
+  PAGINAS.map((p) => p.ruta + ' ' + p.lastmod).join(', '));
 console.log('  llms.txt      ' + llms.length + ' caracteres para rastreadores de IA');
