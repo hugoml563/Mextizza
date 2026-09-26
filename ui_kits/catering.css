@@ -21,8 +21,16 @@ html:has(.pared.romper){overflow-x:clip}
 .pared-lienzo{position:relative;height:100%;max-width:1080px;margin:0 auto}
 /* El logo pintado en la pared, como grafiti: los carteles lo tapan en parte. */
 .pintura{position:absolute;left:26%;bottom:3%;z-index:0;margin:0;font-family:var(--font-display);
-  font-size:128px;line-height:1;letter-spacing:-2px;color:var(--rosa-mexicano);opacity:.8;
-  transform:rotate(-4deg);mix-blend-mode:multiply;white-space:nowrap;pointer-events:none}
+  font-size:128px;line-height:1;letter-spacing:-2px;opacity:.85;
+  transform:rotate(-4deg);mix-blend-mode:multiply;white-space:nowrap;pointer-events:none;
+  /* Pintura vieja: el color sale de un fondo recortado a las letras (rosa con
+     manchas mas oscuras), y dos mascaras de ruido la gastan: puntitos donde se
+     salto y zonas deslavadas. Todo es SVG generado, sin imagenes. */
+  color:transparent;background:url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20width%3D%22420%22%20height%3D%22240%22%3E%3Cfilter%20id%3D%22f%22%20x%3D%220%22%20y%3D%220%22%3E%3CfeTurbulence%20type%3D%22fractalNoise%22%20baseFrequency%3D%22.03%22%20numOctaves%3D%223%22%20seed%3D%2211%22/%3E%3CfeColorMatrix%20values%3D%220%200%200%200%20.55%20%200%200%200%200%200%20%200%200%200%200%20.28%20%200%200%200%202.2%20-1.1%22/%3E%3C/filter%3E%3Crect%20width%3D%22100%25%22%20height%3D%22100%25%22%20filter%3D%22url%28%23f%29%22/%3E%3C/svg%3E") 0 0/420px 240px,var(--rosa-mexicano);
+  -webkit-background-clip:text;background-clip:text;
+  -webkit-mask-image:url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20width%3D%22260%22%20height%3D%22260%22%3E%3Cfilter%20id%3D%22f%22%20x%3D%220%22%20y%3D%220%22%3E%3CfeTurbulence%20type%3D%22fractalNoise%22%20baseFrequency%3D%22.2%22%20numOctaves%3D%224%22%20seed%3D%227%22/%3E%3CfeColorMatrix%20values%3D%220%200%200%200%200%20%200%200%200%200%200%20%200%200%200%200%200%20%200%200%200%20-10.0%206.7%22/%3E%3C/filter%3E%3Crect%20width%3D%22100%25%22%20height%3D%22100%25%22%20filter%3D%22url%28%23f%29%22/%3E%3C/svg%3E"),url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20width%3D%22640%22%20height%3D%22320%22%3E%3Cfilter%20id%3D%22f%22%20x%3D%220%22%20y%3D%220%22%3E%3CfeTurbulence%20type%3D%22fractalNoise%22%20baseFrequency%3D%22.012%20.03%22%20numOctaves%3D%222%22%20seed%3D%223%22/%3E%3CfeColorMatrix%20values%3D%220%200%200%200%200%20%200%200%200%200%200%20%200%200%200%200%200%20%200%200%200%20-1.5%201.75%22/%3E%3C/filter%3E%3Crect%20width%3D%22100%25%22%20height%3D%22100%25%22%20filter%3D%22url%28%23f%29%22/%3E%3C/svg%3E");mask-image:url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20width%3D%22260%22%20height%3D%22260%22%3E%3Cfilter%20id%3D%22f%22%20x%3D%220%22%20y%3D%220%22%3E%3CfeTurbulence%20type%3D%22fractalNoise%22%20baseFrequency%3D%22.2%22%20numOctaves%3D%224%22%20seed%3D%227%22/%3E%3CfeColorMatrix%20values%3D%220%200%200%200%200%20%200%200%200%200%200%20%200%200%200%200%200%20%200%200%200%20-10.0%206.7%22/%3E%3C/filter%3E%3Crect%20width%3D%22100%25%22%20height%3D%22100%25%22%20filter%3D%22url%28%23f%29%22/%3E%3C/svg%3E"),url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20width%3D%22640%22%20height%3D%22320%22%3E%3Cfilter%20id%3D%22f%22%20x%3D%220%22%20y%3D%220%22%3E%3CfeTurbulence%20type%3D%22fractalNoise%22%20baseFrequency%3D%22.012%20.03%22%20numOctaves%3D%222%22%20seed%3D%223%22/%3E%3CfeColorMatrix%20values%3D%220%200%200%200%200%20%200%200%200%200%200%20%200%200%200%200%200%20%200%200%200%20-1.5%201.75%22/%3E%3C/filter%3E%3Crect%20width%3D%22100%25%22%20height%3D%22100%25%22%20filter%3D%22url%28%23f%29%22/%3E%3C/svg%3E");
+  -webkit-mask-size:260px 260px,640px 320px;mask-size:260px 260px,640px 320px;
+  -webkit-mask-composite:source-in;mask-composite:intersect}
 /* La calcomania redonda del hero, pegada entre los carteles. */
 .calco{position:absolute;left:5%;bottom:8%;z-index:10;width:104px;height:104px;border-radius:50%;
   background:var(--blanco-hueso);border:3px solid var(--negro-carbon);display:grid;place-items:center;
@@ -81,7 +89,9 @@ html:has(.pared.romper){overflow-x:clip}
 
 @media (max-width:700px){
   .pared{height:370px}
-  .pintura{font-size:84px;left:4%}
+  /* La textura se encoge con la letra: si no, el desgaste se ve mas grueso. */
+  .pintura{font-size:84px;left:4%;background-size:276px 158px,auto;
+    -webkit-mask-size:170px 170px,420px 210px;mask-size:170px 170px,420px 210px}
   .calco{width:78px;height:78px;font-size:9.5px;left:auto;right:3%;bottom:6%}
   .cartel{width:40%;left:var(--xm);top:var(--ym)}
   .cartel.solo-compu{display:none}
