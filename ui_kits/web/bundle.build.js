@@ -409,62 +409,205 @@ function WebHero({
     size: 116
   })))));
 }
+
+/* La carta. Antes eran tres tarjetas con renglones de miniaturas de 40px: en
+   celular el precio y el boton se comian el ancho y cada descripcion quedaba
+   partida palabra por palabra. Ahora las fotos mandan: en compu una cuadricula
+   de 3x3 con la del mes primero (8 pizzas + ella, sin huecos); en celular un
+   renglon por pizza con foto de 96px y el precio y el boton DEBAJO del texto.
+   La regla vive en index.html (.carta-*). */
+const fotoTam = (foto, tam) => String(foto || '').replace(/\.(webp|jpe?g)$/, '-' + tam + '.webp');
+function BotonAgregar({
+  it,
+  onAdd,
+  onCustomize,
+  added,
+  chico
+}) {
+  return /*#__PURE__*/React.createElement(Button, {
+    size: chico ? 'sm' : 'md',
+    tone: added === it.id ? 'dark' : 'outline',
+    onClick: () => mextizzaAceptaComplementos(it) ? onCustomize(it) : onAdd(it)
+  }, added === it.id ? 'Agregado' : 'Agregar');
+}
 function WebMenu({
   onAdd,
   onCustomize,
   added
 }) {
+  const todas = MEXTIZZA_MENU.flatMap(g => g.items);
+  const esMes = it => it.flag === 'Del mes';
+  const esPizza = it => typeof mextizzaEsPizza === 'function' ? mextizzaEsPizza(it.id) : /^Pizza /.test(it.name);
+  const mes = todas.filter(esMes);
+  const pizzas = mes.concat(todas.filter(it => esPizza(it) && !esMes(it)));
+  const cierre = todas.filter(it => !esPizza(it));
+  const brincar = id => e => {
+    e.preventDefault();
+    const el = document.getElementById(id);
+    if (el) el.scrollIntoView({
+      behavior: 'smooth',
+      block: 'start'
+    });
+  };
   return /*#__PURE__*/React.createElement("section", {
     id: "menu",
     className: "reveal",
     style: {
       background: 'var(--surface-sunken)',
-      paddingTop: 76,
-      paddingBottom: 76
+      paddingTop: 64,
+      paddingBottom: 72
     }
   }, /*#__PURE__*/React.createElement("div", {
     style: webShell.page
-  }, /*#__PURE__*/React.createElement(SectionLabel, null, "Men\xFA"), /*#__PURE__*/React.createElement("div", {
-    className: "web-menu-grid",
-    style: {
-      display: 'grid',
-      gridTemplateColumns: '1fr 1fr',
-      gap: 28,
-      alignItems: 'start'
-    }
-  }, MEXTIZZA_MENU.map((g, i) => /*#__PURE__*/React.createElement(MenuCard, {
-    key: g.cat,
-    kicker: g.cat,
-    title: g.title,
-    headBackground: i === 1 ? 'var(--terracota-horno)' : 'var(--negro-carbon)',
-    style: i === 0 ? {
-      gridRow: 'span 2'
-    } : undefined
-  }, g.note && /*#__PURE__*/React.createElement("p", {
-    style: {
-      margin: '0 0 6px',
-      fontFamily: 'var(--font-body)',
-      fontWeight: 600,
-      fontSize: 13,
-      lineHeight: 1.55,
-      color: 'var(--text-muted)'
-    }
-  }, g.note), g.items.map((it, j) => /*#__PURE__*/React.createElement(MenuItem, {
+  }, /*#__PURE__*/React.createElement("h2", {
+    className: "carta-titulo"
+  }, "La carta"), /*#__PURE__*/React.createElement("p", {
+    className: "carta-bajada"
+  }, "Todas salen del horno de piedra cuando entra tu pedido. Env\xEDo incluido en el precio."), /*#__PURE__*/React.createElement("nav", {
+    className: "carta-chips",
+    "aria-label": "Grupos de la carta"
+  }, /*#__PURE__*/React.createElement("a", {
+    className: "activo",
+    href: "#carta-pizzas",
+    onClick: brincar('carta-pizzas')
+  }, "Pizzas"), /*#__PURE__*/React.createElement("a", {
+    href: "#carta-cierre",
+    onClick: brincar('carta-cierre')
+  }, "Postres y bebidas")), /*#__PURE__*/React.createElement("div", {
+    className: "carta-pizzas",
+    id: "carta-pizzas"
+  }, pizzas.map(it => /*#__PURE__*/React.createElement("article", {
     key: it.id,
-    name: it.name,
-    description: it.desc,
-    price: it.price,
-    photo: it.photo,
-    divider: j < g.items.length - 1,
-    badge: it.flag ? /*#__PURE__*/React.createElement(Badge, {
-      tone: it.flag === 'Del mes' ? 'dorado' : 'rosa'
-    }, it.flag) : null,
-    action: /*#__PURE__*/React.createElement(Button, {
-      size: "sm",
-      tone: added === it.id ? 'dark' : 'outline',
-      onClick: () => mextizzaAceptaComplementos(it) ? onCustomize(it) : onAdd(it)
-    }, added === it.id ? 'Agregado' : 'Agregar')
+    className: 'carta-pizza' + (esMes(it) ? ' carta-mes' : '')
+  }, /*#__PURE__*/React.createElement("img", {
+    src: fotoTam(it.photo, 'md'),
+    srcSet: fotoTam(it.photo, 'thumb') + ' 194w, ' + fotoTam(it.photo, 'md') + ' 530w',
+    sizes: "(min-width: 640px) 340px, 96px",
+    alt: it.name,
+    loading: "lazy",
+    decoding: "async",
+    width: "530",
+    height: "600"
+  }), /*#__PURE__*/React.createElement("div", {
+    className: "carta-cuerpo"
+  }, esMes(it) && /*#__PURE__*/React.createElement("span", {
+    className: "carta-sello"
+  }, "La del mes"), /*#__PURE__*/React.createElement("h3", null, it.name.replace(/^Pizza /, '')), /*#__PURE__*/React.createElement("p", null, it.desc), /*#__PURE__*/React.createElement("div", {
+    className: "carta-fila"
+  }, /*#__PURE__*/React.createElement("span", {
+    className: "carta-precio"
+  }, "$", it.price), /*#__PURE__*/React.createElement(BotonAgregar, {
+    it: it,
+    onAdd: onAdd,
+    onCustomize: onCustomize,
+    added: added
+  })))))), /*#__PURE__*/React.createElement("div", {
+    className: "carta-cierre",
+    id: "carta-cierre"
+  }, /*#__PURE__*/React.createElement("h3", null, "Para cerrar"), /*#__PURE__*/React.createElement("div", {
+    className: "carta-renglones"
+  }, cierre.map(it => /*#__PURE__*/React.createElement("div", {
+    key: it.id,
+    className: "carta-renglon"
+  }, /*#__PURE__*/React.createElement("img", {
+    src: fotoTam(it.photo, 'thumb'),
+    alt: "",
+    loading: "lazy",
+    decoding: "async",
+    width: "60",
+    height: "60"
+  }), /*#__PURE__*/React.createElement("div", {
+    className: "carta-nombre"
+  }, it.name, it.desc ? /*#__PURE__*/React.createElement("small", null, it.desc) : null), /*#__PURE__*/React.createElement("span", {
+    className: "carta-precio"
+  }, "$", it.price), /*#__PURE__*/React.createElement(BotonAgregar, {
+    it: it,
+    onAdd: onAdd,
+    onCustomize: onCustomize,
+    added: added,
+    chico: true
   })))))));
+}
+
+/* La tarjeta de premios y el 2x1 en la portada. Antes solo se veian en el
+   carrito o en /promociones/: quien llegaba por primera vez no se enteraba.
+   Los dias y los premios salen de las constantes que el build compara contra
+   Code.gs, asi que esto no puede prometer algo distinto a lo que se cobra. */
+function WebTarjeta() {
+  const caja = React.useRef(null);
+  const [visto, setVisto] = React.useState(false);
+  React.useEffect(() => {
+    const el = caja.current;
+    if (!el || typeof IntersectionObserver !== 'function') {
+      setVisto(true);
+      return;
+    }
+    // La rebanada sale del horno cuando la seccion entra en pantalla, una vez.
+    const io = new IntersectionObserver(es => {
+      if (es.some(e => e.isIntersecting)) {
+        setVisto(true);
+        io.disconnect();
+      }
+    }, {
+      threshold: 0.5
+    });
+    io.observe(el);
+    return () => io.disconnect();
+  }, []);
+  const Pizza = typeof PizzaSellos === 'function' ? PizzaSellos : null;
+  const dosxuno = typeof MEXTIZZA_2X1 !== 'undefined' ? MEXTIZZA_2X1 : {
+    nombre: 'Miércoles',
+    desde: 19
+  };
+  const hora = dosxuno.desde > 12 ? dosxuno.desde - 12 + ' pm' : dosxuno.desde + ' am';
+  const traviesa = typeof mextizzaProducto === 'function' && PREMIO_PRODUCTOS ? (mextizzaProducto(PREMIO_PRODUCTOS.pizza) || {}).name : '';
+  return /*#__PURE__*/React.createElement("section", {
+    className: "tarjeta-portada reveal"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "tarjeta-rejilla",
+    style: webShell.page
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "tarjeta-pizza",
+    ref: caja,
+    "aria-hidden": "true"
+  }, Pizza && /*#__PURE__*/React.createElement(Pizza, {
+    llenas: visto ? 6 : 5,
+    nueva: visto,
+    pendiente: false,
+    listos: {
+      brownie: false,
+      pizza: false
+    },
+    tam: 260
+  })), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("h2", {
+    className: "carta-titulo"
+  }, "Completa la pizza y te regalamos una"), /*#__PURE__*/React.createElement("p", {
+    className: "carta-bajada"
+  }, "Cada d\xEDa que te llevamos pizza se hornea una rebanada de tu tarjeta. Se junta con tu tel\xE9fono."), /*#__PURE__*/React.createElement("ul", {
+    className: "tarjeta-pasos"
+  }, /*#__PURE__*/React.createElement("li", null, /*#__PURE__*/React.createElement("span", {
+    className: "tarjeta-marca",
+    style: {
+      background: '#5B3A26'
+    }
+  }), "En la rebanada ", CASILLA_BROWNIE, " te toca un brownie."), /*#__PURE__*/React.createElement("li", null, /*#__PURE__*/React.createElement("span", {
+    className: "tarjeta-marca",
+    style: {
+      background: '#F4CD5E'
+    }
+  }), "Con la ", CASILLA_PIZZA, " la pizza est\xE1 completa: la ", String(traviesa || 'Pizza Traviesa').replace(/^Pizza /, ''), " va por nuestra cuenta.")), /*#__PURE__*/React.createElement("div", {
+    className: "tarjeta-2x1"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "tarjeta-2x1-grande"
+  }, "2x1"), /*#__PURE__*/React.createElement("div", {
+    className: "tarjeta-2x1-texto"
+  }, /*#__PURE__*/React.createElement("b", null, dosxuno.nombre, " de 2x1"), /*#__PURE__*/React.createElement("span", null, "Desde las ", hora, ", pide dos pizzas y la de menor precio va por la casa."))), /*#__PURE__*/React.createElement("div", {
+    className: "tarjeta-ligas"
+  }, /*#__PURE__*/React.createElement("a", {
+    href: "/promociones/"
+  }, "Ver las bases"), /*#__PURE__*/React.createElement("a", {
+    href: "/app"
+  }, "Tu tarjeta tambi\xE9n vive en la app")))));
 }
 function WebProcess() {
   const steps = [['48h', 'Fermentación fría', 'La masa descansa dos días completos en refrigeración con temperatura controlada. Rompe azúcares y gluten.'], ['≤10 min', 'Al horno, al pedido', 'Nada se hornea antes de que entre tu pedido. El Gozney XL cocina cada pizza en menos de diez minutos.'], ['≤40 min', 'A tu puerta', 'Radio de reparto de 3 km. Caja kraft con ventilación para que la orilla llegue crujiente.']];
@@ -1096,6 +1239,7 @@ Object.assign(window, {
   WebHeader,
   WebHero,
   WebMenu,
+  WebTarjeta,
   WebProcess,
   WebCatering,
   WebSocial,
@@ -1900,7 +2044,7 @@ function PizzaSellos({
         d: pzRebanada(k, PZ.borde),
         style: {
           fill: espera ? 'var(--dorado-tinte)' : 'var(--blanco-hueso)',
-          stroke: esPremio ? 'var(--rosa-mexicano)' : espera ? 'var(--negro-carbon)' : 'var(--hueso-linea)',
+          stroke: esPremio ? 'var(--rosa-mexicano)' : espera ? 'var(--negro-carbon)' : 'rgba(26,26,26,.3)',
           strokeWidth: esPremio ? 2 : 1.5,
           strokeDasharray: '4 4',
           strokeLinejoin: 'round'
@@ -2637,6 +2781,7 @@ function Aviso2x1({
   }, DIA_2X1_NOMBRE, " de 2x1: pide dos pizzas y la m\xE1s barata va por nuestra cuenta."));
 }
 Object.assign(window, {
+  PizzaSellos,
   PideResena,
   TarjetaPremios,
   AvisoPremio,
@@ -4396,7 +4541,7 @@ function Site() {
     onAdd: add,
     onCustomize: setCustom,
     added: added
-  }), /*#__PURE__*/React.createElement(WebProcess, null), /*#__PURE__*/React.createElement(WebCatering, null), /*#__PURE__*/React.createElement(WebSocial, null), /*#__PURE__*/React.createElement(WebFooter, null), /*#__PURE__*/React.createElement(AddonsDialog, {
+  }), /*#__PURE__*/React.createElement(WebTarjeta, null), /*#__PURE__*/React.createElement(WebProcess, null), /*#__PURE__*/React.createElement(WebCatering, null), /*#__PURE__*/React.createElement(WebSocial, null), /*#__PURE__*/React.createElement(WebFooter, null), /*#__PURE__*/React.createElement(AddonsDialog, {
     item: custom,
     onClose: () => setCustom(null),
     onAdd: add

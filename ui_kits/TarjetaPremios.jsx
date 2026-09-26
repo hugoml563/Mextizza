@@ -122,7 +122,7 @@ function PizzaSellos({ llenas, nueva, pendiente, listos, tam }) {
         <g key={k}>
           <path d={pzRebanada(k, PZ.borde)} style={{
             fill: espera ? 'var(--dorado-tinte)' : 'var(--blanco-hueso)',
-            stroke: esPremio ? 'var(--rosa-mexicano)' : espera ? 'var(--negro-carbon)' : 'var(--hueso-linea)',
+            stroke: esPremio ? 'var(--rosa-mexicano)' : espera ? 'var(--negro-carbon)' : 'rgba(26,26,26,.3)',
             strokeWidth: esPremio ? 2 : 1.5, strokeDasharray: '4 4', strokeLinejoin: 'round',
           }} />
           {espera && <path className="mx-premio-listo" d={pzRebanada(k, PZ.borde)} style={{ fill: 'var(--dorado-masa)' }} />}
@@ -606,4 +606,4 @@ function Aviso2x1({ activo, style }) {
   );
 }
 
-Object.assign(window, { PideResena, TarjetaPremios, AvisoPremio, Aviso2x1, CanjeTarjeta, PREMIO_PRODUCTOS, mextizzaDescuentoPrevisto, NOMBRE_PROMO, DIAS_TARJETA, CASILLA_BROWNIE, CASILLA_PIZZA });
+Object.assign(window, { PizzaSellos, PideResena, TarjetaPremios, AvisoPremio, Aviso2x1, CanjeTarjeta, PREMIO_PRODUCTOS, mextizzaDescuentoPrevisto, NOMBRE_PROMO, DIAS_TARJETA, CASILLA_BROWNIE, CASILLA_PIZZA });

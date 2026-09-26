@@ -797,7 +797,7 @@ function PizzaSellos({
         d: pzRebanada(k, PZ.borde),
         style: {
           fill: espera ? 'var(--dorado-tinte)' : 'var(--blanco-hueso)',
-          stroke: esPremio ? 'var(--rosa-mexicano)' : espera ? 'var(--negro-carbon)' : 'var(--hueso-linea)',
+          stroke: esPremio ? 'var(--rosa-mexicano)' : espera ? 'var(--negro-carbon)' : 'rgba(26,26,26,.3)',
           strokeWidth: esPremio ? 2 : 1.5,
           strokeDasharray: '4 4',
           strokeLinejoin: 'round'
@@ -1534,6 +1534,7 @@ function Aviso2x1({
   }, DIA_2X1_NOMBRE, " de 2x1: pide dos pizzas y la m\xE1s barata va por nuestra cuenta."));
 }
 Object.assign(window, {
+  PizzaSellos,
   PideResena,
   TarjetaPremios,
   AvisoPremio,

@@ -1,0 +1,239 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>Maqueta: carta y tarjeta | Mextizza</title>
+<link rel="stylesheet" href="../styles.css">
+<script src="../ui_kits/menu-data.js"></script>
+<style>
+/* Maqueta de la propuesta: la carta con fotos grandes y la sección de la
+   tarjeta de premios en la portada. No se publica (pruebas/ esta excluido). */
+body{background:var(--blanco-hueso);color:var(--negro-carbon);margin:0;font-family:var(--font-body)}
+.aviso{background:var(--negro-carbon);color:var(--blanco-hueso);font-family:var(--font-label);font-size:11px;
+  letter-spacing:.08em;text-align:center;padding:8px 12px}
+.envoltura{max-width:1080px;margin:0 auto;padding:0 20px}
+section{padding:56px 0}
+h2{font-family:var(--font-display);font-size:clamp(34px,6vw,48px);line-height:1.05;margin:0 0 10px;font-weight:400;text-wrap:balance}
+.bajada{font-size:17px;line-height:1.5;color:#3d3a36;margin:0 0 22px;max-width:52ch}
+
+/* Brincos entre grupos de la carta */
+.chips{display:flex;gap:8px;overflow-x:auto;padding-bottom:4px;margin-bottom:26px;scrollbar-width:none}
+.chips a{flex:none;padding:9px 16px;border:2px solid var(--negro-carbon);border-radius:999px;text-decoration:none;
+  color:var(--negro-carbon);font-size:14px;font-weight:600;letter-spacing:.03em;min-height:40px;box-sizing:border-box;
+  display:inline-flex;align-items:center}
+.chips a.activo{background:var(--negro-carbon);color:var(--blanco-hueso)}
+
+/* Pizzas: foto grande primero. En celular una por fila, en compu tres. */
+.pizzas{display:grid;grid-template-columns:1fr;gap:18px}
+@media (min-width:640px){.pizzas{grid-template-columns:repeat(2,1fr)}}
+@media (min-width:980px){.pizzas{grid-template-columns:repeat(3,1fr)}}
+/* Celular: renglon con foto cuadrada de 96px (hoy mide 40) y el precio con el
+   boton DEBAJO del texto, que ya no le roba ancho a la descripcion. */
+.pizza{background:var(--blanco);border:2px solid var(--negro-carbon);border-radius:14px;overflow:hidden;
+  display:grid;grid-template-columns:96px 1fr;gap:14px;padding:12px}
+.pizza img{width:96px;height:96px;object-fit:cover;display:block;border-radius:10px;border:2px solid var(--negro-carbon);box-sizing:border-box}
+.pizza .cuerpo{display:flex;flex-direction:column;gap:6px;min-width:0}
+.pizza h3{font-family:var(--font-display);font-weight:400;font-size:22px;margin:0;line-height:1.1}
+.pizza p{font-size:14.5px;line-height:1.45;color:#3d3a36;margin:0;flex:1}
+/* Compu y tableta: la foto grande manda. */
+@media (min-width:640px){
+  .pizza{display:flex;flex-direction:column;gap:0;padding:0}
+  .pizza img{width:100%;height:auto;aspect-ratio:4/3;border:none;border-bottom:2px solid var(--negro-carbon);border-radius:0}
+  .pizza .cuerpo{padding:14px 16px 16px;gap:8px;flex:1}
+  .pizza h3{font-size:24px}
+  .pizza p{font-size:15px}
+}
+.fila{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:6px}
+.precio{font-family:var(--font-label);font-size:19px;color:var(--terracota-horno)}
+.agregar{border:2px solid var(--negro-carbon);background:var(--rosa-mexicano);color:#fff;border-radius:8px;
+  padding:10px 18px;min-height:44px;font-family:var(--font-body);font-weight:700;font-size:14px;letter-spacing:.06em;
+  text-transform:uppercase;box-shadow:0 3px 0 var(--negro-carbon);cursor:pointer;transition:transform .12s,box-shadow .12s}
+.agregar:active{transform:translateY(3px);box-shadow:0 0 0 var(--negro-carbon)}
+.agregar.chico{background:var(--blanco);color:var(--negro-carbon);padding:8px 14px;min-height:40px}
+
+/* La del mes abre la cuadricula: 8 pizzas + ella = 3x3 exacto en compu, sin
+   huecos. Se distingue por el color, no por el tamano. */
+.pizza.mes{background:var(--terracota-tinte)}
+.pizza.mes .sello-mes{margin-bottom:2px}
+/* (bloque grande anterior, ya sin uso) */
+.del-mes{margin:34px 0 0;border:2px solid var(--negro-carbon);border-radius:14px;overflow:hidden;background:var(--blanco);
+  display:grid;grid-template-columns:1fr}
+@media (min-width:760px){.del-mes{grid-template-columns:1.1fr 1fr}}
+.del-mes img{width:100%;height:100%;aspect-ratio:4/3;object-fit:cover;display:block}
+.del-mes .cuerpo{padding:22px;display:flex;flex-direction:column;gap:10px;background:var(--terracota-tinte)}
+.sello-mes{align-self:flex-start;background:var(--terracota-horno);color:#fff;font-family:var(--font-label);font-size:12px;
+  letter-spacing:.08em;padding:6px 10px;border-radius:6px}
+.del-mes h3{font-family:var(--font-display);font-weight:400;font-size:32px;margin:0}
+.del-mes p{font-size:16px;line-height:1.5;color:#3d3a36;margin:0}
+
+/* Postres y bebidas: no necesitan foto grande, van en renglones compactos. */
+.cierre{margin-top:34px}
+.cierre h3{font-family:var(--font-display);font-weight:400;font-size:26px;margin:0 0 12px}
+.renglones{display:grid;grid-template-columns:1fr;gap:10px}
+@media (min-width:640px){.renglones{grid-template-columns:repeat(2,1fr)}}
+.renglon{display:flex;align-items:center;gap:12px;background:var(--blanco);border:2px solid var(--negro-carbon);
+  border-radius:12px;padding:8px 12px 8px 8px}
+.renglon img{width:60px;height:60px;border-radius:8px;object-fit:cover;flex:none}
+.renglon .nombre{flex:1;font-size:16px;font-weight:600;line-height:1.2}
+.renglon .nombre small{display:block;font-weight:400;color:#5a5650;font-size:13px}
+
+/* La tarjeta: franja dorada, sin invertir el tema de la pagina. */
+.tarjeta{background:var(--dorado-tinte);border-top:2px solid var(--negro-carbon);border-bottom:2px solid var(--negro-carbon)}
+.tarjeta .rejilla{display:grid;grid-template-columns:1fr;gap:28px;align-items:center}
+@media (min-width:860px){.tarjeta .rejilla{grid-template-columns:320px 1fr;gap:48px}}
+.pizza-sellos{display:flex;justify-content:center}
+.pasos{display:grid;gap:10px;margin:0 0 22px;padding:0;list-style:none}
+.pasos li{display:flex;gap:12px;align-items:center;font-size:16px;line-height:1.4}
+.marca{width:30px;height:30px;flex:none;border-radius:8px;border:2px solid var(--rosa-mexicano);display:grid;place-items:center}
+.dosxuno{background:var(--blanco);border:2px solid var(--negro-carbon);border-radius:14px;padding:16px 18px;
+  display:flex;gap:16px;align-items:center;flex-wrap:wrap;box-shadow:0 4px 0 var(--negro-carbon)}
+.dosxuno .grande{font-family:var(--font-display);font-size:44px;line-height:1;color:var(--rosa-mexicano)}
+.dosxuno .texto{flex:1;min-width:200px}
+.dosxuno b{font-family:var(--font-display);font-weight:400;font-size:22px;display:block}
+.dosxuno span{font-size:15px;color:#3d3a36;line-height:1.4}
+.ligas{display:flex;gap:18px;flex-wrap:wrap;margin-top:18px;font-size:15px}
+.ligas a{color:var(--negro-carbon);font-weight:600}
+
+/* La rebanada nueva sale del horno cuando la seccion entra en pantalla. */
+@keyframes mxrebanada{0%{opacity:0;transform:scale(.35)}60%{opacity:1;transform:scale(1.12)}80%{transform:scale(.96)}100%{opacity:1;transform:scale(1)}}
+@keyframes mxvapor{0%{opacity:0;transform:translateY(4px)}25%{opacity:.85}100%{opacity:0;transform:translateY(-22px)}}
+.mx-rebanada-nueva{transform-box:fill-box;transform-origin:center;animation:mxrebanada .7s cubic-bezier(.2,.9,.3,1.3) both}
+.mx-vapor{transform-box:fill-box;animation:mxvapor 1.6s ease-out .45s both}
+.mx-vapor+.mx-vapor{animation-delay:.7s}
+@media (prefers-reduced-motion:reduce){.mx-rebanada-nueva{animation:none}.mx-vapor{display:none}}
+</style>
+</head>
+<body>
+<div class="aviso">MAQUETA · NO ESTÁ PUBLICADA</div>
+
+<section id="carta">
+  <div class="envoltura">
+    <h2>La carta</h2>
+    <p class="bajada">Todas salen del horno de piedra cuando entra tu pedido. Envío incluido en el precio.</p>
+    <nav class="chips" aria-label="Grupos de la carta">
+      <a class="activo" href="#pizzas">Pizzas</a>
+      <a href="#cierre">Postres y bebidas</a>
+    </nav>
+    <div class="pizzas" id="pizzas"></div>
+    <div class="cierre" id="cierre">
+      <h3>Para cerrar</h3>
+      <div class="renglones" id="renglones"></div>
+    </div>
+  </div>
+</section>
+
+<section class="tarjeta" id="tarjeta">
+  <div class="envoltura rejilla">
+    <div class="pizza-sellos" id="pizza-sellos" aria-hidden="true"></div>
+    <div>
+      <h2>Completa la pizza y te regalamos una</h2>
+      <p class="bajada">Cada día que te llevamos pizza se hornea una rebanada de tu tarjeta. Solo necesitas tu teléfono.</p>
+      <ul class="pasos">
+        <li><span class="marca" style="background:#5B3A26"></span>En la rebanada 4 te toca un brownie.</li>
+        <li><span class="marca" style="background:#F4CD5E"></span>Con la 9 la pizza está completa: la Traviesa va por nuestra cuenta.</li>
+      </ul>
+      <div class="dosxuno">
+        <div class="grande">2x1</div>
+        <div class="texto">
+          <b>Miércoles de 2x1</b>
+          <span>Desde las 7 pm, pide dos pizzas y la de menor precio va por la casa.</span>
+        </div>
+      </div>
+      <div class="ligas">
+        <a href="/promociones/">Ver las bases</a>
+        <a href="/app">Tu tarjeta también vive en la app</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<script>
+(function () {
+  const foto = (p) => p ? p.replace('../../', '../').replace(/\.(webp|jpe?g)$/, '-md.webp') : '';
+  const grupos = window.MEXTIZZA_MENU || [];
+  const todas = grupos.flatMap((g) => g.items);
+  const esMes = (i) => i.flag === 'Del mes';
+  const pizzas = todas.filter((i) => /^Pizza /.test(i.name) && !esMes(i));
+  const mes = todas.find(esMes);
+  const cierre = todas.filter((i) => !/^Pizza /.test(i.name));
+  const esc = (s) => String(s || '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+
+  const orden = mes ? [mes].concat(pizzas) : pizzas;
+  document.getElementById('pizzas').innerHTML = orden.map((p) => `
+    <article class="pizza${esMes(p) ? ' mes' : ''}">
+      <img src="${foto(p.photo)}" alt="${esc(p.name)}" loading="lazy" width="600" height="450">
+      <div class="cuerpo">
+        ${esMes(p) ? '<span class="sello-mes">LA DEL MES</span>' : ''}
+        <h3>${esc(p.name.replace(/^Pizza /, ''))}</h3>
+        <p>${esc(p.desc)}</p>
+        <div class="fila"><span class="precio">$${p.price}</span><button class="agregar">Agregar</button></div>
+      </div>
+    </article>`).join('');
+
+  document.getElementById('renglones').innerHTML = cierre.map((p) => `
+    <div class="renglon">
+      <img src="${foto(p.photo)}" alt="" loading="lazy">
+      <div class="nombre">${esc(p.name)}${p.desc ? `<small>${esc(p.desc)}</small>` : ''}</div>
+      <span class="precio">$${p.price}</span>
+      <button class="agregar chico">Agregar</button>
+    </div>`).join('');
+
+  /* La pizza de sellos, con la misma geometria que TarjetaPremios.jsx. */
+  const N = 9, C = 100, PLATO = 97, BORDE = 92, QUESO = 79;
+  const pt = (g, r) => { const a = g * Math.PI / 180; return [C + r * Math.cos(a), C + r * Math.sin(a)]; };
+  const reb = (k, r) => {
+    const a0 = -90 + k * 40, a1 = a0 + 40, [x0, y0] = pt(a0, r), [x1, y1] = pt(a1, r);
+    return `M${C} ${C} L${x0.toFixed(2)} ${y0.toFixed(2)} A${r} ${r} 0 0 1 ${x1.toFixed(2)} ${y1.toFixed(2)}Z`;
+  };
+  const mitad = (k) => -90 + k * 40 + 20;
+  function pizzaSVG(llenas, nueva) {
+    let s = `<svg viewBox="-14 -14 228 228" width="280" height="280" style="max-width:100%;height:auto;overflow:visible">`;
+    s += `<circle cx="${C}" cy="${C}" r="${PLATO}" fill="var(--hueso-hondo)" stroke="var(--negro-carbon)" stroke-width="2"/>`;
+    for (let k = 0; k < N; k++) {
+      const dia = k + 1, premio = dia === 4 || dia === 9;
+      if (dia <= llenas) {
+        const m = mitad(k), mov = ((k * 37) % 11) - 5;
+        const [a, b] = pt(m + mov, 56), [c, d] = pt(m - 9 - mov / 2, 32), [e, f] = pt(m + 11 - mov / 2, 70);
+        s += `<g class="${nueva && dia === llenas ? 'mx-rebanada-nueva' : ''}">
+          <path d="${reb(k, BORDE)}" fill="var(--dorado-masa)" stroke="var(--negro-carbon)" stroke-width="1.5" stroke-linejoin="round"/>
+          <path d="${reb(k, QUESO)}" fill="#F4CD5E"/>
+          <circle cx="${a}" cy="${b}" r="8.5" fill="var(--terracota-horno)"/>
+          <circle cx="${c}" cy="${d}" r="6" fill="var(--terracota-horno)"/>
+          <ellipse cx="${e}" cy="${f}" rx="6.5" ry="3" fill="#3E7B3A" transform="rotate(${m + 30} ${e} ${f})"/>
+          ${premio ? `<path d="${reb(k, BORDE)}" fill="none" stroke="var(--rosa-mexicano)" stroke-width="3"/>` : ''}
+        </g>`;
+      } else {
+        const [tx, ty] = pt(mitad(k), 60);
+        s += `<path d="${reb(k, BORDE)}" fill="var(--blanco-hueso)" stroke="${premio ? 'var(--rosa-mexicano)' : 'var(--hueso-linea)'}"
+          stroke-width="${premio ? 2 : 1.5}" stroke-dasharray="4 4"/>
+          <text x="${tx}" y="${ty + 7}" text-anchor="middle" font-family="Bungee, sans-serif" font-size="19"
+          fill="${premio ? 'var(--rosa-mexicano-texto)' : '#8a8378'}">${dia}</text>`;
+      }
+    }
+    if (nueva && llenas > 0) {
+      const [vx, vy] = pt(mitad(llenas - 1), 46);
+      s += [-7, 5].map((dx) => `<path class="mx-vapor" d="M${vx + dx} ${vy - 4} q-5 -7 0 -13 q5 -6 0 -13"
+        fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round"/>`).join('');
+    }
+    s += `<circle cx="${C}" cy="${C}" r="21" fill="var(--blanco-hueso)" stroke="var(--negro-carbon)" stroke-width="1.5"/>
+      <text x="${C}" y="${C + 6}" text-anchor="middle" font-family="Bungee, sans-serif" font-size="16">${llenas}/9</text>`;
+    const [bx, by] = pt(mitad(3), PLATO + 4), [px, py] = pt(mitad(8), PLATO + 4);
+    s += `<rect x="${bx - 8}" y="${by - 8}" width="16" height="16" rx="3" fill="#5B3A26" stroke="var(--rosa-mexicano)" stroke-width="2"
+      transform="rotate(12 ${bx} ${by})"/>
+      <path d="M${px - 8} ${py - 7} L${px + 8} ${py - 7} L${px} ${py + 9}Z" fill="#F4CD5E" stroke="var(--rosa-mexicano)" stroke-width="2"/>`;
+    return s + '</svg>';
+  }
+
+  const caja = document.getElementById('pizza-sellos');
+  caja.innerHTML = pizzaSVG(5, false);
+  /* Al entrar en pantalla, la sexta rebanada sale del horno. Una sola vez. */
+  const io = new IntersectionObserver((entradas) => {
+    if (entradas.some((e) => e.isIntersecting)) { caja.innerHTML = pizzaSVG(6, true); io.disconnect(); }
+  }, { threshold: 0.5 });
+  io.observe(caja);
+})();
+</script>
+</body>
+</html>

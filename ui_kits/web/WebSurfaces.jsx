@@ -175,30 +175,130 @@ function WebHero({ onNav }) {
   );
 }
 
-function WebMenu({ onAdd, onCustomize, added }) {
+/* La carta. Antes eran tres tarjetas con renglones de miniaturas de 40px: en
+   celular el precio y el boton se comian el ancho y cada descripcion quedaba
+   partida palabra por palabra. Ahora las fotos mandan: en compu una cuadricula
+   de 3x3 con la del mes primero (8 pizzas + ella, sin huecos); en celular un
+   renglon por pizza con foto de 96px y el precio y el boton DEBAJO del texto.
+   La regla vive en index.html (.carta-*). */
+const fotoTam = (foto, tam) => String(foto || '').replace(/\.(webp|jpe?g)$/, '-' + tam + '.webp');
+
+function BotonAgregar({ it, onAdd, onCustomize, added, chico }) {
   return (
-    <section id="menu" className="reveal" style={{ background: 'var(--surface-sunken)', paddingTop: 76, paddingBottom: 76 }}>
+    <Button size={chico ? 'sm' : 'md'} tone={added === it.id ? 'dark' : 'outline'}
+      onClick={() => mextizzaAceptaComplementos(it) ? onCustomize(it) : onAdd(it)}>
+      {added === it.id ? 'Agregado' : 'Agregar'}
+    </Button>
+  );
+}
+
+function WebMenu({ onAdd, onCustomize, added }) {
+  const todas = MEXTIZZA_MENU.flatMap((g) => g.items);
+  const esMes = (it) => it.flag === 'Del mes';
+  const esPizza = (it) => typeof mextizzaEsPizza === 'function' ? mextizzaEsPizza(it.id) : /^Pizza /.test(it.name);
+  const mes = todas.filter(esMes);
+  const pizzas = mes.concat(todas.filter((it) => esPizza(it) && !esMes(it)));
+  const cierre = todas.filter((it) => !esPizza(it));
+  const brincar = (id) => (e) => {
+    e.preventDefault();
+    const el = document.getElementById(id);
+    if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  };
+  return (
+    <section id="menu" className="reveal" style={{ background: 'var(--surface-sunken)', paddingTop: 64, paddingBottom: 72 }}>
       <div style={webShell.page}>
-        <SectionLabel>Menú</SectionLabel>
-        <div className="web-menu-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 28, alignItems: 'start' }}>
-          {MEXTIZZA_MENU.map((g, i) => (
-            <MenuCard key={g.cat} kicker={g.cat} title={g.title}
-              headBackground={i === 1 ? 'var(--terracota-horno)' : 'var(--negro-carbon)'}
-              style={i === 0 ? { gridRow: 'span 2' } : undefined}>
-              {g.note && (
-                <p style={{ margin: '0 0 6px', fontFamily: 'var(--font-body)', fontWeight: 600, fontSize: 13, lineHeight: 1.55, color: 'var(--text-muted)' }}>{g.note}</p>
-              )}
-              {g.items.map((it, j) => (
-                <MenuItem key={it.id} name={it.name} description={it.desc} price={it.price} photo={it.photo}
-                  divider={j < g.items.length - 1}
-                  badge={it.flag ? <Badge tone={it.flag === 'Del mes' ? 'dorado' : 'rosa'}>{it.flag}</Badge> : null}
-                  action={<Button size="sm" tone={added === it.id ? 'dark' : 'outline'}
-                    onClick={() => mextizzaAceptaComplementos(it) ? onCustomize(it) : onAdd(it)}>
-                    {added === it.id ? 'Agregado' : 'Agregar'}
-                  </Button>} />
-              ))}
-            </MenuCard>
+        <h2 className="carta-titulo">La carta</h2>
+        <p className="carta-bajada">Todas salen del horno de piedra cuando entra tu pedido. Envío incluido en el precio.</p>
+        <nav className="carta-chips" aria-label="Grupos de la carta">
+          <a className="activo" href="#carta-pizzas" onClick={brincar('carta-pizzas')}>Pizzas</a>
+          <a href="#carta-cierre" onClick={brincar('carta-cierre')}>Postres y bebidas</a>
+        </nav>
+
+        <div className="carta-pizzas" id="carta-pizzas">
+          {pizzas.map((it) => (
+            <article key={it.id} className={'carta-pizza' + (esMes(it) ? ' carta-mes' : '')}>
+              <img src={fotoTam(it.photo, 'md')}
+                srcSet={fotoTam(it.photo, 'thumb') + ' 194w, ' + fotoTam(it.photo, 'md') + ' 530w'}
+                sizes="(min-width: 640px) 340px, 96px"
+                alt={it.name} loading="lazy" decoding="async" width="530" height="600" />
+              <div className="carta-cuerpo">
+                {esMes(it) && <span className="carta-sello">La del mes</span>}
+                <h3>{it.name.replace(/^Pizza /, '')}</h3>
+                <p>{it.desc}</p>
+                <div className="carta-fila">
+                  <span className="carta-precio">${it.price}</span>
+                  <BotonAgregar it={it} onAdd={onAdd} onCustomize={onCustomize} added={added} />
+                </div>
+              </div>
+            </article>
           ))}
+        </div>
+
+        <div className="carta-cierre" id="carta-cierre">
+          <h3>Para cerrar</h3>
+          <div className="carta-renglones">
+            {cierre.map((it) => (
+              <div key={it.id} className="carta-renglon">
+                <img src={fotoTam(it.photo, 'thumb')} alt="" loading="lazy" decoding="async" width="60" height="60" />
+                <div className="carta-nombre">{it.name}{it.desc ? <small>{it.desc}</small> : null}</div>
+                <span className="carta-precio">${it.price}</span>
+                <BotonAgregar it={it} onAdd={onAdd} onCustomize={onCustomize} added={added} chico />
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+/* La tarjeta de premios y el 2x1 en la portada. Antes solo se veian en el
+   carrito o en /promociones/: quien llegaba por primera vez no se enteraba.
+   Los dias y los premios salen de las constantes que el build compara contra
+   Code.gs, asi que esto no puede prometer algo distinto a lo que se cobra. */
+function WebTarjeta() {
+  const caja = React.useRef(null);
+  const [visto, setVisto] = React.useState(false);
+  React.useEffect(() => {
+    const el = caja.current;
+    if (!el || typeof IntersectionObserver !== 'function') { setVisto(true); return; }
+    // La rebanada sale del horno cuando la seccion entra en pantalla, una vez.
+    const io = new IntersectionObserver((es) => {
+      if (es.some((e) => e.isIntersecting)) { setVisto(true); io.disconnect(); }
+    }, { threshold: 0.5 });
+    io.observe(el);
+    return () => io.disconnect();
+  }, []);
+  const Pizza = typeof PizzaSellos === 'function' ? PizzaSellos : null;
+  const dosxuno = typeof MEXTIZZA_2X1 !== 'undefined' ? MEXTIZZA_2X1 : { nombre: 'Miércoles', desde: 19 };
+  const hora = dosxuno.desde > 12 ? (dosxuno.desde - 12) + ' pm' : dosxuno.desde + ' am';
+  const traviesa = typeof mextizzaProducto === 'function' && PREMIO_PRODUCTOS
+    ? (mextizzaProducto(PREMIO_PRODUCTOS.pizza) || {}).name : '';
+  return (
+    <section className="tarjeta-portada reveal">
+      <div className="tarjeta-rejilla" style={webShell.page}>
+        <div className="tarjeta-pizza" ref={caja} aria-hidden="true">
+          {Pizza && <Pizza llenas={visto ? 6 : 5} nueva={visto} pendiente={false}
+            listos={{ brownie: false, pizza: false }} tam={260} />}
+        </div>
+        <div>
+          <h2 className="carta-titulo">Completa la pizza y te regalamos una</h2>
+          <p className="carta-bajada">Cada día que te llevamos pizza se hornea una rebanada de tu tarjeta. Se junta con tu teléfono.</p>
+          <ul className="tarjeta-pasos">
+            <li><span className="tarjeta-marca" style={{ background: '#5B3A26' }} />En la rebanada {CASILLA_BROWNIE} te toca un brownie.</li>
+            <li><span className="tarjeta-marca" style={{ background: '#F4CD5E' }} />Con la {CASILLA_PIZZA} la pizza está completa: la {String(traviesa || 'Pizza Traviesa').replace(/^Pizza /, '')} va por nuestra cuenta.</li>
+          </ul>
+          <div className="tarjeta-2x1">
+            <div className="tarjeta-2x1-grande">2x1</div>
+            <div className="tarjeta-2x1-texto">
+              <b>{dosxuno.nombre} de 2x1</b>
+              <span>Desde las {hora}, pide dos pizzas y la de menor precio va por la casa.</span>
+            </div>
+          </div>
+          <div className="tarjeta-ligas">
+            <a href="/promociones/">Ver las bases</a>
+            <a href="/app">Tu tarjeta también vive en la app</a>
+          </div>
         </div>
       </div>
     </section>
@@ -510,4 +610,4 @@ function WebFooter() {
   );
 }
 
-Object.assign(window, { WebHeader, WebHero, WebMenu, WebProcess, WebCatering, WebSocial, WebFooter, webShell });
+Object.assign(window, { WebHeader, WebHero, WebMenu, WebTarjeta, WebProcess, WebCatering, WebSocial, WebFooter, webShell });

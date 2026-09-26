@@ -7,8 +7,6 @@
 body{background:var(--surface-page)}
 @media (max-width: 860px) {
   .web-hero-grid{grid-template-columns:1fr !important}
-  .web-menu-grid{grid-template-columns:1fr !important}
-  .web-menu-grid > div:first-child{grid-row:auto !important}
   .web-catering-grid{grid-template-columns:1fr !important}
   .web-process-grid{grid-template-columns:1fr !important}
   .web-footer-grid{grid-template-columns:1fr !important;gap:32px !important}
@@ -43,8 +41,6 @@ body{background:var(--surface-page)}
 }
 .footer-icon-link{transition:opacity var(--dur-fast) var(--ease-standard);cursor:pointer}
 .footer-icon-link:hover{opacity:1 !important}
-.web-menu-grid > div{transition:transform var(--dur-base) var(--ease-standard),box-shadow var(--dur-base) var(--ease-standard)}
-.web-menu-grid > div:hover{transform:translateY(-4px);box-shadow:var(--shadow-raised)}
 /* Solo con mouse: en tactil el hover se queda pegado tras el toque. */
 @media (hover: hover) and (pointer: fine) {
   .social-foto img{transition:transform var(--dur-base) var(--ease-standard)}
@@ -72,6 +68,68 @@ body{background:var(--surface-page)}
 .prerender li{line-height:1.5;padding-bottom:12px;border-bottom:1px solid var(--linea-suave,#E0D8CB)}
 .prerender b{font-weight:700}
 
+/* ---- La carta ---------------------------------------------------------- */
+.carta-titulo{font-family:var(--font-display);font-weight:400;font-size:clamp(34px,5.5vw,48px);line-height:1.05;margin:0 0 10px;text-wrap:balance}
+.carta-bajada{font-family:var(--font-body);font-size:17px;line-height:1.5;color:#3d3a36;margin:0 0 22px;max-width:52ch}
+.carta-chips{display:flex;gap:8px;overflow-x:auto;padding-bottom:4px;margin-bottom:26px;scrollbar-width:none}
+.carta-chips a{flex:none;padding:9px 16px;border:2px solid var(--negro-carbon);border-radius:999px;text-decoration:none;
+  color:var(--negro-carbon);font-family:var(--font-body);font-size:14px;font-weight:600;letter-spacing:.03em;min-height:40px;
+  box-sizing:border-box;display:inline-flex;align-items:center}
+.carta-chips a.activo{background:var(--negro-carbon);color:var(--blanco-hueso)}
+.carta-pizzas{display:grid;grid-template-columns:1fr;gap:16px}
+.carta-pizza{background:var(--blanco);border:2px solid var(--negro-carbon);border-radius:14px;overflow:hidden;
+  display:grid;grid-template-columns:96px 1fr;gap:14px;padding:12px}
+.carta-pizza img{width:96px;height:96px;object-fit:cover;display:block;border-radius:10px;border:2px solid var(--negro-carbon);box-sizing:border-box}
+.carta-cuerpo{display:flex;flex-direction:column;gap:6px;min-width:0}
+.carta-cuerpo h3{font-family:var(--font-display);font-weight:400;font-size:22px;margin:0;line-height:1.1}
+.carta-cuerpo p{font-family:var(--font-body);font-size:14.5px;line-height:1.45;color:#3d3a36;margin:0;flex:1}
+.carta-fila{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:6px}
+.carta-precio{font-family:var(--font-label);font-size:19px;color:var(--terracota-horno)}
+.carta-mes{background:var(--terracota-tinte)}
+.carta-sello{align-self:flex-start;background:var(--terracota-horno);color:#fff;font-family:var(--font-label);font-size:11px;
+  letter-spacing:.08em;text-transform:uppercase;padding:5px 9px;border-radius:6px}
+@media (min-width:640px){
+  .carta-pizzas{grid-template-columns:repeat(2,1fr);gap:18px}
+  .carta-pizza{display:flex;flex-direction:column;gap:0;padding:0}
+  .carta-pizza img{width:100%;height:auto;aspect-ratio:4/3;border:none;border-bottom:2px solid var(--negro-carbon);border-radius:0}
+  .carta-cuerpo{padding:14px 16px 16px;gap:8px;flex:1}
+  .carta-cuerpo h3{font-size:24px}
+  .carta-cuerpo p{font-size:15px}
+}
+@media (min-width:980px){.carta-pizzas{grid-template-columns:repeat(3,1fr)}}
+.carta-cierre{margin-top:34px;scroll-margin-top:110px}
+.carta-pizzas{scroll-margin-top:110px}
+.carta-cierre h3{font-family:var(--font-display);font-weight:400;font-size:26px;margin:0 0 12px}
+.carta-renglones{display:grid;grid-template-columns:1fr;gap:10px}
+@media (min-width:640px){.carta-renglones{grid-template-columns:repeat(2,1fr)}}
+.carta-renglon{display:flex;align-items:center;gap:12px;background:var(--blanco);border:2px solid var(--negro-carbon);
+  border-radius:12px;padding:8px 12px 8px 8px}
+.carta-renglon img{width:60px;height:60px;border-radius:8px;object-fit:cover;flex:none}
+.carta-nombre{flex:1;font-family:var(--font-body);font-size:16px;font-weight:600;line-height:1.2}
+.carta-nombre small{display:block;font-weight:400;color:#5a5650;font-size:13px}
+/* Solo con mouse: en tactil el hover se queda pegado tras el toque. */
+@media (hover:hover) and (pointer:fine){
+  .carta-pizza{transition:transform var(--dur-base) var(--ease-standard),box-shadow var(--dur-base) var(--ease-standard)}
+  .carta-pizza:hover{transform:translateY(-3px);box-shadow:0 5px 0 var(--negro-carbon)}
+}
+/* ---- La tarjeta en la portada ----------------------------------------- */
+.tarjeta-portada{background:var(--dorado-tinte);border-top:2px solid var(--negro-carbon);border-bottom:2px solid var(--negro-carbon);
+  padding:56px 0}
+.tarjeta-rejilla{display:grid;grid-template-columns:1fr;gap:26px;align-items:center}
+@media (min-width:860px){.tarjeta-rejilla{grid-template-columns:300px 1fr;gap:48px}}
+.tarjeta-pizza{display:flex;justify-content:center}
+.tarjeta-pizza svg{max-width:100%;height:auto}
+.tarjeta-pasos{display:grid;gap:10px;margin:0 0 22px;padding:0;list-style:none}
+.tarjeta-pasos li{display:flex;gap:12px;align-items:center;font-family:var(--font-body);font-size:16px;line-height:1.4}
+.tarjeta-marca{width:28px;height:28px;flex:none;border-radius:7px;border:2px solid var(--rosa-mexicano);box-sizing:border-box}
+.tarjeta-2x1{background:var(--blanco);border:2px solid var(--negro-carbon);border-radius:14px;padding:16px 18px;
+  display:flex;gap:16px;align-items:center;flex-wrap:wrap;box-shadow:0 4px 0 var(--negro-carbon)}
+.tarjeta-2x1-grande{font-family:var(--font-display);font-size:44px;line-height:1;color:var(--rosa-mexicano)}
+.tarjeta-2x1-texto{flex:1;min-width:200px;font-family:var(--font-body)}
+.tarjeta-2x1-texto b{font-family:var(--font-display);font-weight:400;font-size:22px;display:block}
+.tarjeta-2x1-texto span{font-size:15px;color:#3d3a36;line-height:1.4}
+.tarjeta-ligas{display:flex;gap:18px;flex-wrap:wrap;margin-top:18px;font-family:var(--font-body);font-size:15px}
+.tarjeta-ligas a{color:var(--negro-carbon);font-weight:600}
 .reveal{opacity:0;transform:translateY(16px);transition:opacity .4s ease-out,transform .4s ease-out}
 .reveal.is-visible{opacity:1;transform:none}
 

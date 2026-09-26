@@ -94,6 +94,7 @@ function Site(){
         vistaPrevia={typeof mextizzaVistaPrevia === 'function' && mextizzaVistaPrevia('2x1')} />} />
     <WebHero onNav={nav} />
     <WebMenu onAdd={add} onCustomize={setCustom} added={added} />
+    <WebTarjeta />
     <WebProcess />
     <WebCatering />
     <WebSocial />
