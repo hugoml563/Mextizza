@@ -481,7 +481,7 @@ function WebMenu({
     className: 'carta-pizza' + (esMes(it) ? ' carta-mes' : '')
   }, /*#__PURE__*/React.createElement("img", {
     src: fotoTam(it.photo, 'md'),
-    srcSet: fotoTam(it.photo, 'thumb') + ' 194w, ' + fotoTam(it.photo, 'md') + ' 530w',
+    srcSet: fotoTam(it.photo, 'thumb') + ' 220w, ' + fotoTam(it.photo, 'md') + ' 600w',
     sizes: "(min-width: 640px) 340px, 96px",
     alt: it.name,
     loading: "lazy",

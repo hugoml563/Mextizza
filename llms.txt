@@ -13,13 +13,13 @@ y cada pizza se hornea cuando entra el pedido, no antes.
 
 ### Pizzas
 
+- **Pizza Provola** — $229 MXN. Doble queso, doble provolone. Simple y por eso funciona.
+- **Pizza Roni** — $189 MXN. Peperoni clásico, sin vueltas. La que pides cuando ya sabes lo que quieres.
 - **Pizza Serranita** — $229 MXN. Jamón Serrano, arúgula fresca, queso parmesano y salsa de tomate artesanal.
 - **Pizza Aloha** — $189 MXN. La clásica que divide opiniones, jamón, piña y salsa de tomate artesanal. Sin pena.
 - **Pizza Newyork** — $199 MXN. Salsa de tomate artesanal a la vodka con crema. Una capa de sabor que no vas a adivinar a la primera mordida.
-- **Pizza Provola** — $229 MXN. Doble queso, doble provolone. Simple y por eso funciona.
-- **Pizza Chisi** — $219 MXN. Queso monterrey, provolone, parmesano y un toque de gorgonzola… Para los que no negocian con el queso.
 - **Pizza Combinada** — $229 MXN. Jamón, champiñones, pimiento y cebolla. Para los que quieren un poco de todo.
-- **Pizza Roni** — $189 MXN. Peperoni clásico, sin vueltas. La que pides cuando ya sabes lo que quieres.
+- **Pizza Chisi** — $219 MXN. Queso monterrey, provolone, parmesano y un toque de gorgonzola… Para los que no negocian con el queso.
 - **Pizza Traviesa** — $199 MXN. Peperoni con un toque de miel picante… dulce, picante y un poco atrevida.
 
 ### Pizza especial del mes

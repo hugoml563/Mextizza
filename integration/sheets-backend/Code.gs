@@ -1053,13 +1053,13 @@ function jsonOut_(obj) {
    Para cambiar un precio, cambialo en menu-data.js y vuelve a construir. */
 const CATALOGO = {
   productos: {
+    'provola': { nombre: 'Pizza Provola', precio: 229, cat: 'Del horno' },
+    'roni': { nombre: 'Pizza Roni', precio: 189, cat: 'Del horno' },
     'serranita': { nombre: 'Pizza Serranita', precio: 229, cat: 'Del horno' },
     'aloha': { nombre: 'Pizza Aloha', precio: 189, cat: 'Del horno' },
     'newyork': { nombre: 'Pizza Newyork', precio: 199, cat: 'Del horno' },
-    'provola': { nombre: 'Pizza Provola', precio: 229, cat: 'Del horno' },
-    'chisi': { nombre: 'Pizza Chisi', precio: 219, cat: 'Del horno' },
     'combinada': { nombre: 'Pizza Combinada', precio: 229, cat: 'Del horno' },
-    'roni': { nombre: 'Pizza Roni', precio: 189, cat: 'Del horno' },
+    'chisi': { nombre: 'Pizza Chisi', precio: 219, cat: 'Del horno' },
     'traviesa': { nombre: 'Pizza Traviesa', precio: 199, cat: 'Del horno' },
     'cochinita': { nombre: 'Pizza Cochinita', precio: 229, cat: 'Rotativa' },
     'chocolatoso': { nombre: 'Brownie', precio: 40, cat: 'Para cerrar' },

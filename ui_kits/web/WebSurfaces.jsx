@@ -218,7 +218,7 @@ function WebMenu({ onAdd, onCustomize, added }) {
           {pizzas.map((it) => (
             <article key={it.id} className={'carta-pizza' + (esMes(it) ? ' carta-mes' : '')}>
               <img src={fotoTam(it.photo, 'md')}
-                srcSet={fotoTam(it.photo, 'thumb') + ' 194w, ' + fotoTam(it.photo, 'md') + ' 530w'}
+                srcSet={fotoTam(it.photo, 'thumb') + ' 220w, ' + fotoTam(it.photo, 'md') + ' 600w'}
                 sizes="(min-width: 640px) 340px, 96px"
                 alt={it.name} loading="lazy" decoding="async" width="530" height="600" />
               <div className="carta-cuerpo">
