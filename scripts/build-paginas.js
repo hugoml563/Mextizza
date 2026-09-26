@@ -72,8 +72,7 @@ function documento({ slug, title, description, jsonld, cuerpo, imagen, estilos }
 <link rel="canonical" href="${url}">
 <link rel="icon" type="image/png" href="/assets/social/mextizza-app-icon-512.png">
 <link rel="stylesheet" href="/styles.css">
-${(estilos || []).map((e) => `<link rel="stylesheet" href="${e}">`).join('\n')}
-<meta property="og:type" content="website">
+${(estilos || []).map((e) => `<link rel="stylesheet" href="${e}">\n`).join('')}<meta property="og:type" content="website">
 <meta property="og:site_name" content="Mextizza">
 <meta property="og:locale" content="es_MX">
 <meta property="og:url" content="${url}">
