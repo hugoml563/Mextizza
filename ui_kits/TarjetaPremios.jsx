@@ -275,6 +275,43 @@ function TarjetaPremios({ tarjeta, animarUltimo = false, pendiente = false, titu
   );
 }
 
+/* Pide una opinion en Google cuando el pedido ya se entrego: es el momento en
+   que el cliente tiene la pizza enfrente. Sin reseñas la ficha no sube en el
+   mapa, y Google ni siquiera reconoce el nombre (lo corrige a "Meztizza").
+
+   Nunca a cambio de nada: Google prohibe dar premios, sellos o descuentos por
+   una reseña, y puede borrarlas todas o suspender la ficha. Por eso esto vive
+   lejos de la tarjeta y no la menciona. */
+function PideResena({ style }) {
+  const url = typeof MEXTIZZA_SOCIAL !== 'undefined' && MEXTIZZA_SOCIAL.resenaGoogle;
+  if (!url) return null;
+  const estrella = 'M12 2.5l2.9 6.1 6.6.8-4.9 4.6 1.3 6.6L12 17.3l-5.9 3.3 1.3-6.6-4.9-4.6 6.6-.8z';
+  return (
+    <div style={{
+      border: '2px solid var(--negro-carbon)', borderRadius: 'var(--radius-md)',
+      background: 'var(--dorado-tinte)', padding: '14px 16px', ...style,
+    }}>
+      <div aria-hidden="true" style={{ display: 'flex', gap: 3, marginBottom: 8 }}>
+        {[0, 1, 2, 3, 4].map((i) => (
+          <svg key={i} width="18" height="18" viewBox="0 0 24 24">
+            <path d={estrella} style={{ fill: 'var(--dorado-masa)', stroke: 'var(--negro-carbon)', strokeWidth: 1.2, strokeLinejoin: 'round' }} />
+          </svg>
+        ))}
+      </div>
+      <div style={{ fontFamily: 'var(--font-display)', fontSize: 20, lineHeight: 1.15 }}>¿Cómo estuvo?</div>
+      <p style={{ fontFamily: 'var(--font-body)', fontSize: 13.5, lineHeight: 1.5, margin: '6px 0 12px', color: 'var(--text-body)' }}>
+        Si llegó como te la imaginabas, cuéntaselo a Google. Somos una cocina chiquita y así nos encuentran tus vecinos.
+      </p>
+      <a href={url} target="_blank" rel="noopener" style={{
+        display: 'block', textAlign: 'center', padding: '12px 14px', minHeight: 44, boxSizing: 'border-box',
+        borderRadius: 'var(--radius-sm)', background: 'var(--negro-carbon)', color: 'var(--blanco)',
+        textDecoration: 'none', fontFamily: 'var(--font-body)', fontWeight: 700, fontSize: 13,
+        letterSpacing: 0.8, textTransform: 'uppercase',
+      }}>Dejar mi opinión en Google</a>
+    </div>
+  );
+}
+
 /* Que producto vale por cada premio. Tiene que decir lo mismo que PREMIOS en
    Code.gs: si aqui se ofrece canjear un producto y alla se espera otro, el
    cliente pide su premio y el servidor no se lo da. build-js.js compara las dos
@@ -569,4 +606,4 @@ function Aviso2x1({ activo, style }) {
   );
 }
 
-Object.assign(window, { TarjetaPremios, AvisoPremio, Aviso2x1, CanjeTarjeta, PREMIO_PRODUCTOS, mextizzaDescuentoPrevisto, NOMBRE_PROMO, DIAS_TARJETA, CASILLA_BROWNIE, CASILLA_PIZZA });
+Object.assign(window, { PideResena, TarjetaPremios, AvisoPremio, Aviso2x1, CanjeTarjeta, PREMIO_PRODUCTOS, mextizzaDescuentoPrevisto, NOMBRE_PROMO, DIAS_TARJETA, CASILLA_BROWNIE, CASILLA_PIZZA });

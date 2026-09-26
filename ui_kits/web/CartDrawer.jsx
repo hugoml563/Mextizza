@@ -86,6 +86,9 @@ function SeguimientoPedido({ folio }) {
           );
         })}
       </div>
+      {orden && orden.estado === "entregada" && typeof PideResena === "function" && (
+        <PideResena style={{ marginTop: 18 }} />
+      )}
       {orden && !cancelada && (
         <div style={{ marginTop: 16, paddingTop: 14, borderTop: "var(--border-paper)" }}>
           {/* Sin autocancelacion: en un dark kitchen sin volumen una cancelacion a

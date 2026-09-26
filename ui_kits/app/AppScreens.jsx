@@ -592,6 +592,9 @@ function AppTracking({ tab, onTab, count, folio, premio, tarjeta, selloPendiente
             </div>
           </div>
         ))}
+        {orden && orden.estado === 'entregada' && typeof PideResena === 'function' && (
+          <PideResena style={{ marginTop: 22 }} />
+        )}
         {orden && !cancelada && (
           <div style={{ marginTop: 22 }}>
             {/* Sin autocancelacion: el cliente nos escribe con su folio. */}

@@ -196,6 +196,8 @@ function mextizzaWhatsappLink(mensaje) {
 }
 const MEXTIZZA_SOCIAL = {
   instagram: 'https://www.instagram.com/mextizzamx/',
-  facebook: 'https://www.facebook.com/profile.php?id=61592120047383'
+  facebook: 'https://www.facebook.com/profile.php?id=61592120047383',
+  // El link corto de "Pedir resenas" de la ficha de Google Business.
+  resenaGoogle: 'https://g.page/r/CQPoNsxWP1lFEBM/review'
 };
 Object.assign(window, { MEXTIZZA_MENU, MEXTIZZA_ADDONS, MEXTIZZA_FACTS, mextizzaWhatsappLink, mextizzaEstaAbierto, mextizzaEs2x1, MEXTIZZA_2X1, mextizzaVistaPrevia, mextizzaProducto, mextizzaEsPizza, MEXTIZZA_PICKUP_DESCUENTO, MEXTIZZA_PICKUP_ACTIVO, mextizzaAceptaComplementos, MEXTIZZA_SOCIAL });
