@@ -123,6 +123,97 @@ function AppWelcome({ onEnter }) {
 }
 
 /* ---------- Screen 2: menu ---------- */
+/* La carta, igual que en el celular de la web: la del mes primero, un renglon
+   por pizza con foto de 96px (antes 58) y el precio con "Agregar" debajo del
+   texto, que ya no le roba ancho a la descripcion. Tocar la pizza abre su ficha;
+   "Agregar" la manda directo al pedido. Postres y bebidas en renglones cortos. */
+const fotoApp = (foto, tam) => String(foto || '').replace(/\.(webp|jpe?g)$/, '-' + tam + '.webp');
+
+function CartaApp({ onAdd, onOpen, added }) {
+  const scroll = React.useRef(null);
+  const todas = MEXTIZZA_MENU.flatMap((g) => g.items);
+  const esMes = (it) => it.flag === 'Del mes';
+  const esPizza = (it) => typeof mextizzaEsPizza === 'function' ? mextizzaEsPizza(it.id) : /^Pizza /.test(it.name);
+  const pizzas = todas.filter(esMes).concat(todas.filter((it) => esPizza(it) && !esMes(it)));
+  const cierre = todas.filter((it) => !esPizza(it));
+  const brincar = (id) => {
+    const cont = scroll.current, el = cont && cont.querySelector('#' + id);
+    if (el) cont.scrollTo({ top: el.offsetTop - 12, behavior: 'smooth' });
+  };
+  const agregar = (it) => (e) => { e.stopPropagation(); onAdd(it); };
+  const chip = (activo) => ({
+    flex: 'none', padding: '8px 15px', minHeight: 40, boxSizing: 'border-box', borderRadius: 999,
+    border: '2px solid var(--negro-carbon)', background: activo ? 'var(--negro-carbon)' : 'transparent',
+    color: activo ? 'var(--blanco-hueso)' : 'var(--negro-carbon)', fontFamily: 'var(--font-body)',
+    fontWeight: 600, fontSize: 14, letterSpacing: 0.3, cursor: 'pointer',
+  });
+  const precio = { fontFamily: 'var(--font-label)', fontSize: 18, color: 'var(--terracota-horno)' };
+  return (
+    <div ref={scroll} style={{ flex: 1, overflowY: 'auto', padding: '20px 16px 28px', background: 'var(--surface-sunken)' }}>
+      <h2 style={{ fontFamily: 'var(--font-display)', fontWeight: 400, fontSize: 34, lineHeight: 1.05, margin: '0 0 8px' }}>La carta</h2>
+      <p style={{ fontFamily: 'var(--font-body)', fontSize: 15.5, lineHeight: 1.5, color: '#3d3a36', margin: '0 0 16px' }}>
+        Todas salen del horno de piedra cuando entra tu pedido. Envío incluido en el precio.
+      </p>
+      <div style={{ display: 'flex', gap: 8, marginBottom: 18 }}>
+        <button style={chip(true)} onClick={() => brincar('app-carta-pizzas')}>Pizzas</button>
+        <button style={chip(false)} onClick={() => brincar('app-carta-cierre')}>Postres y bebidas</button>
+      </div>
+
+      <div id="app-carta-pizzas" style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+        {pizzas.map((it) => (
+          <div key={it.id} role="button" tabIndex={0} onClick={() => onOpen(it)}
+            onKeyDown={(e) => { if (e.key === 'Enter') onOpen(it); }}
+            style={{
+              display: 'grid', gridTemplateColumns: '96px 1fr', gap: 14, padding: 12, cursor: 'pointer',
+              background: esMes(it) ? 'var(--terracota-tinte)' : 'var(--blanco)',
+              border: '2px solid var(--negro-carbon)', borderRadius: 14,
+            }}>
+            <img src={fotoApp(it.photo, 'thumb')} alt={it.name} loading="lazy" decoding="async" width="96" height="96"
+              style={{ width: 96, height: 96, objectFit: 'cover', borderRadius: 10, border: '2px solid var(--negro-carbon)', boxSizing: 'border-box', display: 'block' }} />
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 6, minWidth: 0 }}>
+              {esMes(it) && (
+                <span style={{ alignSelf: 'flex-start', background: 'var(--terracota-horno)', color: '#fff', fontFamily: 'var(--font-label)',
+                  fontSize: 10.5, letterSpacing: 0.8, textTransform: 'uppercase', padding: '4px 8px', borderRadius: 6 }}>La del mes</span>
+              )}
+              <div style={{ fontFamily: 'var(--font-display)', fontSize: 22, lineHeight: 1.1 }}>{it.name.replace(/^Pizza /, '')}</div>
+              <div style={{ fontFamily: 'var(--font-body)', fontSize: 14.5, lineHeight: 1.45, color: '#3d3a36', flex: 1 }}>{it.desc}</div>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, marginTop: 4 }}>
+                <span style={precio}>${it.price}</span>
+                <Button size="md" tone={added === it.id ? 'dark' : 'outline'} onClick={agregar(it)}>
+                  {added === it.id ? 'Agregado' : 'Agregar'}
+                </Button>
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      <div id="app-carta-cierre" style={{ marginTop: 26 }}>
+        <div style={{ fontFamily: 'var(--font-display)', fontSize: 24, margin: '0 0 10px' }}>Para cerrar</div>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+          {cierre.map((it) => (
+            <div key={it.id} role="button" tabIndex={0} onClick={() => onOpen(it)}
+              onKeyDown={(e) => { if (e.key === 'Enter') onOpen(it); }}
+              style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '8px 12px 8px 8px', cursor: 'pointer',
+                background: 'var(--blanco)', border: '2px solid var(--negro-carbon)', borderRadius: 12 }}>
+              <img src={fotoApp(it.photo, 'thumb')} alt="" loading="lazy" decoding="async" width="56" height="56"
+                style={{ width: 56, height: 56, objectFit: 'cover', borderRadius: 8, flex: 'none' }} />
+              <div style={{ flex: 1, fontFamily: 'var(--font-body)', fontWeight: 600, fontSize: 15.5, lineHeight: 1.2, minWidth: 0 }}>
+                {it.name}
+                {it.desc ? <div style={{ fontWeight: 400, color: '#5a5650', fontSize: 13 }}>{it.desc}</div> : null}
+              </div>
+              <span style={precio}>${it.price}</span>
+              <Button size="sm" tone={added === it.id ? 'dark' : 'outline'} onClick={agregar(it)}>
+                {added === it.id ? 'Listo' : 'Agregar'}
+              </Button>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function AppMenu({ onAdd, onOpen, tab, onTab, count, added }) {
   return (
     <Phone>
@@ -137,26 +228,7 @@ function AppMenu({ onAdd, onOpen, tab, onTab, count, added }) {
         </div>
         <TapeStripe position="bottom" height={3} />
       </div>
-      <div style={{ flex: 1, overflowY: 'auto', padding: '18px 20px 24px', background: 'var(--surface-card)' }}>
-        {MEXTIZZA_MENU.map(g => (
-          <div key={g.cat} style={{ marginBottom: 24 }}>
-            <div style={{ fontFamily: 'var(--font-label)', fontSize: 10, letterSpacing: 1, textTransform: 'uppercase', color: 'var(--rosa-mexicano-texto)', marginBottom: 10 }}>{g.title}</div>
-            {g.items.map((it, j) => (
-              <MenuItem key={it.id} name={it.name} description={it.desc} price={it.price} photo={it.photo} photoSize={58}
-                divider={j < g.items.length - 1} onClick={() => onOpen(it)}
-                badge={it.flag ? <Badge tone={it.flag === 'Del mes' ? 'dorado' : 'rosa'}>{it.flag}</Badge> : null}
-                action={<Button size="sm" tone={added === it.id ? 'dark' : 'outline'}
-                  /* stopPropagation: MenuItem puts the row's onClick on the same
-                     wrapper that holds this button, so without it one tap on "+"
-                     both added the item AND opened the detail screen — where the
-                     customer added it a second time. */
-                  onClick={e => { e.stopPropagation(); onAdd(it); }}>
-                  {added === it.id ? '✓' : '+'}
-                </Button>} />
-            ))}
-          </div>
-        ))}
-      </div>
+      <CartaApp onAdd={onAdd} onOpen={onOpen} added={added} />
       <TabBar tab={tab} onTab={onTab} count={count} />
     </Phone>
   );
