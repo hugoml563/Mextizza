@@ -1,0 +1,277 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>Maqueta: catering | Mextizza</title>
+<link rel="stylesheet" href="../styles.css">
+<style>
+/* Maqueta del catering nuevo. No se publica (pruebas/ esta excluido).
+   Sin fotos del horno todavia: el collage usa las fotos reales de la carta, y
+   se cambia por la del horno en el primer evento. */
+body{background:var(--blanco-hueso);color:var(--negro-carbon);margin:0;font-family:var(--font-body)}
+.aviso{background:var(--negro-carbon);color:var(--blanco-hueso);font-family:var(--font-label);font-size:11px;
+  letter-spacing:.08em;text-align:center;padding:8px 12px}
+.envoltura{max-width:1080px;margin:0 auto;padding:0 20px}
+section{padding:56px 0 64px}
+h2{font-family:var(--font-display);font-weight:400;font-size:clamp(36px,6vw,54px);line-height:1.02;margin:0 0 12px;text-wrap:balance}
+.bajada{font-size:18px;line-height:1.5;color:#3d3a36;margin:0 0 30px;max-width:46ch}
+
+/* La pared: los posts de Instagram pegados como carteles en la calle, sobre el
+   gris asfalto de la marca, con cinta de las rayas de Mextizza. Se ven girados
+   y encimados a proposito. Al entrar en pantalla se pegan uno por uno. */
+.pared{position:relative;height:500px;margin-bottom:36px;border-radius:14px;overflow:hidden;
+  border:2px solid var(--negro-carbon);background-size:96px 48px}
+.pared.dorado{background-image:url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20width%3D%2296%22%20height%3D%2248%22%3E%3Crect%20width%3D%2296%22%20height%3D%2248%22%20fill%3D%22%23C9A56F%22/%3E%3Crect%20x%3D%221.5%22%20y%3D%221.5%22%20width%3D%2245%22%20height%3D%2221%22%20rx%3D%221.5%22%20fill%3D%22%23F7EBD8%22/%3E%3Crect%20x%3D%221.5%22%20y%3D%2220.0%22%20width%3D%2245%22%20height%3D%222.5%22%20fill%3D%22rgba%28140%2C95%2C35%2C.13%29%22/%3E%3Crect%20x%3D%2249.5%22%20y%3D%221.5%22%20width%3D%2245%22%20height%3D%2221%22%20rx%3D%221.5%22%20fill%3D%22%23F0DFC2%22/%3E%3Crect%20x%3D%2249.5%22%20y%3D%2220.0%22%20width%3D%2245%22%20height%3D%222.5%22%20fill%3D%22rgba%28140%2C95%2C35%2C.13%29%22/%3E%3Crect%20x%3D%22-22.5%22%20y%3D%2225.5%22%20width%3D%2245%22%20height%3D%2221%22%20rx%3D%221.5%22%20fill%3D%22%23FAF1E3%22/%3E%3Crect%20x%3D%22-22.5%22%20y%3D%2244.0%22%20width%3D%2245%22%20height%3D%222.5%22%20fill%3D%22rgba%28140%2C95%2C35%2C.13%29%22/%3E%3Crect%20x%3D%2225.5%22%20y%3D%2225.5%22%20width%3D%2245%22%20height%3D%2221%22%20rx%3D%221.5%22%20fill%3D%22%23EDD9B8%22/%3E%3Crect%20x%3D%2225.5%22%20y%3D%2244.0%22%20width%3D%2245%22%20height%3D%222.5%22%20fill%3D%22rgba%28140%2C95%2C35%2C.13%29%22/%3E%3Crect%20x%3D%2273.5%22%20y%3D%2225.5%22%20width%3D%2245%22%20height%3D%2221%22%20rx%3D%221.5%22%20fill%3D%22%23F7EBD8%22/%3E%3Crect%20x%3D%2273.5%22%20y%3D%2244.0%22%20width%3D%2245%22%20height%3D%222.5%22%20fill%3D%22rgba%28140%2C95%2C35%2C.13%29%22/%3E%3C/svg%3E")}
+.pared.gris{background-image:url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20width%3D%2296%22%20height%3D%2248%22%3E%3Crect%20width%3D%2296%22%20height%3D%2248%22%20fill%3D%22%238C8680%22/%3E%3Crect%20x%3D%221%22%20y%3D%221%22%20width%3D%2246%22%20height%3D%2222%22%20rx%3D%221.5%22%20fill%3D%22%23C9C4BC%22/%3E%3Crect%20x%3D%221%22%20y%3D%2221%22%20width%3D%2246%22%20height%3D%222%22%20fill%3D%22rgba%280%2C0%2C0%2C.10%29%22/%3E%3Crect%20x%3D%2249%22%20y%3D%221%22%20width%3D%2246%22%20height%3D%2222%22%20rx%3D%221.5%22%20fill%3D%22%23BFB9B0%22/%3E%3Crect%20x%3D%2249%22%20y%3D%2221%22%20width%3D%2246%22%20height%3D%222%22%20fill%3D%22rgba%280%2C0%2C0%2C.10%29%22/%3E%3Crect%20x%3D%22-23%22%20y%3D%2225%22%20width%3D%2246%22%20height%3D%2222%22%20rx%3D%221.5%22%20fill%3D%22%23D1CCC4%22/%3E%3Crect%20x%3D%22-23%22%20y%3D%2245%22%20width%3D%2246%22%20height%3D%222%22%20fill%3D%22rgba%280%2C0%2C0%2C.10%29%22/%3E%3Crect%20x%3D%2225%22%20y%3D%2225%22%20width%3D%2246%22%20height%3D%2222%22%20rx%3D%221.5%22%20fill%3D%22%23C4BEB5%22/%3E%3Crect%20x%3D%2225%22%20y%3D%2245%22%20width%3D%2246%22%20height%3D%222%22%20fill%3D%22rgba%280%2C0%2C0%2C.10%29%22/%3E%3Crect%20x%3D%2273%22%20y%3D%2225%22%20width%3D%2246%22%20height%3D%2222%22%20rx%3D%221.5%22%20fill%3D%22%23C9C4BC%22/%3E%3Crect%20x%3D%2273%22%20y%3D%2245%22%20width%3D%2246%22%20height%3D%222%22%20fill%3D%22rgba%280%2C0%2C0%2C.10%29%22/%3E%3C/svg%3E")}
+/* Luz de arriba y orillas un poco mas oscuras: pared de verdad, no fondo plano. */
+.pared::after{content:"";position:absolute;inset:0;pointer-events:none;z-index:30;
+  background:radial-gradient(ellipse at 30% -10%,rgba(255,255,255,.18),transparent 55%),
+    radial-gradient(ellipse at center,transparent 60%,rgba(120,80,20,.20) 100%)}
+/* El logo pintado en la pared, como grafiti: los carteles lo tapan en parte. */
+.pintura{position:absolute;left:26%;bottom:-1%;z-index:0;margin:0;font-family:var(--font-display);
+  font-size:128px;line-height:1;letter-spacing:-2px;color:var(--rosa-mexicano);opacity:.8;
+  transform:rotate(-4deg);mix-blend-mode:multiply;white-space:nowrap;pointer-events:none}
+.pared.gris .pintura{mix-blend-mode:normal;opacity:.75}
+/* La calcomania redonda del hero, pegada entre los carteles. */
+.calco{position:absolute;left:5%;bottom:5%;z-index:10;width:104px;height:104px;border-radius:50%;
+  background:var(--blanco-hueso);border:3px solid var(--negro-carbon);display:grid;place-items:center;
+  text-align:center;font-family:var(--font-label);font-size:12px;line-height:1.15;letter-spacing:.06em;
+  transform:rotate(12deg);box-shadow:0 6px 10px rgba(0,0,0,.3)}
+/* Todas las poses del cartel usan la MISMA lista de transformaciones, en el
+   mismo orden: asi el navegador interpola cada valor en vez de brincar. */
+.cartel{position:absolute;left:var(--x);top:var(--y);width:21%;aspect-ratio:4/5;z-index:var(--z,1);
+  --rx:0deg;--ry:0deg;--gx:50%;--gy:30%;
+  transform:perspective(900px) rotate(var(--r)) rotateX(var(--rx)) rotateY(var(--ry)) translateY(0) scale(1);
+  box-shadow:0 10px 18px rgba(60,35,5,.28);will-change:transform}
+.cartel img{width:100%;height:100%;object-fit:cover;display:block;border:3px solid #fff;box-sizing:border-box}
+/* Cinta: un pedazo de la franja de colores de la marca, pegado arriba. */
+.cartel::before{content:"";position:absolute;top:-10px;left:50%;width:56px;height:20px;z-index:2;
+  transform:translateX(-50%) rotate(calc(var(--r) * -1.6));background:var(--stripe-tape);opacity:.9;
+  box-shadow:0 1px 2px rgba(0,0,0,.3)}
+/* Brillo del papel: sigue al cursor. Tenue, porque un cartel no es de vidrio. */
+.cartel::after{content:"";position:absolute;inset:0;pointer-events:none;opacity:0;
+  background:radial-gradient(circle at var(--gx) var(--gy),rgba(255,255,255,.32),transparent 55%);
+  transition:opacity .35s ease}
+
+/* Pegado uno por uno al entrar la seccion. Quien pidio menos movimiento ve la
+   pared ya armada. */
+@media (prefers-reduced-motion:no-preference){
+  .pared:not(.pegada) .cartel{opacity:0;
+    transform:perspective(900px) rotate(var(--r)) rotateX(0deg) rotateY(0deg) translateY(-18px) scale(1.08)}
+  .pared.pegada:not(.lista) .cartel{transition:opacity .35s ease,transform .45s cubic-bezier(.2,.9,.3,1.3);
+    transition-delay:var(--d)}
+}
+
+/* Ya pegada, la pared reacciona al mouse. Antes el cursor heredaba el retraso
+   de la entrada (hasta 660 ms): por eso se sentia trabado. */
+@media (hover:hover) and (pointer:fine){
+  /* Al salir: regresa un poco mas rapido de lo que se despego, y se queda
+     encima hasta terminar de bajar para no esconderse de golpe. */
+  .pared.lista .cartel{
+    transition:transform .38s cubic-bezier(.22,1,.36,1),box-shadow .38s cubic-bezier(.22,1,.36,1),
+      filter .4s ease,z-index 0s linear .38s}
+  /* Al llegar: se despega de la pared con un rebote suave. */
+  .pared.lista .cartel:hover{z-index:20;
+    transform:perspective(900px) rotate(0deg) rotateX(var(--rx)) rotateY(var(--ry)) translateY(-14px) scale(1.09);
+    box-shadow:0 28px 38px rgba(60,35,5,.34),0 8px 12px rgba(60,35,5,.18);
+    transition:transform .5s cubic-bezier(.34,1.45,.64,1),box-shadow .5s ease,filter .4s ease,z-index 0s}
+  /* Ya despegado, la inclinacion sigue al cursor sin rebotar en cada movimiento. */
+  .pared.lista .cartel.siguiendo:hover{
+    transition:transform .14s ease-out,box-shadow .5s ease,filter .4s ease,z-index 0s}
+  .pared.lista .cartel:hover::after{opacity:1}
+  /* Los demas se apagan un poco para que resalte el que senalas. */
+  .pared.lista:has(.cartel:hover) .cartel:not(:hover){filter:saturate(.7) brightness(.9)}
+}
+/* Movimiento reducido: el cartel pasa al frente con su sombra, sin inclinarse. */
+@media (hover:hover) and (pointer:fine) and (prefers-reduced-motion:reduce){
+  .pared.lista .cartel:hover,.pared.lista .cartel.siguiendo:hover{
+    transform:perspective(900px) rotate(var(--r)) rotateX(0deg) rotateY(0deg) translateY(0) scale(1);transition:none}
+  .pared.lista .cartel:hover::after{opacity:0}
+}
+@media (max-width:700px){
+  .pared{height:370px}
+  .pintura{font-size:84px}
+  .calco{width:78px;height:78px;font-size:9.5px;left:auto;right:3%;bottom:4%}
+  .pintura{left:4%}
+  .cartel{width:40%;left:var(--xm);top:var(--ym)}
+  .cartel.solo-compu{display:none}
+}
+
+/* Solo de la maqueta: para comparar las dos paredes. */
+.comparar{display:flex;gap:8px;margin-bottom:12px}
+.comparar button{padding:8px 14px;min-height:40px;border:2px solid var(--negro-carbon);border-radius:999px;background:transparent;
+  font-family:var(--font-body);font-weight:600;font-size:14px;cursor:pointer}
+.comparar button.activo{background:var(--negro-carbon);color:var(--blanco-hueso)}
+.rejilla{display:grid;grid-template-columns:1fr;gap:30px;align-items:start}
+@media (min-width:880px){.rejilla{grid-template-columns:1fr 420px;gap:48px}}
+
+/* Como va: el verbo es el titulo, sin "Paso 1". */
+.pasos{list-style:none;margin:0;padding:0;display:grid;gap:22px}
+.pasos li{border-top:2px solid var(--negro-carbon);padding-top:14px}
+.pasos b{display:block;font-family:var(--font-display);font-weight:400;font-size:26px;line-height:1.1}
+.pasos span{display:block;font-size:16px;line-height:1.5;color:#3d3a36;margin-top:6px;max-width:44ch}
+.letra-chica{font-size:15px;line-height:1.55;color:#3d3a36;margin:26px 0 0;max-width:52ch}
+
+/* La calculadora: el precio es fijo, asi que se ve al instante. */
+.calcula{background:var(--blanco);border:2px solid var(--negro-carbon);border-radius:14px;padding:20px;
+  box-shadow:0 5px 0 var(--negro-carbon)}
+.calcula h3{font-family:var(--font-display);font-weight:400;font-size:26px;margin:0 0 14px}
+.etiqueta{display:block;font-size:14px;font-weight:600;margin:0 0 6px}
+.contador{display:flex;align-items:center;gap:12px}
+.contador button{width:48px;height:48px;border-radius:10px;border:2px solid var(--negro-carbon);background:var(--blanco-hueso);
+  font-size:24px;font-weight:700;cursor:pointer;color:var(--negro-carbon)}
+.contador button:disabled{opacity:.35;cursor:default}
+.contador output{font-family:var(--font-display);font-size:34px;min-width:64px;text-align:center}
+.contador small{font-size:14px;color:#3d3a36}
+.nota{font-size:13px;color:#5a5650;margin:6px 0 0;min-height:18px}
+.total{background:var(--dorado-tinte);border:2px solid var(--negro-carbon);border-radius:12px;padding:14px 16px;margin:16px 0}
+.total .grande{font-family:var(--font-display);font-size:40px;line-height:1;color:var(--terracota-horno)}
+.total .grande small{font-family:var(--font-body);font-size:15px;color:var(--negro-carbon)}
+.total p{margin:8px 0 0;font-size:14.5px;line-height:1.45}
+.campo{margin-top:12px}
+.campo input{width:100%;box-sizing:border-box;min-height:46px;padding:10px 12px;border:2px solid var(--negro-carbon);
+  border-radius:10px;font-family:var(--font-body);font-size:16px;background:var(--blanco);color:var(--negro-carbon)}
+.campo input:focus{outline:3px solid var(--rosa-mexicano);outline-offset:1px}
+.dos{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.apartar{width:100%;margin-top:18px;min-height:52px;border:2px solid var(--negro-carbon);border-radius:10px;
+  background:var(--rosa-mexicano);color:#fff;font-family:var(--font-body);font-weight:700;font-size:16px;letter-spacing:.06em;
+  text-transform:uppercase;box-shadow:0 4px 0 var(--negro-carbon);cursor:pointer;transition:transform .12s,box-shadow .12s}
+.apartar:active{transform:translateY(4px);box-shadow:0 0 0 var(--negro-carbon)}
+.pie-form{font-size:13px;color:#5a5650;text-align:center;margin:10px 0 0}
+</style>
+</head>
+<body>
+<div class="aviso">MAQUETA · NO ESTÁ PUBLICADA</div>
+
+<section id="catering">
+  <div class="envoltura">
+    <div class="comparar" role="group" aria-label="Color de la pared">
+      <button type="button" data-pared="dorado" class="activo">Tabique dorado claro</button>
+      <button type="button" data-pared="gris">Tabique gris</button>
+    </div>
+    <div class="pared dorado" id="pared" aria-hidden="true">
+      <p class="pintura">Mextizza</p>
+      <div class="calco">HECHO<br>A MANO<br>EN 48H</div>
+      <div class="cartel" style="--x:-1%;--y:9%;--r:-6deg;--z:2;--xm:-8%;--ym:5%;--d:0ms"><img src="../assets/social/posts/post-traviesa.webp" alt="" loading="lazy" decoding="async" width="432" height="540"></div>
+      <div class="cartel" style="--x:12.5%;--y:32%;--r:4deg;--z:3;--xm:14%;--ym:36%;--d:110ms"><img src="../assets/social/posts/post-cochinita.webp" alt="" loading="lazy" decoding="async" width="432" height="540"></div>
+      <div class="cartel" style="--x:26%;--y:5%;--r:-3deg;--z:2;--xm:33%;--ym:3%;--d:220ms"><img src="../assets/social/posts/post-aloha.webp" alt="" loading="lazy" decoding="async" width="432" height="540"></div>
+      <div class="cartel" style="--x:40%;--y:28%;--r:5deg;--z:4;--xm:54%;--ym:33%;--d:330ms"><img src="../assets/social/posts/post-roni.webp" alt="" loading="lazy" decoding="async" width="432" height="540"></div>
+      <div class="cartel solo-compu" style="--x:53.5%;--y:4%;--r:-4deg;--z:2;--xm:0%;--ym:0%;--d:440ms"><img src="../assets/social/posts/post-chisi.webp" alt="" loading="lazy" decoding="async" width="432" height="540"></div>
+      <div class="cartel solo-compu" style="--x:67%;--y:30%;--r:3deg;--z:3;--xm:0%;--ym:0%;--d:550ms"><img src="../assets/social/posts/post-provola.webp" alt="" loading="lazy" decoding="async" width="432" height="540"></div>
+      <div class="cartel" style="--x:80.5%;--y:7%;--r:-5deg;--z:2;--xm:70%;--ym:6%;--d:660ms"><img src="../assets/social/posts/post-serranita.webp" alt="" loading="lazy" decoding="async" width="432" height="540"></div>
+    </div>
+
+    <h2>El horno se va a tu fiesta</h2>
+    <p class="bajada">Tus invitados agarran su rebanada recién salida del horno. Tú te olvidas de la cocina y disfrutas la fiesta.</p>
+
+    <div class="rejilla">
+      <div>
+        <ol class="pasos">
+          <li><b>Apartas la fecha</b><span>Cualquier día de la semana, con 4 días de anticipación y el 30% de anticipo.</span></li>
+          <li><b>Llegamos con el horno</b><span>Lo montamos y lo operamos nosotros, ahí mismo. Llevamos platos y servilletas.</span></li>
+          <li><b>Sale pizza toda la fiesta</b><span>Durante 2 a 3 horas, de toda la carta, más ensalada César o Spring Mix.</span></li>
+        </ol>
+        <p class="letra-chica">Solo necesitamos un espacio al aire libre o ventilado y una superficie firme para montar el horno.
+          Vamos a Atizapán y la zona norte del Estado de México; si tu fiesta queda más lejos, escríbenos y lo vemos.</p>
+      </div>
+
+      <form class="calcula" onsubmit="event.preventDefault(); alert('Maqueta: aquí se abre WhatsApp con el total y queda la solicitud en el Sheet.');">
+        <h3>¿Cuántos van a ser?</h3>
+        <span class="etiqueta" id="lbl-personas">Invitados</span>
+        <div class="contador" role="group" aria-labelledby="lbl-personas">
+          <button type="button" id="menos" aria-label="Una persona menos">−</button>
+          <output id="personas" aria-live="polite">25</output>
+          <button type="button" id="mas" aria-label="Una persona más">+</button>
+          <small>personas</small>
+        </div>
+        <p class="nota" id="nota-personas"></p>
+
+        <div class="total" aria-live="polite">
+          <div class="grande"><span id="total">$5,875</span> <small>en total</small></div>
+          <p>Apartas con <b id="anticipo">$1,763</b>. Incluye 2 a 3 horas de pizza de toda la carta, ensalada, platos y servilletas.</p>
+        </div>
+
+        <div class="dos">
+          <div class="campo"><label class="etiqueta" for="fecha">Fecha</label><input id="fecha" type="date" required></div>
+          <div class="campo"><label class="etiqueta" for="colonia">Colonia</label><input id="colonia" placeholder="Dónde es la fiesta" required></div>
+        </div>
+        <div class="campo"><label class="etiqueta" for="nombre">Tu nombre</label><input id="nombre" autocomplete="name" required></div>
+        <div class="campo"><label class="etiqueta" for="tel">WhatsApp</label><input id="tel" type="tel" inputmode="tel" placeholder="10 dígitos" required></div>
+
+        <button class="apartar" type="submit">Apartar mi fecha</button>
+        <p class="pie-form">Te confirmamos disponibilidad por WhatsApp.</p>
+      </form>
+    </div>
+  </div>
+</section>
+
+<script>
+(function () {
+  const PRECIO = 235, MIN = 20, MAX = 30, ANTICIPO = 0.30, AVISO_DIAS = 4;
+  let n = 25;
+  const $ = (id) => document.getElementById(id);
+  const pesos = (v) => '$' + Math.round(v).toLocaleString('es-MX');
+  function pintar() {
+    $('personas').textContent = n;
+    $('total').textContent = pesos(n * PRECIO);
+    $('anticipo').textContent = pesos(n * PRECIO * ANTICIPO);
+    $('menos').disabled = n <= MIN;
+    $('mas').disabled = n >= MAX;
+    $('nota-personas').textContent = n === MIN ? 'El mínimo es 20: con menos no sale a cuenta montar el horno.'
+      : n === MAX ? '¿Son más de 30? Escríbenos y lo vemos.' : '';
+  }
+  $('menos').onclick = () => { if (n > MIN) { n--; pintar(); } };
+  $('mas').onclick = () => { if (n < MAX) { n++; pintar(); } };
+  // El calendario no deja escoger fechas con menos de 4 dias de aviso.
+  const d = new Date(); d.setDate(d.getDate() + AVISO_DIAS);
+  $('fecha').min = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+  pintar();
+  // La pared se arma cuando aparece en pantalla, una sola vez.
+  const pared = $('pared');
+  const io = new IntersectionObserver((es) => {
+    if (!es.some((e) => e.isIntersecting)) return;
+    pared.classList.add('pegada');
+    io.disconnect();
+    // Cuando termina de pegarse el ultimo cartel, la pared ya reacciona al mouse.
+    setTimeout(() => pared.classList.add('lista'), 1200);
+  }, { threshold: 0.3 });
+  io.observe(pared);
+  /* La inclinacion 3D y el brillo siguen al cursor. Se escriben como variables
+     de CSS, sin tocar nada mas: el navegador hace la animacion. */
+  const conMouse = matchMedia('(hover: hover) and (pointer: fine)').matches;
+  const quieto = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  if (conMouse && !quieto) {
+    pared.querySelectorAll('.cartel').forEach((c) => {
+      /* Tras el despegue (450 ms), la inclinacion sigue al cursor sin rebote.
+         Se mide desde el primer movimiento y no desde pointerenter: si el
+         cartel se mueve debajo del cursor, el navegador no avisa la entrada. */
+      let desde = 0;
+      c.addEventListener('pointermove', (e) => {
+        if (!desde) desde = performance.now();
+        else if (performance.now() - desde > 450) c.classList.add('siguiendo');
+        const r = c.getBoundingClientRect();
+        const x = (e.clientX - r.left) / r.width, y = (e.clientY - r.top) / r.height;
+        c.style.setProperty('--ry', ((x - 0.5) * 12).toFixed(2) + 'deg');
+        c.style.setProperty('--rx', ((0.5 - y) * 10).toFixed(2) + 'deg');
+        c.style.setProperty('--gx', (x * 100).toFixed(1) + '%');
+        c.style.setProperty('--gy', (y * 100).toFixed(1) + '%');
+      });
+      c.addEventListener('pointerleave', () => {
+        desde = 0;
+        c.classList.remove('siguiendo');
+        c.style.setProperty('--rx', '0deg');
+        c.style.setProperty('--ry', '0deg');
+      });
+    });
+  }
+  document.querySelectorAll('.comparar button').forEach((b) => b.addEventListener('click', () => {
+    document.querySelectorAll('.comparar button').forEach((x) => x.classList.toggle('activo', x === b));
+    pared.classList.remove('dorado', 'gris');
+    pared.classList.add(b.dataset.pared);
+  }));
+})();
+</script>
+</body>
+</html>

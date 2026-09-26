@@ -1,0 +1,124 @@
+/* Catering: la pared de carteles y la calculadora. Compartido por la portada
+   (ui_kits/web/index.html) y la pagina /catering-pizza-horno-de-lena/.
+
+   La pared va a todo el ancho de la pagina: tabique del mismo dorado claro de
+   la seccion de la tarjeta (#F7EBD8), con juntas mas oscuras. Arriba y abajo se
+   funde con el fondo de la pagina para que se lea como parte de ella y no como
+   un recuadro. Los carteles viven en un lienzo del ancho del contenido. */
+
+.pared{position:relative;width:100%;height:500px;overflow:hidden;
+  background-image:linear-gradient(to bottom,var(--blanco-hueso) 0,rgba(245,240,232,0) 44px,
+      rgba(245,240,232,0) calc(100% - 44px),var(--blanco-hueso) 100%),
+    url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20width%3D%2296%22%20height%3D%2248%22%3E%3Crect%20width%3D%2296%22%20height%3D%2248%22%20fill%3D%22%23C9A56F%22/%3E%3Crect%20x%3D%221.5%22%20y%3D%221.5%22%20width%3D%2245%22%20height%3D%2221%22%20rx%3D%221.5%22%20fill%3D%22%23F7EBD8%22/%3E%3Crect%20x%3D%221.5%22%20y%3D%2220.0%22%20width%3D%2245%22%20height%3D%222.5%22%20fill%3D%22rgba%28140%2C95%2C35%2C.13%29%22/%3E%3Crect%20x%3D%2249.5%22%20y%3D%221.5%22%20width%3D%2245%22%20height%3D%2221%22%20rx%3D%221.5%22%20fill%3D%22%23F0DFC2%22/%3E%3Crect%20x%3D%2249.5%22%20y%3D%2220.0%22%20width%3D%2245%22%20height%3D%222.5%22%20fill%3D%22rgba%28140%2C95%2C35%2C.13%29%22/%3E%3Crect%20x%3D%22-22.5%22%20y%3D%2225.5%22%20width%3D%2245%22%20height%3D%2221%22%20rx%3D%221.5%22%20fill%3D%22%23FAF1E3%22/%3E%3Crect%20x%3D%22-22.5%22%20y%3D%2244.0%22%20width%3D%2245%22%20height%3D%222.5%22%20fill%3D%22rgba%28140%2C95%2C35%2C.13%29%22/%3E%3Crect%20x%3D%2225.5%22%20y%3D%2225.5%22%20width%3D%2245%22%20height%3D%2221%22%20rx%3D%221.5%22%20fill%3D%22%23EDD9B8%22/%3E%3Crect%20x%3D%2225.5%22%20y%3D%2244.0%22%20width%3D%2245%22%20height%3D%222.5%22%20fill%3D%22rgba%28140%2C95%2C35%2C.13%29%22/%3E%3Crect%20x%3D%2273.5%22%20y%3D%2225.5%22%20width%3D%2245%22%20height%3D%2221%22%20rx%3D%221.5%22%20fill%3D%22%23F7EBD8%22/%3E%3Crect%20x%3D%2273.5%22%20y%3D%2244.0%22%20width%3D%2245%22%20height%3D%222.5%22%20fill%3D%22rgba%28140%2C95%2C35%2C.13%29%22/%3E%3C/svg%3E");
+  background-size:100% 100%,96px 48px}
+/* En la pagina de catering la pared sale del contenedor angosto del texto. */
+.pared.romper{width:100vw;margin-left:calc(50% - 50vw)}
+html:has(.pared.romper){overflow-x:clip}
+/* Luz de arriba y orillas un poco mas oscuras: pared de verdad, no fondo plano. */
+.pared::after{content:"";position:absolute;inset:0;pointer-events:none;z-index:30;
+  background:radial-gradient(ellipse at 30% -10%,rgba(255,255,255,.18),transparent 55%),
+    radial-gradient(ellipse 80% 90% at center,transparent 62%,rgba(120,80,20,.16) 100%)}
+.pared-lienzo{position:relative;height:100%;max-width:1080px;margin:0 auto}
+/* El logo pintado en la pared, como grafiti: los carteles lo tapan en parte. */
+.pintura{position:absolute;left:26%;bottom:3%;z-index:0;margin:0;font-family:var(--font-display);
+  font-size:128px;line-height:1;letter-spacing:-2px;color:var(--rosa-mexicano);opacity:.8;
+  transform:rotate(-4deg);mix-blend-mode:multiply;white-space:nowrap;pointer-events:none}
+/* La calcomania redonda del hero, pegada entre los carteles. */
+.calco{position:absolute;left:5%;bottom:8%;z-index:10;width:104px;height:104px;border-radius:50%;
+  background:var(--blanco-hueso);border:3px solid var(--negro-carbon);display:grid;place-items:center;
+  text-align:center;font-family:var(--font-label);font-size:12px;line-height:1.15;letter-spacing:.06em;
+  transform:rotate(12deg);box-shadow:0 6px 10px rgba(60,35,5,.3)}
+
+/* Todas las poses del cartel usan la MISMA lista de transformaciones, en el
+   mismo orden: asi el navegador interpola cada valor en vez de brincar. */
+.cartel{position:absolute;left:var(--x);top:var(--y);width:21%;aspect-ratio:4/5;z-index:var(--z,1);
+  --rx:0deg;--ry:0deg;--gx:50%;--gy:30%;
+  transform:perspective(900px) rotate(var(--r)) rotateX(var(--rx)) rotateY(var(--ry)) translateY(0) scale(1);
+  box-shadow:0 10px 18px rgba(60,35,5,.28)}
+.cartel img{width:100%;height:100%;object-fit:cover;display:block;border:3px solid #fff;box-sizing:border-box}
+/* Cinta: un pedazo de la franja de colores de la marca, pegado arriba. */
+.cartel::before{content:"";position:absolute;top:-10px;left:50%;width:56px;height:20px;z-index:2;
+  transform:translateX(-50%) rotate(calc(var(--r) * -1.6));background:var(--stripe-tape);opacity:.9;
+  box-shadow:0 1px 2px rgba(0,0,0,.3)}
+/* Brillo del papel: sigue al cursor. Tenue, porque un cartel no es de vidrio. */
+.cartel::after{content:"";position:absolute;inset:0;pointer-events:none;opacity:0;
+  background:radial-gradient(circle at var(--gx) var(--gy),rgba(255,255,255,.32),transparent 55%);
+  transition:opacity .35s ease}
+
+/* Pegado uno por uno al entrar en pantalla. Solo con la clase "animada" (la
+   pone el sitio con JavaScript): sin ella la pared se ve ya armada. */
+@media (prefers-reduced-motion:no-preference){
+  .pared.animada:not(.pegada) .cartel{opacity:0;
+    transform:perspective(900px) rotate(var(--r)) rotateX(0deg) rotateY(0deg) translateY(-18px) scale(1.08)}
+  .pared.pegada:not(.lista) .cartel{transition:opacity .35s ease,transform .45s cubic-bezier(.2,.9,.3,1.3);
+    transition-delay:var(--d)}
+}
+
+/* Ya pegada, la pared reacciona al mouse, sin heredar el retraso de la entrada. */
+@media (hover:hover) and (pointer:fine){
+  /* Al salir: regresa un poco mas rapido de lo que se despego, y se queda
+     encima hasta terminar de bajar para no esconderse de golpe. */
+  .pared.lista .cartel{will-change:transform;
+    transition:transform .38s cubic-bezier(.22,1,.36,1),box-shadow .38s cubic-bezier(.22,1,.36,1),
+      filter .4s ease,z-index 0s linear .38s}
+  /* Al llegar: se despega de la pared con un rebote suave. */
+  .pared.lista .cartel:hover{z-index:20;
+    transform:perspective(900px) rotate(0deg) rotateX(var(--rx)) rotateY(var(--ry)) translateY(-14px) scale(1.09);
+    box-shadow:0 28px 38px rgba(60,35,5,.34),0 8px 12px rgba(60,35,5,.18);
+    transition:transform .5s cubic-bezier(.34,1.45,.64,1),box-shadow .5s ease,filter .4s ease,z-index 0s}
+  /* Ya despegado, la inclinacion sigue al cursor sin rebotar en cada movimiento. */
+  .pared.lista .cartel.siguiendo:hover{
+    transition:transform .14s ease-out,box-shadow .5s ease,filter .4s ease,z-index 0s}
+  .pared.lista .cartel:hover::after{opacity:1}
+  /* Los demas se apagan un poco para que resalte el que senalas. */
+  .pared.lista:has(.cartel:hover) .cartel:not(:hover){filter:saturate(.7) brightness(.9)}
+}
+@media (hover:hover) and (pointer:fine) and (prefers-reduced-motion:reduce){
+  .pared.lista .cartel:hover,.pared.lista .cartel.siguiendo:hover{
+    transform:perspective(900px) rotate(var(--r)) rotateX(0deg) rotateY(0deg) translateY(0) scale(1);transition:none}
+  .pared.lista .cartel:hover::after{opacity:0}
+}
+
+@media (max-width:700px){
+  .pared{height:370px}
+  .pintura{font-size:84px;left:4%}
+  .calco{width:78px;height:78px;font-size:9.5px;left:auto;right:3%;bottom:6%}
+  .cartel{width:40%;left:var(--xm);top:var(--ym)}
+  .cartel.solo-compu{display:none}
+}
+
+/* ---- Como va y la calculadora -------------------------------------------- */
+.catering-rejilla{display:grid;grid-template-columns:1fr;gap:30px;align-items:start}
+@media (min-width:880px){.catering-rejilla{grid-template-columns:1fr 420px;gap:48px}}
+.catering-pasos{list-style:none;margin:0;padding:0;display:grid;gap:22px}
+.catering-pasos li{border-top:2px solid var(--negro-carbon);padding-top:14px}
+.catering-pasos b{display:block;font-family:var(--font-display);font-weight:400;font-size:26px;line-height:1.1}
+.catering-pasos span{display:block;font-family:var(--font-body);font-size:16px;line-height:1.5;color:#3d3a36;margin-top:6px;max-width:44ch}
+.catering-letra{font-family:var(--font-body);font-size:15px;line-height:1.55;color:#3d3a36;margin:26px 0 0;max-width:52ch}
+.calcula{background:var(--blanco);border:2px solid var(--negro-carbon);border-radius:14px;padding:20px;
+  box-shadow:0 5px 0 var(--negro-carbon);font-family:var(--font-body)}
+.calcula h3{font-family:var(--font-display);font-weight:400;font-size:26px;margin:0 0 14px}
+.calcula .etiqueta{display:block;font-size:14px;font-weight:600;margin:0 0 6px}
+.contador{display:flex;align-items:center;gap:12px}
+.contador button{width:48px;height:48px;border-radius:10px;border:2px solid var(--negro-carbon);background:var(--blanco-hueso);
+  font-size:24px;font-weight:700;cursor:pointer;color:var(--negro-carbon)}
+.contador button:disabled{opacity:.35;cursor:default}
+.contador output{font-family:var(--font-display);font-size:34px;min-width:64px;text-align:center}
+.contador small{font-size:14px;color:#3d3a36}
+.calcula .nota{font-size:13px;color:#5a5650;margin:6px 0 0;min-height:18px}
+.calcula .total{background:var(--dorado-tinte);border:2px solid var(--negro-carbon);border-radius:12px;padding:14px 16px;margin:16px 0}
+.calcula .total .grande{font-family:var(--font-display);font-size:40px;line-height:1;color:var(--terracota-horno)}
+.calcula .total .grande small{font-family:var(--font-body);font-size:15px;color:var(--negro-carbon)}
+.calcula .total p{margin:8px 0 0;font-size:14.5px;line-height:1.45}
+.calcula .campo{margin-top:12px}
+.calcula .campo input{width:100%;box-sizing:border-box;min-height:46px;padding:10px 12px;border:2px solid var(--negro-carbon);
+  border-radius:10px;font-family:var(--font-body);font-size:16px;background:var(--blanco);color:var(--negro-carbon)}
+.calcula .campo input:focus{outline:3px solid var(--rosa-mexicano);outline-offset:1px}
+.calcula .campo input[aria-invalid="true"]{border-color:var(--rosa-mexicano-texto)}
+.calcula .error{font-size:13px;color:var(--rosa-mexicano-texto);margin:5px 0 0}
+.calcula .apartar{width:100%;margin-top:18px;min-height:52px;border:2px solid var(--negro-carbon);border-radius:10px;
+  background:var(--rosa-mexicano);color:#fff;font-family:var(--font-body);font-weight:700;font-size:16px;letter-spacing:.06em;
+  text-transform:uppercase;box-shadow:0 4px 0 var(--negro-carbon);cursor:pointer;transition:transform .12s,box-shadow .12s}
+.calcula .apartar:active{transform:translateY(4px);box-shadow:0 0 0 var(--negro-carbon)}
+.calcula .apartar:disabled{opacity:.6;cursor:default}
+.calcula .pie{font-size:13px;color:#5a5650;text-align:center;margin:10px 0 0}

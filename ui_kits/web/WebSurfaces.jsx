@@ -342,88 +342,211 @@ function WebProcess() {
   );
 }
 
+/* Los posts de Instagram pegados en la pared del catering. x/y/r en compu,
+   xm/ym en celular (ahi se ven cinco). z: quien queda encima de quien. */
+const CARTELES = [
+  { post: 'traviesa', x: '-1%', y: '9%', r: '-6deg', z: 2, xm: '-8%', ym: '5%' },
+  { post: 'cochinita', x: '12.5%', y: '32%', r: '4deg', z: 3, xm: '14%', ym: '36%' },
+  { post: 'aloha', x: '26%', y: '5%', r: '-3deg', z: 2, xm: '33%', ym: '3%' },
+  { post: 'roni', x: '40%', y: '28%', r: '5deg', z: 4, xm: '54%', ym: '33%' },
+  { post: 'chisi', x: '53.5%', y: '4%', r: '-4deg', z: 2, soloCompu: true },
+  { post: 'provola', x: '67%', y: '30%', r: '3deg', z: 3, soloCompu: true },
+  { post: 'serranita', x: '80.5%', y: '7%', r: '-5deg', z: 2, xm: '70%', ym: '6%' },
+];
+
+/* La pared de tabique con los carteles. Los estilos viven en ui_kits/catering.css
+   (los comparte la pagina de catering). Aqui solo va lo que necesita JavaScript:
+   que se peguen uno por uno al entrar en pantalla, y que la inclinacion y el
+   brillo sigan al cursor. Todo se escribe como variables de CSS, sin estado de
+   React: el navegador hace la animacion. */
+function ParedCarteles() {
+  const ref = React.useRef(null);
+  React.useEffect(() => {
+    const pared = ref.current;
+    if (!pared) return;
+    const limpiar = [];
+    const listo = () => { pared.classList.add('pegada'); limpiar.push(setTimeout(() => pared.classList.add('lista'), 1200)); };
+    if (typeof IntersectionObserver === 'function') {
+      const io = new IntersectionObserver((es) => {
+        if (es.some((e) => e.isIntersecting)) { listo(); io.disconnect(); }
+      }, { threshold: 0.3 });
+      io.observe(pared);
+      limpiar.push(() => io.disconnect());
+    } else listo();
+
+    const conMouse = window.matchMedia('(hover: hover) and (pointer: fine)').matches;
+    const quieto = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (conMouse && !quieto) {
+      pared.querySelectorAll('.cartel').forEach((c) => {
+        /* Tras el despegue (450 ms) la inclinacion sigue al cursor sin rebote.
+           Se mide desde el primer movimiento: si el cartel se mueve debajo del
+           cursor, el navegador no avisa la entrada. */
+        let desde = 0;
+        const mover = (e) => {
+          if (!desde) desde = performance.now();
+          else if (performance.now() - desde > 450) c.classList.add('siguiendo');
+          const r = c.getBoundingClientRect();
+          const x = (e.clientX - r.left) / r.width, y = (e.clientY - r.top) / r.height;
+          c.style.setProperty('--ry', ((x - 0.5) * 12).toFixed(2) + 'deg');
+          c.style.setProperty('--rx', ((0.5 - y) * 10).toFixed(2) + 'deg');
+          c.style.setProperty('--gx', (x * 100).toFixed(1) + '%');
+          c.style.setProperty('--gy', (y * 100).toFixed(1) + '%');
+        };
+        const salir = () => {
+          desde = 0;
+          c.classList.remove('siguiendo');
+          c.style.setProperty('--rx', '0deg');
+          c.style.setProperty('--ry', '0deg');
+        };
+        c.addEventListener('pointermove', mover);
+        c.addEventListener('pointerleave', salir);
+        limpiar.push(() => { c.removeEventListener('pointermove', mover); c.removeEventListener('pointerleave', salir); });
+      });
+    }
+    return () => limpiar.forEach((f) => (typeof f === 'function' ? f() : clearTimeout(f)));
+  }, []);
+
+  return (
+    <div ref={ref} className="pared animada" aria-hidden="true">
+      <div className="pared-lienzo">
+        <p className="pintura">Mextizza</p>
+        <div className="calco">HECHO<br />A MANO<br />EN 48H</div>
+        {CARTELES.map((c, i) => (
+          <div key={c.post} className={'cartel' + (c.soloCompu ? ' solo-compu' : '')}
+            style={{ '--x': c.x, '--y': c.y, '--r': c.r, '--z': c.z, '--xm': c.xm || '0%', '--ym': c.ym || '0%', '--d': (i * 110) + 'ms' }}>
+            <img src={'../../assets/social/posts/post-' + c.post + '.webp'} alt="" loading="lazy" decoding="async" width="432" height="540" />
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+/* Fecha de hoy en CDMX mas n dias, como AAAA-MM-DD: el minimo del calendario. */
+function fechaCDMXMas(dias) {
+  const hoy = new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Mexico_City', year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date());
+  const [a, m, d] = hoy.split('-').map(Number);
+  return new Date(Date.UTC(a, m - 1, d + dias, 12)).toISOString().slice(0, 10);
+}
+const fechaLegible = (iso) => {
+  const [a, m, d] = iso.split('-').map(Number);
+  return new Date(Date.UTC(a, m - 1, d, 12)).toLocaleDateString('es-MX', { weekday: 'long', day: 'numeric', month: 'long', timeZone: 'UTC' });
+};
+const pesos = (v) => '$' + Math.round(v).toLocaleString('es-MX');
+
+/* El catering. Antes: dos tarjetas con cinco etiquetas de ficha tecnica y un
+   formulario de "Solicitar cotizacion" para un precio que ya es fijo. Ahora: la
+   pared con los carteles, como va en tres pasos y una calculadora que dice el
+   total y el anticipo al instante. La solicitud sigue llegando al Sheet. */
 function WebCatering() {
   const c = MEXTIZZA_FACTS.catering;
+  const [n, setN] = React.useState(25);
+  const [fecha, setFecha] = React.useState('');
+  const [direccion, setDireccion] = React.useState('');
   const [nombre, setNombre] = React.useState('');
   const [tel, setTel] = React.useState('');
-  const [personas, setPersonas] = React.useState('20 personas');
-  const [fecha, setFecha] = React.useState('');
   const [attempted, setAttempted] = React.useState(false);
   const [enviando, setEnviando] = React.useState(false);
   const [error, setError] = React.useState(null);
   const [folio, setFolio] = React.useState(null);
 
+  const minimo = fechaCDMXMas(c.avisoDias || 4);
+  const total = n * c.precio;
+  const anticipo = total * (parseFloat(c.anticipo) / 100);
   const digits = tel.replace(/\D/g, '');
-  const telOk = digits.length === 10;
-  const valid = !!nombre.trim() && telOk && !!fecha.trim();
+  const fallas = {
+    fecha: !fecha ? 'Elige la fecha de tu fiesta.' : fecha < minimo ? 'Necesitamos ' + c.aviso + ' de anticipación.' : '',
+    direccion: direccion.trim().length < 6 ? 'Escribe la dirección de la fiesta.' : '',
+    nombre: !nombre.trim() ? 'Escribe tu nombre.' : '',
+    tel: digits.length !== 10 ? 'Necesitamos 10 dígitos para escribirte por WhatsApp.' : '',
+  };
+  const valido = !Object.values(fallas).some(Boolean);
 
-  const solicitar = async () => {
-    if (!valid) return setAttempted(true);
+  const apartar = async (e) => {
+    e.preventDefault();
+    if (!valido) return setAttempted(true);
     setError(null);
     setEnviando(true);
+    const dia = fechaLegible(fecha);
     try {
-      const r = await mextizzaSolicitarCatering({ nombre, telefono: digits, personas, fecha_evento: fecha });
+      const r = await mextizzaSolicitarCatering({
+        nombre: nombre.trim(), telefono: digits, personas: n + ' personas', fecha_evento: dia + ' (' + fecha + ')',
+        notas: 'Dirección: ' + direccion.trim() + '. Total ' + pesos(total) + ', anticipo ' + pesos(anticipo) + '.',
+      });
       setFolio(r.folio);
       window.open(mextizzaWhatsappLink(
-        `Hola, soy ${nombre}. Quiero cotizar catering para ${personas} el ${fecha}. Mi teléfono es ${digits}.`
+        'Hola, soy ' + nombre.trim() + '. Quiero apartar catering para ' + n + ' personas el ' + dia +
+        ' en ' + direccion.trim() + '. Total ' + pesos(total) + ', anticipo ' + pesos(anticipo) + '. Mi teléfono es ' + digits + '.'
       ), '_blank', 'noopener');
-    } catch (e) {
-      setError('No se pudo enviar la solicitud. Intenta de nuevo o escríbenos directo por WhatsApp.');
+    } catch (err) {
+      setError('No se pudo enviar. Intenta de nuevo o escríbenos directo por WhatsApp.');
     } finally {
       setEnviando(false);
     }
   };
 
+  const campo = (id, etiqueta, valor, cambiar, props, falla) => (
+    <div className="campo">
+      <label className="etiqueta" htmlFor={id}>{etiqueta}</label>
+      <input id={id} value={valor} onChange={(e) => cambiar(e.target.value)} aria-invalid={attempted && !!falla}
+        aria-describedby={attempted && falla ? id + '-error' : undefined} {...props} />
+      {attempted && falla && <p className="error" id={id + '-error'}>{falla}</p>}
+    </div>
+  );
+
   return (
     <section id="catering" className="reveal" style={{ background: 'var(--surface-page)', paddingBottom: 76 }}>
-      <div style={webShell.page}>
-        <h2 className="carta-titulo" style={{ marginBottom: 22 }}>El horno se va a tu fiesta</h2>
-        <div className="web-catering-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 28, alignItems: 'start' }}>
-          <FramedPanel variant="object" tape="top">
-            <div style={{ paddingTop: 8 }}>
-              <h3 style={{ fontFamily: 'var(--font-display)', fontSize: 27 }}>Pizza recién hecha frente a tus invitados</h3>
-              <p style={{ fontFamily: 'var(--font-body)', fontSize: 14, lineHeight: 1.6, color: 'var(--text-muted)', marginTop: 10 }}>
-                Llevamos el Gozney XL y horneamos frente a tus invitados. Eliges de todo el menú más ensalada César o Spring Mix.
-              </p>
-              <dl style={{ margin: '22px 0 0', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px 20px' }}>
-                {[['Por persona', '$' + c.precio], ['Mínimo', c.min + ' personas'], ['Máximo', c.max + ' personas'], ['Anticipo', c.anticipo], ['Anticipación', c.aviso]].map(([k, v]) => (
-                  <div key={k}>
-                    <dt style={{ fontFamily: 'var(--font-label)', fontSize: 10, letterSpacing: 1, textTransform: 'uppercase', color: 'var(--text-muted)' }}>{k}</dt>
-                    <dd style={{ margin: 0, fontFamily: 'var(--font-body)', fontWeight: 700, fontSize: 15 }}>{v}</dd>
-                  </div>
-                ))}
-              </dl>
-            </div>
-          </FramedPanel>
-          <FramedPanel variant="info">
-            <h3 style={{ fontFamily: 'var(--font-display)', fontSize: 23, marginBottom: 14 }}>Solicitar fecha</h3>
-            {folio ? (
-              <StatusNote tone="ok" title="Solicitud enviada">
-                Folio {folio}. Te vamos a contactar por WhatsApp al número que dejaste para cuadrar el menú y el resto de los detalles.
+      <ParedCarteles />
+      <div style={{ ...webShell.page, marginTop: 34 }}>
+        <h2 className="carta-titulo">El horno se va a tu fiesta</h2>
+        <p className="carta-bajada" style={{ maxWidth: '46ch' }}>
+          Tus invitados agarran su rebanada recién salida del horno. Tú te olvidas de la cocina y disfrutas la fiesta.
+        </p>
+        <div className="catering-rejilla">
+          <div>
+            <ol className="catering-pasos">
+              <li><b>Apartas la fecha</b><span>{c.dias}, con {c.aviso} de anticipación y el {c.anticipo} de anticipo.</span></li>
+              <li><b>Llegamos con el horno</b><span>Lo montamos y lo operamos nosotros, ahí mismo. Llevamos {c.incluye}.</span></li>
+              <li><b>Sale pizza toda la fiesta</b><span>Durante {c.servicio}, de toda la carta, más ensalada César o Spring Mix.</span></li>
+            </ol>
+            <p className="catering-letra">Solo necesitamos un espacio al aire libre o ventilado y una superficie firme para montar el horno.
+              Vamos a Atizapán y la zona norte del Estado de México; si tu fiesta queda más lejos, escríbenos y lo vemos.</p>
+          </div>
+
+          {folio ? (
+            <div className="calcula">
+              <StatusNote tone="ok" title="Fecha solicitada">
+                Folio {folio}. Te escribimos por WhatsApp para confirmar la disponibilidad y el anticipo.
               </StatusNote>
-            ) : (
-              <>
-                <Field label="Nombre" required placeholder="Tu nombre" value={nombre}
-                  onChange={e => setNombre(e.target.value)}
-                  invalid={attempted && !nombre.trim()} />
-                <Field label="Teléfono" required type="tel" placeholder="55 1234 5678" value={tel}
-                  onChange={e => setTel(e.target.value)}
-                  invalid={attempted && !telOk}
-                  hint={attempted && !telOk ? 'Necesitamos 10 dígitos para contactarte por WhatsApp.' : 'Te contactamos por WhatsApp a este número para cuadrar los detalles.'}
-                  style={{ marginTop: 12 }} />
-                <Field label="Personas" as="select" value={personas} onChange={e => setPersonas(e.target.value)}
-                  options={['20 personas', '22 personas', '25 personas', '30 personas']} style={{ marginTop: 12 }} />
-                <Field label="Fecha del evento" required placeholder="dd / mm / aaaa" value={fecha}
-                  onChange={e => setFecha(e.target.value)}
-                  invalid={attempted && !fecha.trim()}
-                  hint={`Necesitamos ${c.aviso} de anticipación mínima.`} style={{ marginTop: 12 }} />
-                {error && <StatusNote tone="block" title="Algo falló" style={{ marginTop: 12 }}>{error}</StatusNote>}
-                <Button tone="warm" block disabled={enviando} onClick={solicitar} style={{ marginTop: 18 }}>
-                  {enviando ? 'Enviando…' : 'Solicitar cotización'}
-                </Button>
-              </>
-            )}
-          </FramedPanel>
+            </div>
+          ) : (
+            <form className="calcula" onSubmit={apartar} noValidate>
+              <h3>¿Cuántos van a ser?</h3>
+              <span className="etiqueta" id="catering-personas">Invitados</span>
+              <div className="contador" role="group" aria-labelledby="catering-personas">
+                <button type="button" aria-label="Una persona menos" disabled={n <= c.min} onClick={() => setN((v) => Math.max(c.min, v - 1))}>−</button>
+                <output aria-live="polite">{n}</output>
+                <button type="button" aria-label="Una persona más" disabled={n >= c.max} onClick={() => setN((v) => Math.min(c.max, v + 1))}>+</button>
+                <small>personas</small>
+              </div>
+              <p className="nota">
+                {n === c.min ? 'El mínimo es ' + c.min + ': con menos no sale a cuenta montar el horno.'
+                  : n === c.max ? '¿Son más de ' + c.max + '? Escríbenos y lo vemos.' : ''}
+              </p>
+              <div className="total" aria-live="polite">
+                <div className="grande">{pesos(total)} <small>en total</small></div>
+                <p>Apartas con <b>{pesos(anticipo)}</b>. Incluye {c.servicio} de pizza de toda la carta, ensalada, {c.incluye}.</p>
+              </div>
+              {campo('catering-fecha', 'Fecha', fecha, setFecha, { type: 'date', min: minimo }, fallas.fecha)}
+              {campo('catering-direccion', 'Dirección de la fiesta', direccion, setDireccion,
+                { placeholder: 'Calle, número y colonia', autoComplete: 'street-address' }, fallas.direccion)}
+              {campo('catering-nombre', 'Tu nombre', nombre, setNombre, { autoComplete: 'name' }, fallas.nombre)}
+              {campo('catering-tel', 'WhatsApp', tel, setTel, { type: 'tel', inputMode: 'tel', placeholder: '10 dígitos', autoComplete: 'tel-national' }, fallas.tel)}
+              {error && <StatusNote tone="block" title="Algo falló" style={{ marginTop: 12 }}>{error}</StatusNote>}
+              <button className="apartar" type="submit" disabled={enviando}>{enviando ? 'Enviando…' : 'Apartar mi fecha'}</button>
+              <p className="pie">Te confirmamos disponibilidad por WhatsApp.</p>
+            </form>
+          )}
         </div>
       </div>
     </section>

@@ -60,7 +60,7 @@ const OTRAS_PAGINAS = [
   ['catering-pizza-horno-de-lena', 'Catering con horno en tu evento'],
 ];
 
-function documento({ slug, title, description, jsonld, cuerpo, imagen }) {
+function documento({ slug, title, description, jsonld, cuerpo, imagen, estilos }) {
   const url = SITIO + '/' + slug + '/';
   return `<!doctype html>
 <html lang="es">
@@ -72,6 +72,7 @@ function documento({ slug, title, description, jsonld, cuerpo, imagen }) {
 <link rel="canonical" href="${url}">
 <link rel="icon" type="image/png" href="/assets/social/mextizza-app-icon-512.png">
 <link rel="stylesheet" href="/styles.css">
+${(estilos || []).map((e) => `<link rel="stylesheet" href="${e}">`).join('\n')}
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="Mextizza">
 <meta property="og:locale" content="es_MX">
@@ -202,7 +203,26 @@ prefieres escribirnos. Abrimos ${esc(MEXTIZZA_FACTS.horario.texto.toLowerCase())
 
 // ---------------------------------------------------------------- pagina 2
 const cat = MEXTIZZA_FACTS.catering;
+const CARTELES = [
+  ['traviesa', '-1%', '9%', '-6deg', 2, '-8%', '5%'],
+  ['cochinita', '12.5%', '32%', '4deg', 3, '14%', '36%'],
+  ['aloha', '26%', '5%', '-3deg', 2, '33%', '3%'],
+  ['roni', '40%', '28%', '5deg', 4, '54%', '33%'],
+  ['chisi', '53.5%', '4%', '-4deg', 2, null, null],
+  ['provola', '67%', '30%', '3deg', 3, null, null],
+  ['serranita', '80.5%', '7%', '-5deg', 2, '70%', '6%'],
+];
+const paredCarteles = `<div class="pared romper lista" aria-hidden="true"><div class="pared-lienzo">
+  <p class="pintura">Mextizza</p>
+  <div class="calco">HECHO<br>A MANO<br>EN 48H</div>
+${CARTELES.map(([post, x, y, r, z, xm, ym]) =>
+  `  <div class="cartel${xm ? '' : ' solo-compu'}" style="--x:${x};--y:${y};--r:${r};--z:${z};--xm:${xm || '0%'};--ym:${ym || '0%'}">` +
+  `<img src="/assets/social/posts/post-${post}.webp" alt="" loading="lazy" decoding="async" width="432" height="540"></div>`).join('\n')}
+</div></div>`;
+const pesosMx = (v) => '$' + Math.round(v).toLocaleString('es-MX');
+
 const p2 = documento({
+  estilos: ['/ui_kits/catering.css'],
   slug: 'catering-pizza-horno-de-lena',
   title: 'Catering de pizza con horno en tu evento | Mextizza',
   description:
@@ -226,17 +246,23 @@ const p2 = documento({
   cuerpo: `
 <p class="dato">Desde ${cat.min} personas · $${cat.precio} por persona</p>
 <h1>Catering de pizza con horno en tu evento</h1>
-<p>Llevamos el horno a donde estés y horneamos ahí mismo, durante todo el servicio.
-Nadie come una pizza que lleva media hora esperando en una caja: sale del horno y va
-a la mesa. La masa es la misma de siempre, fermentada ${esc(MEXTIZZA_FACTS.fermento.toLowerCase())}.</p>
+<p>Tus invitados agarran su rebanada recién salida del horno. Tú te olvidas de la
+cocina y disfrutas la fiesta. Nadie come una pizza que lleva media hora esperando en
+una caja: sale del horno y va a la mesa.</p>
+${paredCarteles}
 
-<h2>Cómo funciona</h2>
+<h2>Cómo va</h2>
 <ul>
-  <li><b>De ${cat.min} a ${cat.max} personas.</b> Abajo de ${cat.min} no sale a cuenta montar el horno.</li>
-  <li><b>$${cat.precio} por persona.</b> Incluye el horno, quien lo opera y la pizza durante el servicio.</li>
-  <li><b>Anticipo del ${esc(cat.anticipo)}</b> para apartar la fecha.</li>
-  <li><b>Aviso de ${esc(cat.aviso)}</b> como mínimo. La masa necesita sus 48 horas, y esas no se aceleran.</li>
+  <li><b>Apartas la fecha.</b> ${esc(cat.dias)}, con ${esc(cat.aviso)} de anticipación y el
+      ${esc(cat.anticipo)} de anticipo. La masa necesita sus 48 horas, y esas no se aceleran.</li>
+  <li><b>Llegamos con el horno.</b> Lo montamos y lo operamos nosotros, ahí mismo. Llevamos ${esc(cat.incluye)}.</li>
+  <li><b>Sale pizza toda la fiesta.</b> Durante ${esc(cat.servicio)}, de toda la carta, más ensalada César o Spring Mix.</li>
 </ul>
+
+<h2>Cuánto cuesta</h2>
+<p><b>$${cat.precio} por persona</b>, de ${cat.min} a ${cat.max} personas: de ${pesosMx(cat.min * cat.precio)}
+a ${pesosMx(cat.max * cat.precio)} en total. Apartas con el ${esc(cat.anticipo)}. Abajo de ${cat.min}
+personas no sale a cuenta montar el horno.</p>
 
 <h2>Qué se necesita del lugar</h2>
 <p>Un espacio al aire libre o bien ventilado para el horno, y una superficie firme y
@@ -247,11 +273,11 @@ plana donde montarlo. Nosotros llevamos todo lo demás.</p>
 lejos, escríbenos de todos modos y lo vemos.</p>
 
 <h2>Apartar una fecha</h2>
-<p>Escríbenos con la fecha, cuántas personas y dónde sería. Te confirmamos
-disponibilidad y te pasamos el detalle.</p>
+<p>En la página principal calculas tu total y apartas en un minuto. También puedes
+escribirnos por WhatsApp con la fecha, cuántas personas y la dirección.</p>
 <div class="cta">
-  <a class="p" href="${wa('Hola, quiero cotizar catering con horno para un evento.')}">Cotizar por WhatsApp</a>
-  <a class="s" href="/">Ver el menú</a>
+  <a class="p" href="/#catering">Apartar mi fecha</a>
+  <a class="s" href="${wa('Hola, quiero apartar catering con horno para una fiesta.')}">Escribir por WhatsApp</a>
 </div>`,
 });
 

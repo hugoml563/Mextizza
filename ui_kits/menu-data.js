@@ -78,7 +78,9 @@ const MEXTIZZA_FACTS = {
   },
   fermento: 'Fermentación fría de 48 horas',
   estilo: 'Horno de piedra, masa fermentada en frío 48 horas',
-  catering: { precio: 235, min: 20, max: 30, anticipo: '30%', aviso: '4 días' },
+  // avisoDias, servicio, incluye y dias: lo que la calculadora de catering promete.
+  catering: { precio: 235, min: 20, max: 30, anticipo: '30%', aviso: '4 días', avisoDias: 4,
+    servicio: '2 a 3 horas', incluye: 'platos y servilletas', dias: 'Cualquier día de la semana' },
   zona: 'Col. Lomas Lindas, Atizapán de Zaragoza',
   whatsapp: '525526577352' // WhatsApp Business, formato internacional (52 + 10 dígitos)
 };

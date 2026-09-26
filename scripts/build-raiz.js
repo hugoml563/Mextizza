@@ -26,6 +26,7 @@ const DESTINO = path.join(RAIZ, 'index.html');
 const RUTAS = [
   ['href="../../manifest.webmanifest"', 'href="/manifest.webmanifest"'],
   ['href="../../styles.css"', 'href="/styles.css"'],
+  ['href="../catering.css"', 'href="/ui_kits/catering.css"'],
   ['href="../../assets/', 'href="/assets/'],
   ['src="../../_ds_bundle.js"', 'src="/_ds_bundle.js"'],
   ['src="../menu-data.js"', 'src="/ui_kits/menu-data.js"'],
