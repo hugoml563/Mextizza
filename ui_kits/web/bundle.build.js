@@ -895,16 +895,16 @@ function WebCatering() {
       ...webShell.page,
       marginTop: 34
     }
-  }, /*#__PURE__*/React.createElement("h2", {
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "catering-rejilla"
+  }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("h2", {
     className: "carta-titulo"
   }, "El horno se va a tu fiesta"), /*#__PURE__*/React.createElement("p", {
     className: "carta-bajada",
     style: {
       maxWidth: '46ch'
     }
-  }, "Tus invitados agarran su rebanada reci\xE9n salida del horno. T\xFA te olvidas de la cocina y disfrutas la fiesta."), /*#__PURE__*/React.createElement("div", {
-    className: "catering-rejilla"
-  }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("ol", {
+  }, "Tus invitados agarran su rebanada reci\xE9n salida del horno. T\xFA te olvidas de la cocina y disfrutas la fiesta."), /*#__PURE__*/React.createElement("ol", {
     className: "catering-pasos"
   }, /*#__PURE__*/React.createElement("li", null, /*#__PURE__*/React.createElement("b", null, "Apartas la fecha"), /*#__PURE__*/React.createElement("span", null, c.dias, ", con ", c.aviso, " de anticipaci\xF3n y el ", c.anticipo, " de anticipo.")), /*#__PURE__*/React.createElement("li", null, /*#__PURE__*/React.createElement("b", null, "Llegamos con el horno"), /*#__PURE__*/React.createElement("span", null, "Lo montamos y lo operamos nosotros, ah\xED mismo. Llevamos ", c.incluye, ".")), /*#__PURE__*/React.createElement("li", null, /*#__PURE__*/React.createElement("b", null, "Sale pizza toda la fiesta"), /*#__PURE__*/React.createElement("span", null, "Durante ", c.servicio, ", de toda la carta, m\xE1s ensalada C\xE9sar o Spring Mix."))), /*#__PURE__*/React.createElement("p", {
     className: "catering-letra"

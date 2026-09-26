@@ -498,12 +498,14 @@ function WebCatering() {
     <section id="catering" className="reveal" style={{ background: 'var(--surface-page)', paddingBottom: 76 }}>
       <ParedCarteles />
       <div style={{ ...webShell.page, marginTop: 34 }}>
-        <h2 className="carta-titulo">El horno se va a tu fiesta</h2>
-        <p className="carta-bajada" style={{ maxWidth: '46ch' }}>
-          Tus invitados agarran su rebanada recién salida del horno. Tú te olvidas de la cocina y disfrutas la fiesta.
-        </p>
+        {/* El titulo va en la columna de la izquierda: asi la calculadora
+            arranca a su altura y no queda un hueco a la izquierda. */}
         <div className="catering-rejilla">
           <div>
+            <h2 className="carta-titulo">El horno se va a tu fiesta</h2>
+            <p className="carta-bajada" style={{ maxWidth: '46ch' }}>
+              Tus invitados agarran su rebanada recién salida del horno. Tú te olvidas de la cocina y disfrutas la fiesta.
+            </p>
             <ol className="catering-pasos">
               <li><b>Apartas la fecha</b><span>{c.dias}, con {c.aviso} de anticipación y el {c.anticipo} de anticipo.</span></li>
               <li><b>Llegamos con el horno</b><span>Lo montamos y lo operamos nosotros, ahí mismo. Llevamos {c.incluye}.</span></li>
