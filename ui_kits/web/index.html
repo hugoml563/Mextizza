@@ -8,7 +8,6 @@ body{background:var(--surface-page)}
 @media (max-width: 860px) {
   .web-hero-grid{grid-template-columns:1fr !important}
   .web-catering-grid{grid-template-columns:1fr !important}
-  .web-process-grid{grid-template-columns:1fr !important}
   .web-footer-grid{grid-template-columns:1fr !important;gap:32px !important}
 }
 .franja-pedido{display:none}
@@ -112,6 +111,16 @@ body{background:var(--surface-page)}
   .carta-pizza{transition:transform var(--dur-base) var(--ease-standard),box-shadow var(--dur-base) var(--ease-standard)}
   .carta-pizza:hover{transform:translateY(-3px);box-shadow:0 5px 0 var(--negro-carbon)}
 }
+/* ---- La masa ----------------------------------------------------------- */
+.masa-rejilla{display:grid;grid-template-columns:1fr;gap:24px;align-items:center}
+@media (min-width:860px){.masa-rejilla{grid-template-columns:380px 1fr;gap:52px}}
+.masa-foto{width:100%;height:auto;aspect-ratio:4/3;object-fit:cover;object-position:50% 45%;display:block;
+  border:2px solid var(--negro-carbon);border-radius:14px;box-sizing:border-box}
+@media (min-width:860px){.masa-foto{aspect-ratio:4/5}}
+.masa-datos{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-top:8px;padding-top:16px;
+  border-top:2px solid var(--negro-carbon)}
+.masa-datos b{display:block;font-family:var(--font-display);font-weight:400;font-size:28px;line-height:1;color:var(--rosa-mexicano)}
+.masa-datos span{display:block;font-family:var(--font-body);font-size:13.5px;line-height:1.35;color:#3d3a36;margin-top:6px}
 /* ---- La tarjeta en la portada ----------------------------------------- */
 .tarjeta-portada{background:var(--dorado-tinte);border-top:2px solid var(--negro-carbon);border-bottom:2px solid var(--negro-carbon);
   padding:56px 0}

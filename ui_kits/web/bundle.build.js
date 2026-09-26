@@ -335,7 +335,7 @@ function WebHero({
       maxWidth: 500,
       marginTop: 22
     }
-  }, MEXTIZZA_FACTS.estilo, ". Dark kitchen en ", MEXTIZZA_FACTS.zona, ". S\xF3lo entrega, sin sal\xF3n."), /*#__PURE__*/React.createElement("div", {
+  }, "T\xFA pides y la metemos al horno. Llega calientita a tu puerta en Lomas Lindas y colonias vecinas."), /*#__PURE__*/React.createElement("div", {
     className: "web-hero-cta",
     style: {
       display: 'flex',
@@ -355,19 +355,20 @@ function WebHero({
   }, "Pedir por WhatsApp")), /*#__PURE__*/React.createElement("div", {
     style: {
       display: 'flex',
-      gap: 26,
-      marginTop: 40,
+      gap: 22,
+      marginTop: 30,
       flexWrap: 'wrap'
     }
-  }, [['clock', MEXTIZZA_FACTS.radio], ['flame', 'Horno Gozney XL'], ['pin', 'Envío incluido']].map(([ic, t]) => /*#__PURE__*/React.createElement("span", {
+  }, [['pin', 'Envío incluido'], ['clock', 'Hasta 40 min a tu puerta']].map(([ic, t]) => /*#__PURE__*/React.createElement("span", {
     key: t,
     style: {
       display: 'flex',
       alignItems: 'center',
       gap: 8,
-      color: 'var(--text-muted)',
+      color: 'var(--negro-carbon)',
       fontFamily: 'var(--font-body)',
-      fontSize: 12.5
+      fontWeight: 600,
+      fontSize: 15
     }
   }, /*#__PURE__*/React.createElement(Icon, {
     name: ic,
@@ -609,61 +610,41 @@ function WebTarjeta() {
     href: "/app"
   }, "Tu tarjeta tambi\xE9n vive en la app")))));
 }
+
+/* La masa. Eran tres tarjetas iguales con numeros tecnicos; ahora la foto de
+   la masa (las burbujas de la fermentacion prueban mas que cualquier dato) y
+   una frase con la escena primero. Los tres datos quedan en un renglon. */
 function WebProcess() {
-  const steps = [['48h', 'Fermentación fría', 'La masa descansa dos días completos en refrigeración con temperatura controlada. Rompe azúcares y gluten.'], ['≤10 min', 'Al horno, al pedido', 'Nada se hornea antes de que entre tu pedido. El Gozney XL cocina cada pizza en menos de diez minutos.'], ['≤40 min', 'A tu puerta', 'Radio de reparto de 3 km. Caja kraft con ventilación para que la orilla llegue crujiente.']];
+  const datos = [['48 h', 'de fermentación en frío'], ['10 min', 'o menos en el horno de piedra'], ['40 min', 'o menos hasta tu puerta']];
   return /*#__PURE__*/React.createElement("section", {
     id: "proceso",
-    style: {
-      background: 'var(--surface-page)',
-      padding: '76px 0'
-    }
-  }, /*#__PURE__*/React.createElement("div", {
-    style: webShell.page
-  }, /*#__PURE__*/React.createElement(SectionLabel, {
-    color: "var(--rosa-mexicano-texto)"
-  }, "El proceso es el argumento"), /*#__PURE__*/React.createElement("div", {
-    className: "web-process-grid",
-    style: {
-      display: 'grid',
-      gridTemplateColumns: 'repeat(3,1fr)',
-      gap: 24
-    }
-  }, steps.map(([n, t, d], i) => /*#__PURE__*/React.createElement("div", {
-    key: n,
     className: "reveal",
     style: {
-      transitionDelay: i * 80 + 'ms',
-      background: 'var(--surface-card)',
-      border: 'var(--border-paper)',
-      borderRadius: 'var(--radius-md)',
-      boxShadow: 'var(--shadow-soft)',
-      padding: 26
+      background: 'var(--surface-page)',
+      padding: '72px 0'
     }
   }, /*#__PURE__*/React.createElement("div", {
-    style: {
-      fontFamily: 'var(--font-display)',
-      fontSize: 40,
-      color: ['var(--rosa-mexicano)', 'var(--terracota-horno)', 'var(--dorado-masa)'][i],
-      lineHeight: 1
-    }
-  }, n), /*#__PURE__*/React.createElement("div", {
-    style: {
-      fontFamily: 'var(--font-body)',
-      fontWeight: 700,
-      fontSize: 14,
-      textTransform: 'uppercase',
-      letterSpacing: 1,
-      marginTop: 14
-    }
-  }, t), /*#__PURE__*/React.createElement("p", {
-    style: {
-      fontFamily: 'var(--font-body)',
-      fontSize: 13,
-      lineHeight: 1.65,
-      color: 'var(--text-muted)',
-      marginTop: 8
-    }
-  }, d))))));
+    className: "masa-rejilla",
+    style: webShell.page
+  }, /*#__PURE__*/React.createElement("img", {
+    className: "masa-foto",
+    src: "../../assets/photos/masa-48h-md.webp",
+    srcSet: "../../assets/photos/masa-48h-md.webp 338w, ../../assets/photos/masa-48h.webp 619w",
+    sizes: "(min-width: 860px) 380px, 100vw",
+    loading: "lazy",
+    decoding: "async",
+    width: "619",
+    height: "1100",
+    alt: "La masa de Mextizza despu\xE9s de 48 horas, con las burbujas de la fermentaci\xF3n"
+  }), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("h2", {
+    className: "carta-titulo"
+  }, "Nuestra masa descansa dos d\xEDas para que t\xFA no esperes"), /*#__PURE__*/React.createElement("p", {
+    className: "carta-bajada"
+  }, "La dejamos fermentar en fr\xEDo 48 horas: por eso sale ligera y con la orilla llena de burbujas. Cuando pides, la estiramos, la horneamos y sale directo a tu puerta."), /*#__PURE__*/React.createElement("div", {
+    className: "masa-datos"
+  }, datos.map(([n, t]) => /*#__PURE__*/React.createElement("div", {
+    key: n
+  }, /*#__PURE__*/React.createElement("b", null, n), /*#__PURE__*/React.createElement("span", null, t)))))));
 }
 function WebCatering() {
   const c = MEXTIZZA_FACTS.catering;
@@ -706,7 +687,12 @@ function WebCatering() {
     }
   }, /*#__PURE__*/React.createElement("div", {
     style: webShell.page
-  }, /*#__PURE__*/React.createElement(SectionLabel, null, "Catering de fin de semana"), /*#__PURE__*/React.createElement("div", {
+  }, /*#__PURE__*/React.createElement("h2", {
+    className: "carta-titulo",
+    style: {
+      marginBottom: 22
+    }
+  }, "El horno se va a tu fiesta"), /*#__PURE__*/React.createElement("div", {
     className: "web-catering-grid",
     style: {
       display: 'grid',
@@ -726,7 +712,7 @@ function WebCatering() {
       fontFamily: 'var(--font-display)',
       fontSize: 27
     }
-  }, "Horno en vivo en tu casa"), /*#__PURE__*/React.createElement("p", {
+  }, "Pizza reci\xE9n hecha frente a tus invitados"), /*#__PURE__*/React.createElement("p", {
     style: {
       fontFamily: 'var(--font-body)',
       fontSize: 14,
@@ -1041,7 +1027,12 @@ function WebSocial() {
       flexWrap: 'wrap',
       gap: 12
     }
-  }, /*#__PURE__*/React.createElement(SectionLabel, null, "En redes"), /*#__PURE__*/React.createElement("div", {
+  }, /*#__PURE__*/React.createElement("h2", {
+    className: "carta-titulo",
+    style: {
+      margin: '0 0 18px'
+    }
+  }, "As\xED salen del horno"), /*#__PURE__*/React.createElement("div", {
     style: {
       display: 'flex',
       alignItems: 'center',

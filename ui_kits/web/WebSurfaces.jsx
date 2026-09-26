@@ -141,7 +141,9 @@ function WebHero({ onNav }) {
             fontFamily: 'var(--font-body)', fontSize: 16, lineHeight: 1.6, color: 'var(--text-muted)',
             maxWidth: 500, marginTop: 22
           }}>
-            {MEXTIZZA_FACTS.estilo}. Dark kitchen en {MEXTIZZA_FACTS.zona}. Sólo entrega, sin salón.
+            {/* Antes: "Dark kitchen en Col. Lomas Lindas...". Jerga que el cliente no
+                usa; lo que decide el pedido es el antojo y que llegue caliente. */}
+            Tú pides y la metemos al horno. Llega calientita a tu puerta en Lomas Lindas y colonias vecinas.
           </p>
           <div className="web-hero-cta" style={{ display: 'flex', gap: 12, marginTop: 34 }}>
             <Button tone="primary" size="lg" icon="cart" onClick={() => onNav('menu')}>Ver el menú</Button>
@@ -150,9 +152,11 @@ function WebHero({ onNav }) {
               Pedir por WhatsApp
             </Button>
           </div>
-          <div style={{ display: 'flex', gap: 26, marginTop: 40, flexWrap: 'wrap' }}>
-            {[['clock', MEXTIZZA_FACTS.radio], ['flame', 'Horno Gozney XL'], ['pin', 'Envío incluido']].map(([ic, t]) => (
-              <span key={t} style={{ display: 'flex', alignItems: 'center', gap: 8, color: 'var(--text-muted)', fontFamily: 'var(--font-body)', fontSize: 12.5 }}>
+          {/* Los dos datos que deciden el pedido, a un tamano que se lee. El modelo
+              del horno no le dice nada a quien tiene hambre. */}
+          <div style={{ display: 'flex', gap: 22, marginTop: 30, flexWrap: 'wrap' }}>
+            {[['pin', 'Envío incluido'], ['clock', 'Hasta 40 min a tu puerta']].map(([ic, t]) => (
+              <span key={t} style={{ display: 'flex', alignItems: 'center', gap: 8, color: 'var(--negro-carbon)', fontFamily: 'var(--font-body)', fontWeight: 600, fontSize: 15 }}>
                 <Icon name={ic} size={16} />{t}
               </span>
             ))}
@@ -305,24 +309,33 @@ function WebTarjeta() {
   );
 }
 
+/* La masa. Eran tres tarjetas iguales con numeros tecnicos; ahora la foto de
+   la masa (las burbujas de la fermentacion prueban mas que cualquier dato) y
+   una frase con la escena primero. Los tres datos quedan en un renglon. */
 function WebProcess() {
-  const steps = [
-    ['48h', 'Fermentación fría', 'La masa descansa dos días completos en refrigeración con temperatura controlada. Rompe azúcares y gluten.'],
-    ['≤10 min', 'Al horno, al pedido', 'Nada se hornea antes de que entre tu pedido. El Gozney XL cocina cada pizza en menos de diez minutos.'],
-    ['≤40 min', 'A tu puerta', 'Radio de reparto de 3 km. Caja kraft con ventilación para que la orilla llegue crujiente.']
+  const datos = [
+    ['48 h', 'de fermentación en frío'],
+    ['10 min', 'o menos en el horno de piedra'],
+    ['40 min', 'o menos hasta tu puerta'],
   ];
   return (
-    <section id="proceso" style={{ background: 'var(--surface-page)', padding: '76px 0' }}>
-      <div style={webShell.page}>
-        <SectionLabel color="var(--rosa-mexicano-texto)">El proceso es el argumento</SectionLabel>
-        <div className="web-process-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 24 }}>
-          {steps.map(([n, t, d], i) => (
-            <div key={n} className="reveal" style={{ transitionDelay: (i * 80) + 'ms', background: 'var(--surface-card)', border: 'var(--border-paper)', borderRadius: 'var(--radius-md)', boxShadow: 'var(--shadow-soft)', padding: 26 }}>
-              <div style={{ fontFamily: 'var(--font-display)', fontSize: 40, color: [ 'var(--rosa-mexicano)', 'var(--terracota-horno)', 'var(--dorado-masa)' ][i], lineHeight: 1 }}>{n}</div>
-              <div style={{ fontFamily: 'var(--font-body)', fontWeight: 700, fontSize: 14, textTransform: 'uppercase', letterSpacing: 1, marginTop: 14 }}>{t}</div>
-              <p style={{ fontFamily: 'var(--font-body)', fontSize: 13, lineHeight: 1.65, color: 'var(--text-muted)', marginTop: 8 }}>{d}</p>
-            </div>
-          ))}
+    <section id="proceso" className="reveal" style={{ background: 'var(--surface-page)', padding: '72px 0' }}>
+      <div className="masa-rejilla" style={webShell.page}>
+        <img className="masa-foto" src="../../assets/photos/masa-48h-md.webp"
+          srcSet="../../assets/photos/masa-48h-md.webp 338w, ../../assets/photos/masa-48h.webp 619w"
+          sizes="(min-width: 860px) 380px, 100vw" loading="lazy" decoding="async" width="619" height="1100"
+          alt="La masa de Mextizza después de 48 horas, con las burbujas de la fermentación" />
+        <div>
+          <h2 className="carta-titulo">Nuestra masa descansa dos días para que tú no esperes</h2>
+          <p className="carta-bajada">
+            La dejamos fermentar en frío 48 horas: por eso sale ligera y con la orilla llena de burbujas.
+            Cuando pides, la estiramos, la horneamos y sale directo a tu puerta.
+          </p>
+          <div className="masa-datos">
+            {datos.map(([n, t]) => (
+              <div key={n}><b>{n}</b><span>{t}</span></div>
+            ))}
+          </div>
         </div>
       </div>
     </section>
@@ -364,11 +377,11 @@ function WebCatering() {
   return (
     <section id="catering" className="reveal" style={{ background: 'var(--surface-page)', paddingBottom: 76 }}>
       <div style={webShell.page}>
-        <SectionLabel>Catering de fin de semana</SectionLabel>
+        <h2 className="carta-titulo" style={{ marginBottom: 22 }}>El horno se va a tu fiesta</h2>
         <div className="web-catering-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 28, alignItems: 'start' }}>
           <FramedPanel variant="object" tape="top">
             <div style={{ paddingTop: 8 }}>
-              <h3 style={{ fontFamily: 'var(--font-display)', fontSize: 27 }}>Horno en vivo en tu casa</h3>
+              <h3 style={{ fontFamily: 'var(--font-display)', fontSize: 27 }}>Pizza recién hecha frente a tus invitados</h3>
               <p style={{ fontFamily: 'var(--font-body)', fontSize: 14, lineHeight: 1.6, color: 'var(--text-muted)', marginTop: 10 }}>
                 Llevamos el Gozney XL y horneamos frente a tus invitados. Eliges de todo el menú más ensalada César o Spring Mix.
               </p>
@@ -536,7 +549,7 @@ function WebSocial() {
     <section className="reveal" style={{ background: 'var(--surface-page)', paddingBottom: 76 }}>
       <div style={webShell.page}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12 }}>
-          <SectionLabel>En redes</SectionLabel>
+          <h2 className="carta-titulo" style={{ margin: '0 0 18px' }}>Así salen del horno</h2>
           <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 20 }}>
             <a href={mextizzaWhatsappLink('Hola, quiero hacer un pedido en Mextizza.')} target="_blank" rel="noopener" aria-label="Mextizza en WhatsApp"
               style={{ display: 'flex', alignItems: 'center', borderBottom: 'none', color: 'var(--negro-carbon)', padding: 6 }}>
