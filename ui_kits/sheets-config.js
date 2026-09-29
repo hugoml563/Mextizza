@@ -174,8 +174,15 @@ if (!window.__mextizzaSheetsConfigLoaded) {
   /** El telefono ligado a la cuenta y su tarjeta. */
   const mextizzaMiCuenta = () => conCuenta('mi_cuenta', {});
 
-  const mextizzaSolicitarCatering = ({ nombre, telefono, personas, fecha_evento, notas }) =>
-    mextizzaApiPost('solicitar_catering', { nombre, telefono, personas, fecha_evento, notas });
+  const mextizzaSolicitarCatering = ({ nombre, telefono, personas, fecha_evento, notas, direccion }) =>
+    mextizzaApiPost('solicitar_catering', { nombre, telefono, personas, fecha_evento, notas, direccion });
+
+  /* Catering en el Centro de Ventas. Admin: las solicitudes traen nombre,
+     telefono y direccion, y aprobar crea el evento en el calendario. */
+  const mextizzaListarCatering = () => mextizzaApiGet('listar_catering', {}, true);
+  /** accion: 'platica' | 'aprobar' | 'rechazar' | 'cancelar'. Aprobar pide fecha, hora y direccion. */
+  const mextizzaActualizarCatering = (folio, accion, datos = {}) =>
+    mextizzaApiPost('catering_actualizar', { folio, accion, ...datos }, true);
 
   /* Estado de la tarjeta de un telefono, mas si en este momento corre el 2x1.
      El horario del 2x1 lo decide el servidor y no el reloj del telefono: si el
@@ -187,5 +194,5 @@ if (!window.__mextizzaSheetsConfigLoaded) {
 
   const mextizzaTarjeta = (telefono) => mextizzaApiGet('tarjeta', { telefono: telefono || '' });
 
-  Object.assign(window, { mextizzaPickup, mextizzaTarjeta, mextizzaCrearOrden, mextizzaAvanzarEstado, mextizzaCancelarOrden, mextizzaEstadoOrden, mextizzaEstadoPorTelefono, mextizzaCancelarPorCliente, mextizzaListarAbiertas, mextizzaListarHoy, mextizzaSolicitarCatering, mextizzaTokenAdmin, mextizzaGuardarTokenAdmin, mextizzaOlvidarTokenAdmin, mextizzaCapturaCocina, mextizzaInvEstado, mextizzaInvCompra, mextizzaInvLote, mextizzaInvMerma, mextizzaInvConteo, mextizzaLigarTelefono, mextizzaMiCuenta });
+  Object.assign(window, { mextizzaPickup, mextizzaTarjeta, mextizzaCrearOrden, mextizzaAvanzarEstado, mextizzaCancelarOrden, mextizzaEstadoOrden, mextizzaEstadoPorTelefono, mextizzaCancelarPorCliente, mextizzaListarAbiertas, mextizzaListarHoy, mextizzaSolicitarCatering, mextizzaListarCatering, mextizzaActualizarCatering, mextizzaTokenAdmin, mextizzaGuardarTokenAdmin, mextizzaOlvidarTokenAdmin, mextizzaCapturaCocina, mextizzaInvEstado, mextizzaInvCompra, mextizzaInvLote, mextizzaInvMerma, mextizzaInvConteo, mextizzaLigarTelefono, mextizzaMiCuenta });
 }

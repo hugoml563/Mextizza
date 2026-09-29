@@ -858,7 +858,9 @@ function WebCatering() {
         telefono: digits,
         personas: n + ' personas',
         fecha_evento: dia + ' (' + fecha + ')',
-        notas: 'Dirección: ' + direccion.trim() + '. Total ' + pesos(total) + ', anticipo ' + pesos(anticipo) + '.'
+        notas: 'Dirección: ' + direccion.trim() + '. Total ' + pesos(total) + ', anticipo ' + pesos(anticipo) + '.',
+        // Aparte de las notas para que el Centro de Ventas la lea sin adivinar.
+        direccion: direccion.trim()
       });
       setFolio(r.folio);
       window.open(mextizzaWhatsappLink('Hola, soy ' + nombre.trim() + '. Quiero apartar catering para ' + n + ' personas el ' + dia + ' en ' + direccion.trim() + '. Total ' + pesos(total) + ', anticipo ' + pesos(anticipo) + '. Mi teléfono es ' + digits + '.'), '_blank', 'noopener');

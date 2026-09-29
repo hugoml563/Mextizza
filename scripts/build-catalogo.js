@@ -29,7 +29,7 @@ function catalogo() {
   global.window = {};
   delete require.cache[require.resolve(path.join(RAIZ, 'ui_kits', 'menu-data.js'))];
   require(path.join(RAIZ, 'ui_kits', 'menu-data.js'));
-  const { MEXTIZZA_MENU, MEXTIZZA_ADDONS } = global.window;
+  const { MEXTIZZA_MENU, MEXTIZZA_ADDONS, MEXTIZZA_FACTS } = global.window;
 
   const productos = {};
   for (const g of MEXTIZZA_MENU) {
@@ -41,11 +41,16 @@ function catalogo() {
   for (const grupo of MEXTIZZA_ADDONS || []) {
     for (const a of grupo.items || []) complementos[a.id] = { nombre: a.name, precio: a.price };
   }
-  return { productos, complementos };
+  /* El catering tambien: el Centro de Ventas enseña el total y el anticipo de
+     cada evento, y el precio por persona no debe poder decir una cosa en la
+     calculadora del sitio y otra en la tablet. */
+  const c = MEXTIZZA_FACTS.catering;
+  const catering = { precio: c.precio, anticipo: parseFloat(c.anticipo) / 100, min: c.min, max: c.max };
+  return { productos, complementos, catering };
 }
 
 function generar() {
-  const { productos, complementos } = catalogo();
+  const { productos, complementos, catering } = catalogo();
   const l = [];
   l.push(INICIO);
   l.push('/* GENERADO por scripts/build-catalogo.js desde ui_kits/menu-data.js.');
@@ -64,6 +69,8 @@ function generar() {
       "', precio: " + a.precio + ' },');
   }
   l.push('  },');
+  l.push('  catering: { precio: ' + catering.precio + ', anticipo: ' + catering.anticipo +
+    ', min: ' + catering.min + ', max: ' + catering.max + ' },');
   l.push('};');
   l.push(FIN);
   return l.join('\n');

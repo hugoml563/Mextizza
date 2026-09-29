@@ -41,6 +41,10 @@ window.__resources = Object.assign(window.__resources || {}, {
 .mx-app{width:100%!important;height:auto!important;min-height:100vh!important;overflow:visible!important}
 .mx-top{flex-wrap:wrap!important;gap:10px 14px!important;padding:10px 12px!important}
 .mx-top img{height:38px!important}
+/* Con Eventos ya son cuatro pestanas y no caben en 375 px: bajan a su
+   propio renglon a todo el ancho en vez de salirse de la pantalla. */
+.mx-vistas{order:3;width:100%;margin-left:0!important;flex-wrap:wrap}
+.mx-vistas>*{flex:1 1 40%}
 /* En el telefono todo se apila y quien hace scroll es la pagina, no cada
    panel: paneles con scroll propio dentro de un telefono son trampas de dedo. */
 .mx-fila{flex-direction:column!important;min-height:0!important}
@@ -67,7 +71,7 @@ window.__resources = Object.assign(window.__resources || {}, {
 <div style="font-family:'Bungee',cursive;font-size:11px;letter-spacing:2px;text-transform:uppercase;color:#C1502E">Centro de ventas</div>
 <div style="font-size:12.5px;font-weight:700;color:#6b6b6b;margin-top:3px">{{ fecha }} · {{ reloj }}</div>
 </div>
-<div style="flex:none;display:flex;gap:8px;margin-left:6px">
+<div class="mx-vistas" style="flex:none;display:flex;gap:8px;margin-left:6px">
 <sc-for list="{{ vistas }}" as="v" hint-placeholder-count="2">
 <sc-if value="{{ v.activa }}" hint-placeholder-val="{{ true }}">
 <button onClick="{{ v.set }}" style="padding:9px 16px;border:2px solid #1A1A1A;border-radius:6px;background:#1A1A1A;color:#F5F0E8;font-family:'Oswald',sans-serif;font-size:12px;font-weight:700;letter-spacing:1px;text-transform:uppercase;cursor:pointer;min-height:44px">{{ v.label }}</button>
@@ -383,6 +387,153 @@ window.__resources = Object.assign(window.__resources || {}, {
 </div>
 </sc-if>
 
+<sc-if value="{{ verEventos }}" hint-placeholder-val="{{ false }}">
+
+<div style="flex:1;display:flex;flex-direction:column;min-width:0;padding:16px 18px 0">
+<div class="mx-filtros" style="flex:none;display:flex;gap:8px;margin-bottom:14px">
+<sc-for list="{{ cat.filtros }}" as="f" hint-placeholder-count="3">
+<sc-if value="{{ f.activo }}" hint-placeholder-val="{{ true }}">
+<button onClick="{{ f.set }}" style="flex:1;padding:10px 8px;border:2px solid #1A1A1A;border-radius:6px;font-family:'Oswald',sans-serif;font-size:12px;font-weight:700;letter-spacing:1px;text-transform:uppercase;cursor:pointer;background:#1A1A1A;color:#F5F0E8;display:flex;flex-direction:column;align-items:center;gap:2px" style-hover="opacity:.85">
+<span>{{ f.label }}</span>
+<span style="font-family:'Bungee',cursive;font-size:15px">{{ f.count }}</span>
+</button>
+</sc-if>
+<sc-if value="{{ f.inactivo }}" hint-placeholder-val="{{ false }}">
+<button onClick="{{ f.set }}" style="flex:1;padding:10px 8px;border:2px solid #1A1A1A;border-radius:6px;font-family:'Oswald',sans-serif;font-size:12px;font-weight:700;letter-spacing:1px;text-transform:uppercase;cursor:pointer;background:#FFFFFF;color:#1A1A1A;display:flex;flex-direction:column;align-items:center;gap:2px" style-hover="opacity:.85">
+<span>{{ f.label }}</span>
+<span style="font-family:'Bungee',cursive;font-size:15px">{{ f.count }}</span>
+</button>
+</sc-if>
+</sc-for>
+</div>
+
+<div class="mx-scroll" style="flex:1;overflow:auto;padding-bottom:18px;display:flex;flex-direction:column;gap:12px">
+<sc-for list="{{ cat.lista }}" as="e" hint-placeholder-count="3">
+<div style="{{ e.marco }}">
+<div style="{{ e.barra }}"></div>
+<div class="mx-orden" style="flex:1;display:flex;gap:18px;align-items:stretch;padding:14px 16px;min-width:0">
+<div style="flex:1;min-width:0">
+<div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+<span style="font-family:'Bungee',cursive;font-size:17px">{{ e.folio }}</span>
+<span style="{{ e.chip }}">{{ e.estadoLabel }}</span>
+<sc-if value="{{ e.urge }}" hint-placeholder-val="{{ false }}"><span style="font-size:12px;font-weight:700;color:#E4007C;animation:mxpulse 1.4s ease-in-out infinite">{{ e.faltan }}</span></sc-if>
+<sc-if value="{{ !e.urge }}" hint-placeholder-val="{{ true }}"><span style="font-size:12px;font-weight:700;color:#6b6b6b">{{ e.faltan }}</span></sc-if>
+</div>
+<div style="font-size:14.5px;font-weight:700;margin-top:7px">{{ e.nombre }} <span style="color:#6b6b6b;font-weight:400">· {{ e.personas }} personas</span></div>
+<div style="font-size:13px;font-weight:700;margin-top:4px;color:#C1502E">{{ e.cuando }}</div>
+<sc-if value="{{ e.direccion }}" hint-placeholder-val="{{ true }}"><div style="font-size:12.5px;color:#4A4A4A;margin-top:3px">{{ e.direccion }}</div></sc-if>
+<sc-if value="{{ e.motivo }}" hint-placeholder-val="{{ false }}"><div style="margin-top:7px;padding:7px 10px;background:#F7EBD8;border-left:3px solid #9a9a9a;font-size:12.5px;line-height:1.45"><b style="font-size:10px;letter-spacing:1px;text-transform:uppercase;color:#6b6b6b">Motivo</b><br>{{ e.motivo }}</div></sc-if>
+</div>
+<div class="mx-ordenlado" style="flex:none;width:236px;display:flex;flex-direction:column;justify-content:space-between;gap:10px;padding-left:18px;border-left:2px dashed rgba(0,0,0,.14)">
+<div>
+<div style="display:flex;justify-content:space-between;align-items:baseline">
+<span style="font-size:11px;font-weight:700;letter-spacing:1.2px;text-transform:uppercase;color:#6b6b6b">Total</span>
+<span style="font-family:'Bungee',cursive;font-size:21px;color:#C1502E">{{ e.total }}</span>
+</div>
+<div style="margin-top:5px;font-size:12px;font-weight:700">Anticipo {{ e.anticipo }} · <sc-if value="{{ e.pagado }}" hint-placeholder-val="{{ false }}"><span style="color:#2E7D5B">pagado</span></sc-if><sc-if value="{{ !e.pagado }}" hint-placeholder-val="{{ true }}"><span style="color:#E4007C">por cobrar</span></sc-if></div>
+<sc-if value="{{ e.enCalendario }}" hint-placeholder-val="{{ false }}"><div style="margin-top:5px;font-size:11.5px;font-weight:700;color:#2E7D5B">✓ En el calendario</div></sc-if>
+</div>
+<sc-if value="{{ e.elegido }}" hint-placeholder-val="{{ false }}">
+<button onClick="{{ e.abrir }}" style="padding:14px 8px;border:2px solid #C1502E;border-radius:6px;background:#C1502E;color:#FFFFFF;font-family:'Bungee',cursive;font-size:12px;letter-spacing:1px;text-transform:uppercase;cursor:pointer;min-height:48px">Abierto →</button>
+</sc-if>
+<sc-if value="{{ !e.elegido }}" hint-placeholder-val="{{ true }}">
+<button onClick="{{ e.abrir }}" style="padding:14px 8px;border:none;border-radius:6px;background:#1A1A1A;color:#FFFFFF;font-family:'Bungee',cursive;font-size:12px;letter-spacing:1px;text-transform:uppercase;cursor:pointer;min-height:48px" style-hover="background:#C1502E">{{ e.cta }}</button>
+</sc-if>
+</div>
+</div>
+</div>
+</sc-for>
+<sc-if value="{{ cat.vacia }}" hint-placeholder-val="{{ false }}">
+<div style="margin:auto;text-align:center;padding:60px 20px;color:#9a9a9a">
+<div style="font-family:'Bungee',cursive;font-size:16px;letter-spacing:1px;text-transform:uppercase">{{ cat.vaciaTitulo }}</div>
+<div style="font-size:13px;font-weight:700;margin-top:6px">Las solicitudes de la calculadora del sitio entran aquí en automático.</div>
+</div>
+</sc-if>
+</div>
+</div>
+
+<div class="mx-lado" style="flex:none;width:340px;background:#FFFFFF;border-left:3px solid #1A1A1A;padding:18px;overflow:auto">
+
+<sc-if value="{{ cat.hayAviso }}" hint-placeholder-val="{{ false }}">
+<div style="margin-bottom:14px;padding:10px 12px;background:#F7EBD8;border-left:3px solid #C1502E;font-size:12px;font-weight:700;line-height:1.45">{{ cat.aviso }}</div>
+</sc-if>
+
+<sc-if value="{{ cat.sinSel }}" hint-placeholder-val="{{ true }}">
+<div style="display:flex;align-items:center;gap:10px;font-family:'Bungee',cursive;font-size:11px;letter-spacing:1px;text-transform:uppercase;margin-bottom:12px">Lo que viene<span style="flex:1;height:2px;background:#1A1A1A;opacity:.15"></span></div>
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+<div style="padding:10px 12px;border:2px solid #1A1A1A;border-radius:6px"><div style="font-size:10.5px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:#6b6b6b">Por atender</div><div style="font-family:'Bungee',cursive;font-size:22px;line-height:1.1;margin-top:2px;color:#E4007C">{{ cat.resumen.atender }}</div></div>
+<div style="padding:10px 12px;border:2px solid #1A1A1A;border-radius:6px"><div style="font-size:10.5px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:#6b6b6b">Aprobados</div><div style="font-family:'Bungee',cursive;font-size:22px;line-height:1.1;margin-top:2px;color:#2E7D5B">{{ cat.resumen.aprobados }}</div></div>
+</div>
+<div style="display:flex;justify-content:space-between;align-items:baseline;margin-top:10px;padding:12px 14px;background:#1A1A1A;border-radius:6px">
+<span style="font-size:11px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:#D9A65C">Anticipos por cobrar</span>
+<span style="font-family:'Bungee',cursive;font-size:18px;color:#FFFFFF">{{ cat.resumen.porCobrar }}</span>
+</div>
+
+<div style="display:flex;align-items:center;gap:10px;font-family:'Bungee',cursive;font-size:11px;letter-spacing:1px;text-transform:uppercase;margin:26px 0 10px">Agenda<span style="flex:1;height:2px;background:#1A1A1A;opacity:.15"></span></div>
+<sc-for list="{{ cat.agenda }}" as="a" hint-placeholder-count="3">
+<div style="display:flex;gap:12px;align-items:center;padding:9px 0;border-bottom:1px dashed rgba(0,0,0,.14)">
+<div style="flex:none;width:46px;text-align:center;border:2px solid #1A1A1A;border-radius:6px;padding:3px 0"><div style="font-size:9.5px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:#C1502E">{{ a.mes }}</div><div style="font-family:'Bungee',cursive;font-size:18px;line-height:1.1">{{ a.dia }}</div></div>
+<div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:700">{{ a.nombre }}</div><div style="font-size:11.5px;color:#6b6b6b;font-weight:700">{{ a.detalle }}</div></div>
+</div>
+</sc-for>
+<sc-if value="{{ cat.agendaVacia }}" hint-placeholder-val="{{ false }}">
+<div style="padding:11px 13px;border:2px dashed rgba(0,0,0,.18);border-radius:6px;font-size:12px;font-weight:700;color:#6b6b6b">Todavía no hay eventos aprobados.</div>
+</sc-if>
+<div style="margin-top:22px;padding:12px 14px;border:2px dashed #C1502E;border-radius:6px;font-size:11.5px;font-weight:700;line-height:1.5;color:#4A4A4A">Al aprobar, el evento se agenda en el calendario de {{ cat.calendario }} con aviso 4 días antes (masa y compras) y 1 día antes.</div>
+</sc-if>
+
+<sc-if value="{{ cat.conSel }}" hint-placeholder-val="{{ false }}">
+<button onClick="{{ cat.cerrar }}" style="margin-bottom:12px;padding:8px 12px;border:2px solid #1A1A1A;border-radius:6px;background:transparent;font-family:'Oswald',sans-serif;font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;cursor:pointer;min-height:40px" style-hover="background:#1A1A1A;color:#F5F0E8">‹ Resumen</button>
+<div style="font-family:'Bungee',cursive;font-size:15px;line-height:1.25">{{ cat.sel.nombre }}</div>
+<div style="font-size:12px;font-weight:700;color:#6b6b6b;margin-top:4px">{{ cat.sel.folio }} · {{ cat.sel.personas }} personas · {{ cat.sel.total }}</div>
+<div style="font-size:12px;font-weight:700;color:#6b6b6b;margin-top:2px">Tel. {{ cat.sel.telefono }}</div>
+<a href="{{ cat.sel.whatsapp }}" target="_blank" rel="noopener" style="display:block;margin-top:12px;padding:12px;border-radius:6px;background:#2E7D5B;color:#FFFFFF;text-align:center;text-decoration:none;font-family:'Bungee',cursive;font-size:11.5px;letter-spacing:1px;text-transform:uppercase">Escribirle por WhatsApp</a>
+<sc-if value="{{ cat.sel.tieneNotas }}" hint-placeholder-val="{{ false }}"><div style="margin-top:12px;padding:7px 10px;background:#F7EBD8;border-left:3px solid #C1502E;font-size:12px;line-height:1.45"><b style="font-size:10px;letter-spacing:1px;text-transform:uppercase;color:#C1502E">Lo que pidió</b><br>{{ cat.sel.notas }}</div></sc-if>
+
+<sc-if value="{{ cat.sel.esNueva }}" hint-placeholder-val="{{ false }}">
+<button onClick="{{ cat.platica }}" style="width:100%;margin-top:10px;padding:12px;border:2px solid #1A1A1A;border-radius:6px;background:transparent;color:#1A1A1A;font-family:'Bungee',cursive;font-size:11.5px;letter-spacing:1px;text-transform:uppercase;cursor:pointer;min-height:46px" style-hover="background:#1A1A1A;color:#F5F0E8">Ya le escribimos</button>
+<div style="font-size:11px;color:#6b6b6b;font-weight:700;margin-top:5px">La pasa a "En plática" para que se note que alguien ya la está viendo.</div>
+</sc-if>
+
+<sc-if value="{{ cat.sel.abierta }}" hint-placeholder-val="{{ false }}">
+<div style="margin-top:16px;padding-top:14px;border-top:2px dashed rgba(0,0,0,.14)">
+<div style="font-size:11px;font-weight:700;letter-spacing:1.2px;text-transform:uppercase;color:#C1502E">Lo que quedó con el cliente</div>
+<label style="display:block;margin-top:9px;font-size:11px;font-weight:700;color:#6b6b6b">Fecha</label>
+<input type="date" value="{{ cat.form.fecha }}" onInput="{{ cat.form.setFecha }}" style="width:100%;box-sizing:border-box;margin-top:4px;padding:10px;border:2px solid #1A1A1A;border-radius:6px;font-family:'Oswald',sans-serif;font-size:14px;font-weight:700;background:#FFFFFF;color:#1A1A1A">
+<label style="display:block;margin-top:9px;font-size:11px;font-weight:700;color:#6b6b6b">Hora en que empieza</label>
+<input type="time" value="{{ cat.form.hora }}" onInput="{{ cat.form.setHora }}" style="width:100%;box-sizing:border-box;margin-top:4px;padding:10px;border:2px solid #1A1A1A;border-radius:6px;font-family:'Oswald',sans-serif;font-size:14px;font-weight:700;background:#FFFFFF;color:#1A1A1A">
+<label style="display:block;margin-top:9px;font-size:11px;font-weight:700;color:#6b6b6b">Dirección</label>
+<input type="text" value="{{ cat.form.direccion }}" onInput="{{ cat.form.setDireccion }}" style="width:100%;box-sizing:border-box;margin-top:4px;padding:10px;border:2px solid #1A1A1A;border-radius:6px;font-family:'Oswald',sans-serif;font-size:14px;font-weight:700;background:#FFFFFF;color:#1A1A1A">
+<label style="display:flex;align-items:center;gap:10px;margin-top:12px;font-size:13px;font-weight:700;cursor:pointer;min-height:40px"><input type="checkbox" checked="{{ cat.form.pagado }}" onChange="{{ cat.form.setPagado }}" style="width:22px;height:22px;accent-color:#2E7D5B">Ya pagó el anticipo de {{ cat.sel.anticipo }}</label>
+<button onClick="{{ cat.aprobar }}" style="width:100%;margin-top:10px;padding:13px;border:none;border-radius:6px;background:#2E7D5B;color:#FFFFFF;font-family:'Bungee',cursive;font-size:12px;letter-spacing:1px;text-transform:uppercase;cursor:pointer;min-height:48px" style-hover="background:#1A1A1A"><sc-if value="{{ cat.quieto }}" hint-placeholder-val="{{ true }}">Aprobar y agendar</sc-if><sc-if value="{{ cat.guardando }}" hint-placeholder-val="{{ false }}"><span class="mx-puntos" aria-label="Guardando"><i></i><i></i><i></i></span></sc-if></button>
+</div>
+
+<div style="margin-top:16px;padding-top:14px;border-top:2px dashed rgba(0,0,0,.14)">
+<div style="font-size:11px;font-weight:700;letter-spacing:1.2px;text-transform:uppercase;color:#6b6b6b">¿No se hace?</div>
+<input type="text" placeholder="Motivo (opcional)" value="{{ cat.form.motivo }}" onInput="{{ cat.form.setMotivo }}" style="width:100%;box-sizing:border-box;margin-top:7px;padding:10px;border:2px solid #1A1A1A;border-radius:6px;font-family:'Oswald',sans-serif;font-size:14px;font-weight:700;background:#FFFFFF;color:#1A1A1A">
+<button onClick="{{ cat.rechazar }}" style="width:100%;margin-top:7px;padding:12px;border:2px solid #1A1A1A;border-radius:6px;background:transparent;color:#1A1A1A;font-family:'Bungee',cursive;font-size:11.5px;letter-spacing:1px;text-transform:uppercase;cursor:pointer;min-height:46px" style-hover="background:#E4007C;color:#FFFFFF;border-color:#E4007C">{{ cat.rechazarLabel }}</button>
+</div>
+</sc-if>
+
+<sc-if value="{{ cat.sel.esAprobado }}" hint-placeholder-val="{{ false }}">
+<div style="margin-top:16px;padding:12px 14px;background:#1A1A1A;border-radius:6px;color:#F5F0E8">
+<div style="font-size:10.5px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:#D9A65C">Aprobado</div>
+<div style="font-family:'Bungee',cursive;font-size:14px;margin-top:4px">{{ cat.sel.cuando }}</div>
+<div style="font-size:12px;font-weight:700;margin-top:4px">{{ cat.sel.direccion }}</div>
+<div style="font-size:12px;font-weight:700;margin-top:4px;color:#D9A65C">Anticipo {{ cat.sel.anticipo }} · {{ cat.sel.pagoTexto }}</div>
+</div>
+<div style="margin-top:16px;padding-top:14px;border-top:2px dashed rgba(0,0,0,.14)">
+<div style="font-size:11px;font-weight:700;letter-spacing:1.2px;text-transform:uppercase;color:#6b6b6b">¿Se cayó el evento?</div>
+<input type="text" placeholder="Motivo (opcional)" value="{{ cat.form.motivo }}" onInput="{{ cat.form.setMotivo }}" style="width:100%;box-sizing:border-box;margin-top:7px;padding:10px;border:2px solid #1A1A1A;border-radius:6px;font-family:'Oswald',sans-serif;font-size:14px;font-weight:700;background:#FFFFFF;color:#1A1A1A">
+<button onClick="{{ cat.cancelar }}" style="width:100%;margin-top:7px;padding:12px;border:2px solid #1A1A1A;border-radius:6px;background:transparent;color:#1A1A1A;font-family:'Bungee',cursive;font-size:11.5px;letter-spacing:1px;text-transform:uppercase;cursor:pointer;min-height:46px" style-hover="background:#E4007C;color:#FFFFFF;border-color:#E4007C">{{ cat.cancelarLabel }}</button>
+<div style="font-size:11px;color:#6b6b6b;font-weight:700;margin-top:5px">También lo borra del calendario.</div>
+</div>
+</sc-if>
+</sc-if>
+
+</div>
+</sc-if>
+
 
 </div>
 </div>
@@ -406,6 +557,32 @@ const META = {
 const CANAL_BG = { Web:'#C1502E', App:'#E4007C', WhatsApp:'#2E7D5B', Mostrador:'#4A4A4A' };
 const money = n => '$' + n.toLocaleString('es-MX');
 
+/* Catering. Espejo de CATERING_ESTADOS y CALENDARIO_CATERING en Code.gs. */
+const CAT_META = {
+  nueva:     { label: 'Nueva',      color: '#E4007C' },
+  platica:   { label: 'En plática', color: '#D9A65C' },
+  aprobado:  { label: 'Aprobado',   color: '#2E7D5B' },
+  rechazado: { label: 'Rechazado',  color: '#9a9a9a' },
+  cancelado: { label: 'Cancelado',  color: '#9a9a9a' }
+};
+const CALENDARIO_CATERING = 'mextizza@gmail.com';
+/* Los dias se cuentan en el calendario de CDMX, no en el reloj de la tablet:
+   "faltan 3 dias" no puede cambiar segun la zona del navegador. */
+const hoyCDMX = () => new Date().toLocaleDateString('en-CA', { timeZone: 'America/Mexico_City' });
+const diasEntre = (desde, hasta) => {
+  if (!desde || !hasta) return null;
+  const f = iso => { const [a, m, d] = iso.split('-').map(Number); return Date.UTC(a, m - 1, d); };
+  return Math.round((f(hasta) - f(desde)) / 86400000);
+};
+const fechaEvento = iso => {
+  if (!iso) return 'Sin fecha';
+  const [a, m, d] = iso.split('-').map(Number);
+  const s = new Date(Date.UTC(a, m - 1, d, 12)).toLocaleDateString('es-MX', { weekday: 'long', day: 'numeric', month: 'long', timeZone: 'UTC' }).replace(',', '');
+  return s.charAt(0).toUpperCase() + s.slice(1);
+};
+const faltanTexto = dias => dias === null ? 'sin fecha'
+  : dias < 0 ? 'ya pasó' : dias === 0 ? 'es hoy' : dias === 1 ? 'es mañana' : 'en ' + dias + ' días';
+
 const fechaLarga = d => {
   const s = d.toLocaleDateString('es-MX', { weekday: 'long', day: 'numeric', month: 'long' }).replace(',', '');
   return s.charAt(0).toUpperCase() + s.slice(1);
@@ -413,7 +590,9 @@ const fechaLarga = d => {
 
 class Component extends DCLogic {
   state = { ordenes: [], filtro: 'activas', reloj: '20:34', fechaViva: fechaLarga(new Date()), error: null,
-    vista: 'pedidos', inv: null, captura: null, invError: null, aviso: '', guardando: false };
+    vista: 'pedidos', inv: null, captura: null, invError: null, aviso: '', guardando: false,
+    cat: null, catError: null, catAviso: '', catFiltro: 'atender', catSel: null, catForm: {},
+    catGuardando: false, catConfirmar: null };
 
   total(o) { return o.lineas.reduce((s,l) => s + l.importe, 0); }
 
@@ -464,10 +643,16 @@ class Component extends DCLogic {
   componentDidMount() {
     if (!mextizzaTokenAdmin()) this.pedirTokenAdmin('El Centro de Ventas necesita autorizarse.');
     this.cargar();
+    this.cargarCatering();
+    this._tick = 0;
     this._poll = setInterval(() => {
       this.cargar();
       const enInv = this.state.vista === 'inventario' || this.state.vista === 'compras';
       if (enInv && !this.state.captura) this.cargarInv();
+      /* Con la pestana abierta, cada 15 s como los pedidos; si no, cada minuto,
+         solo para que el contador de la pestana avise de una solicitud nueva. */
+      this._tick++;
+      if (this.state.vista === 'eventos' || this._tick % 4 === 0) this.cargarCatering();
     }, 15000);
     const tickReloj = () => this.setState({ reloj: new Date().toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit', hour12: false }), fechaViva: fechaLarga(new Date()) });
     tickReloj();
@@ -478,6 +663,7 @@ class Component extends DCLogic {
     clearInterval(this._poll);
     clearInterval(this._reloj);
     clearTimeout(this._avisoTmr);
+    clearTimeout(this._catAvisoTmr);
   }
 
   /* El estado avanza en pantalla ANTES de que el servidor conteste. Apps Script
@@ -524,6 +710,7 @@ class Component extends DCLogic {
     /* Las dos pestanas comen del mismo inv_estado, asi que una sola llamada
        las alimenta a las dos y cambiar de una a otra es instantaneo. */
     if ((v === 'inventario' || v === 'compras') && !this.state.inv) this.cargarInv();
+    if (v === 'eventos') this.cargarCatering();
   }
 
   async cancelar(i) {
@@ -714,6 +901,189 @@ class Component extends DCLogic {
     return base;
   }
 
+  /* Catering: el horno se va a tu fiesta. Las solicitudes se leen aparte de
+     los pedidos y con menos prisa -- un evento se aparta con dias de
+     anticipacion, no con minutos -- pero se leen siempre, no solo con la
+     pestana abierta: el contador de la pestana es lo que avisa que llego una. */
+  async cargarCatering() {
+    if (!mextizzaTokenAdmin()) return;
+    try {
+      const { eventos } = await mextizzaListarCatering();
+      this.setState({ cat: eventos, catError: null });
+    } catch (err) {
+      this.setState({ catError: 'No se pudieron leer los eventos: ' + err.message });
+    }
+  }
+
+  abrirEvento(folio) {
+    const e = (this.state.cat || []).find(x => x.folio === folio);
+    if (!e) return;
+    this.setState({
+      catSel: folio, catConfirmar: null, catError: null, catAviso: '',
+      catForm: { fecha: e.fecha, hora: e.hora, direccion: e.direccion, pagado: e.anticipoPagado, motivo: '' }
+    });
+    /* En el telefono el panel queda debajo de la lista: sin esto, tocar
+       "Atender" parece no hacer nada. */
+    if (window.innerWidth <= 820) {
+      setTimeout(() => {
+        const lado = document.querySelectorAll('.mx-lado');
+        if (lado.length) lado[lado.length - 1].scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }, 50);
+    }
+  }
+
+  cerrarEvento() {
+    this.setState({ catSel: null, catConfirmar: null, catError: null });
+  }
+
+  campoEvento(campo, valor) {
+    this.setState({ catForm: { ...this.state.catForm, [campo]: valor }, catConfirmar: null });
+  }
+
+  async accionEvento(accion, datos, aviso) {
+    if (this.state.catGuardando) return;
+    const folio = this.state.catSel;
+    this.setState({ catGuardando: true, catError: null, catConfirmar: null });
+    try {
+      await mextizzaActualizarCatering(folio, accion, datos);
+      this.setState({ catGuardando: false, catAviso: aviso, catSel: accion === 'platica' ? folio : null });
+      clearTimeout(this._catAvisoTmr);
+      this._catAvisoTmr = setTimeout(() => this.setState({ catAviso: '' }), 8000);
+      await this.cargarCatering();
+      if (accion === 'platica') this.abrirEvento(folio);
+    } catch (err) {
+      this.setState({ catGuardando: false, catError: 'No se guardó: ' + err.message });
+    }
+  }
+
+  /* Rechazar y cancelar no se deshacen desde aqui, asi que piden un segundo
+     toque. No se usa confirm(): algunos navegadores embebidos lo bloquean. */
+  confirmarEvento(accion, aviso) {
+    if (this.state.catConfirmar !== accion) return this.setState({ catConfirmar: accion });
+    this.accionEvento(accion, { motivo: (this.state.catForm.motivo || '').trim() }, aviso);
+  }
+
+  vistaEventos() {
+    const lista = this.state.cat || [];
+    const hoy = hoyCDMX();
+    const abiertos = lista.filter(e => e.estado === 'nueva' || e.estado === 'platica');
+    const aprobados = lista.filter(e => e.estado === 'aprobado');
+    const cerrados = lista.filter(e => e.estado === 'rechazado' || e.estado === 'cancelado');
+    const porFecha = (a, b) => (a.fecha || '9999').localeCompare(b.fecha || '9999');
+    const grupos = {
+      atender: abiertos.slice().sort(porFecha),
+      proximos: aprobados.slice().sort(porFecha),
+      cerrados: cerrados.slice().sort((a, b) => b.creado.localeCompare(a.creado))
+    };
+    const filtro = this.state.catFiltro;
+    const titulos = { atender: 'Por atender', proximos: 'Próximos', cerrados: 'Cerrados' };
+
+    const tarjeta = e => {
+      const dias = diasEntre(hoy, e.fecha);
+      const abierta = e.estado === 'nueva' || e.estado === 'platica';
+      /* Con menos de 4 dias ya no da tiempo de comprar y poner masa con calma:
+         una solicitud abierta asi urge contestarla, y un aprobado a 2 dias
+         o menos es la señal de que la masa ya deberia estar fermentando. */
+      const urge = dias !== null && dias >= 0 && (abierta ? dias < 4 : (e.estado === 'aprobado' && dias <= 2));
+      const color = CAT_META[e.estado].color;
+      return {
+        folio: e.folio, nombre: e.nombre, personas: e.personas,
+        direccion: e.direccion, motivo: e.motivo,
+        estadoLabel: CAT_META[e.estado].label,
+        cuando: fechaEvento(e.fecha) + (e.hora ? ' · ' + e.hora : ''),
+        faltan: faltanTexto(dias) + (urge && abierta ? ' · contestar ya' : (urge ? ' · ¿ya hay masa?' : '')),
+        urge,
+        total: money(e.total), anticipo: money(e.anticipo), pagado: e.anticipoPagado,
+        enCalendario: e.enCalendario,
+        elegido: this.state.catSel === e.folio,
+        cta: abierta ? 'Atender' : 'Ver',
+        abrir: () => this.abrirEvento(e.folio),
+        marco: 'flex:none;background:#FFFFFF;border:2px solid ' + (this.state.catSel === e.folio ? '#C1502E' : '#1A1A1A') +
+          ';border-radius:8px;display:flex;align-items:stretch;overflow:hidden' +
+          (e.estado === 'rechazado' || e.estado === 'cancelado' ? ';opacity:.7' : ''),
+        barra: 'flex:none;width:10px;background:' + color,
+        chip: 'padding:3px 9px;border-radius:99px;background:' + color + ';color:' +
+          (e.estado === 'platica' ? '#1A1A1A' : '#FFFFFF') +
+          ';font-size:10.5px;font-weight:700;letter-spacing:1.2px;text-transform:uppercase'
+      };
+    };
+
+    const sel = lista.find(e => e.folio === this.state.catSel) || null;
+    const form = this.state.catForm || {};
+    const mesCorto = iso => {
+      const [a, m, d] = iso.split('-').map(Number);
+      return new Date(Date.UTC(a, m - 1, d, 12)).toLocaleDateString('es-MX', { month: 'short', timeZone: 'UTC' }).replace('.', '');
+    };
+
+    return {
+      filtros: Object.keys(grupos).map(k => ({
+        label: titulos[k], count: grupos[k].length,
+        activo: filtro === k, inactivo: filtro !== k,
+        set: () => this.setState({ catFiltro: k })
+      })),
+      lista: grupos[filtro].map(tarjeta),
+      vacia: grupos[filtro].length === 0,
+      vaciaTitulo: filtro === 'atender' ? 'Nada por atender' : (filtro === 'proximos' ? 'Sin eventos aprobados' : 'Nada cerrado este mes'),
+      hayAviso: !!(this.state.catError || this.state.catAviso || !this.state.cat),
+      aviso: this.state.catError || this.state.catAviso ||
+        (!mextizzaTokenAdmin() ? 'Falta el token de administrador. Toca "Conectar" arriba para capturarlo.' : 'Leyendo los eventos…'),
+      sinSel: !sel, conSel: !!sel,
+      calendario: CALENDARIO_CATERING,
+      resumen: {
+        atender: abiertos.length,
+        aprobados: aprobados.length,
+        porCobrar: money(aprobados.filter(e => !e.anticipoPagado).reduce((s, e) => s + e.anticipo, 0))
+      },
+      agenda: grupos.proximos.slice(0, 6).map(e => ({
+        mes: e.fecha ? mesCorto(e.fecha) : '—',
+        dia: e.fecha ? Number(e.fecha.slice(8, 10)) : '?',
+        nombre: e.nombre,
+        detalle: e.personas + ' personas' + (e.hora ? ' · ' + e.hora : '') + ' · ' + faltanTexto(diasEntre(hoy, e.fecha))
+      })),
+      agendaVacia: grupos.proximos.length === 0,
+      cerrar: () => this.cerrarEvento(),
+      guardando: !!this.state.catGuardando,
+      quieto: !this.state.catGuardando,
+      sel: sel ? {
+        folio: sel.folio, nombre: sel.nombre, personas: sel.personas, telefono: sel.telefono,
+        total: money(sel.total), anticipo: money(sel.anticipo),
+        direccion: sel.direccion,
+        cuando: fechaEvento(sel.fecha) + (sel.hora ? ' · ' + sel.hora : ''),
+        pagoTexto: sel.anticipoPagado ? 'pagado' : 'por cobrar',
+        notas: sel.notas, tieneNotas: !!sel.notas.trim(),
+        esNueva: sel.estado === 'nueva',
+        abierta: sel.estado === 'nueva' || sel.estado === 'platica',
+        esAprobado: sel.estado === 'aprobado',
+        whatsapp: 'https://wa.me/52' + String(sel.telefono).replace(/\D/g, '').slice(-10) + '?text=' +
+          encodeURIComponent('Hola ' + sel.nombre.split(' ')[0] + ', te escribimos de Mextizza por tu catering del ' +
+            fechaEvento(sel.fecha).toLowerCase() + ' para ' + sel.personas + ' personas.')
+      } : {},
+      form: {
+        fecha: form.fecha || '', hora: form.hora || '', direccion: form.direccion || '',
+        pagado: !!form.pagado, motivo: form.motivo || '',
+        setFecha: ev => this.campoEvento('fecha', ev.target.value),
+        setHora: ev => this.campoEvento('hora', ev.target.value),
+        setDireccion: ev => this.campoEvento('direccion', ev.target.value),
+        setMotivo: ev => this.campoEvento('motivo', ev.target.value),
+        setPagado: ev => this.campoEvento('pagado', ev.target.checked)
+      },
+      platica: () => this.accionEvento('platica', {}, sel ? sel.folio + ' quedó en plática.' : ''),
+      aprobar: () => {
+        if (!form.fecha) return this.setState({ catError: 'Falta la fecha.' });
+        if (form.fecha < hoy) return this.setState({ catError: 'Esa fecha ya pasó.' });
+        if (!form.hora) return this.setState({ catError: 'Falta la hora en que empieza el evento.' });
+        if ((form.direccion || '').trim().length < 6) return this.setState({ catError: 'Falta la dirección.' });
+        this.accionEvento('aprobar', {
+          fecha: form.fecha, hora: form.hora, direccion: form.direccion.trim(), anticipo_pagado: !!form.pagado
+        }, 'Aprobado. Quedó en el calendario con aviso 4 días y 1 día antes.');
+      },
+      rechazarLabel: this.state.catConfirmar === 'rechazar' ? 'Toca otra vez para rechazar' : 'Rechazar',
+      rechazar: () => this.confirmarEvento('rechazar', 'Solicitud rechazada.'),
+      cancelarLabel: this.state.catConfirmar === 'cancelar' ? 'Toca otra vez para cancelar' : 'Cancelar el evento',
+      cancelar: () => this.confirmarEvento('cancelar', 'Evento cancelado y borrado del calendario.')
+    };
+  }
+
   renderVals() {
     const { ordenes, filtro } = this.state;
     const umbral = this.props.umbralAlerta ?? 20;
@@ -788,6 +1158,8 @@ class Component extends DCLogic {
       limita: c.hoy > 0 ? c.limitaHoy : (c.limitaHoy || '—')
     }));
 
+    const pendientesCat = (this.state.cat || []).filter(e => e.estado === 'nueva').length;
+
     return {
       fecha: (this.props.fecha && this.props.fecha !== 'Martes 25 de agosto') ? this.props.fecha : this.state.fechaViva,
       reloj: this.state.reloj,
@@ -800,7 +1172,10 @@ class Component extends DCLogic {
       vistas: [
         { label: 'Pedidos', clave: 'pedidos' },
         { label: 'Inventario', clave: 'inventario' },
-        { label: 'Compras', clave: 'compras' }
+        { label: 'Compras', clave: 'compras' },
+        /* El numero es lo que falta por contestar: una solicitud nueva no debe
+           depender de que alguien abra la pestana para enterarse. */
+        { label: 'Eventos' + (pendientesCat ? ' · ' + pendientesCat : ''), clave: 'eventos' }
       ].map(v => ({
         label: v.label,
         activa: this.state.vista === v.clave,
@@ -810,6 +1185,8 @@ class Component extends DCLogic {
       verPedidos: this.state.vista === 'pedidos',
       verInventario: this.state.vista === 'inventario',
       verCompras: this.state.vista === 'compras',
+      verEventos: this.state.vista === 'eventos',
+      cat: this.vistaEventos(),
       compras: this.vistaCompras(),
       capacidad: capacidad,
       sinCapacidad: capacidad.length === 0,

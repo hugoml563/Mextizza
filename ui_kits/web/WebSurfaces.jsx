@@ -472,6 +472,8 @@ function WebCatering() {
       const r = await mextizzaSolicitarCatering({
         nombre: nombre.trim(), telefono: digits, personas: n + ' personas', fecha_evento: dia + ' (' + fecha + ')',
         notas: 'Dirección: ' + direccion.trim() + '. Total ' + pesos(total) + ', anticipo ' + pesos(anticipo) + '.',
+        // Aparte de las notas para que el Centro de Ventas la lea sin adivinar.
+        direccion: direccion.trim(),
       });
       setFolio(r.folio);
       window.open(mextizzaWhatsappLink(

@@ -24,6 +24,11 @@
  * 6. Cada vez que edites este código, tienes que crear una NUEVA versión de
  *    la implementación (Implementar → Administrar implementaciones → editar
  *    → Nueva versión) para que los cambios surtan efecto en la URL pública.
+ * 7. Catering: aprobar un evento lo agenda en el calendario de
+ *    CALENDARIO_CATERING (mextizza@gmail.com). La primera vez corre a mano
+ *    `probarCalendarioCatering` para aceptar el permiso de Google Calendar.
+ *    Si el script no es de mextizza@gmail.com, comparte ese calendario con la
+ *    cuenta del script con permiso de "Hacer cambios en eventos".
  */
 
 const SHEETS = {
@@ -69,7 +74,10 @@ const ITEM_COMPLEMENTOS_HEADERS = ['linea_id', 'complemento_id', 'complemento_no
 const PRODUCTOS_HEADERS = ['id', 'nombre', 'descripcion', 'categoria', 'precio', 'activo', 'foto'];
 const COMPLEMENTOS_HEADERS = ['id', 'nombre', 'grupo', 'precio', 'activo'];
 const CLIENTES_HEADERS = ['telefono', 'nombre', 'direccion', 'colonia', 'notas', 'pedidos', 'dias_ciclo', 'ultimo_dia', 'brownie_usado', 'pizza_usada', 'ciclos', 'brownie_guardado', 'uid'];
-const CATERING_HEADERS = ['folio', 'nombre', 'telefono', 'personas', 'fecha_evento', 'notas', 'estado', 'creado_en'];
+/* Las columnas despues de creado_en son del Centro de Ventas: lo que se
+   coordina con el cliente antes de aprobar y el enlace al evento del calendario.
+   Van al final para que las solicitudes que ya existen no se muevan. */
+const CATERING_HEADERS = ['folio', 'nombre', 'telefono', 'personas', 'fecha_evento', 'notas', 'estado', 'creado_en', 'direccion', 'hora', 'anticipo_pagado', 'motivo', 'calendario_id', 'actualizado_en'];
 
 const INSUMOS_HEADERS = ['id', 'nombre', 'uom', 'categoria', 'tipo', 'costo_promedio', 'stock', 'stock_minimo', 'rinde', 'activo', 'colchon'];
 const PARAMETROS_HEADERS = ['clave', 'valor', 'nota'];
@@ -973,6 +981,10 @@ function doPost(e) {
       case 'solicitar_catering':
         result = crearSolicitudCatering_(body);
         break;
+      case 'catering_actualizar':
+        requiereAdmin_(nivel);
+        result = actualizarCatering_(body);
+        break;
       default:
         throw new Error('Acción desconocida: ' + body.action);
     }
@@ -992,6 +1004,11 @@ function doGet(e) {
     if (e.parameter.action === 'listar_abiertas') {
       requiereAdmin_(nivel);
       return jsonOut_({ ok: true, ordenes: listarAbiertas_() });
+    }
+    /* Las solicitudes de catering traen nombre, telefono y direccion: solo admin. */
+    if (e.parameter.action === 'listar_catering') {
+      requiereAdmin_(nivel);
+      return jsonOut_({ ok: true, eventos: listarCatering_() });
     }
     if (e.parameter.action === 'listar_hoy') {
       requiereAdmin_(nivel);
@@ -1084,6 +1101,7 @@ const CATALOGO = {
     'macha': { nombre: 'Toque de salsa macha (cacahuate)', precio: 15 },
     'aoev': { nombre: 'Terminado con aceite de oliva extra virgen', precio: 15 },
   },
+  catering: { precio: 235, anticipo: 0.3, min: 20, max: 30 },
 };
 // <catalogo:fin>
 
@@ -1844,12 +1862,256 @@ function cancelarOrden_(body) {
   return { folio: body.folio, estado: 'cancelada' };
 }
 
-/** body: { token, nombre, telefono, personas, fecha_evento, notas } */
+/* ================================================================ CATERING ===
+   El horno se va a tu fiesta. La solicitud entra desde la calculadora del sitio
+   como 'nueva'; en el Centro de Ventas pasa a 'platica' cuando ya se le escribio
+   al cliente, y termina en 'aprobado' o 'rechazado'. Un aprobado se puede
+   'cancelar' despues si el cliente se echa para atras.
+
+   Aprobar crea el evento en el Google Calendar de la cocina, con recordatorio
+   4 dias antes (la masa tarda 48 horas y hay que comprar) y 1 dia antes. */
+const CATERING_ESTADOS = ['nueva', 'platica', 'aprobado', 'rechazado', 'cancelado'];
+
+/* El calendario donde caen los eventos aprobados. Si el script es de otra
+   cuenta, ese calendario tiene que estar compartido con ella con permiso de
+   "Hacer cambios en eventos". Se puede cambiar sin tocar el codigo con la
+   propiedad del script CALENDARIO_CATERING. */
+const CALENDARIO_CATERING = 'mextizza@gmail.com';
+/* Cuanto dura el evento en el calendario. El servicio es de 2 a 3 horas; se
+   aparta una mas para llegar, prender el horno y recoger. */
+const CATERING_HORAS_EVENTO = 4;
+const CATERING_RECORDATORIOS_MIN = [4 * 24 * 60, 24 * 60];
+
+/** body: { token, nombre, telefono, personas, fecha_evento, notas, direccion } */
 function crearSolicitudCatering_(body) {
   const sh = sheet_(SHEETS.catering);
+  asegurarColumnasCatering_(sh);
   const folio = 'CAT-' + String(sh.getLastRow()).padStart(4, '0');
-  sh.appendRow([folio, textoSeguro_(body.nombre), textoSeguro_(body.telefono), textoSeguro_(body.personas), textoSeguro_(body.fecha_evento), textoSeguro_(body.notas), 'nueva', new Date()]);
+  sh.appendRow([folio, textoSeguro_(body.nombre), textoSeguro_(body.telefono), textoSeguro_(body.personas),
+    textoSeguro_(body.fecha_evento), textoSeguro_(body.notas), 'nueva', new Date(),
+    textoSeguro_(String(body.direccion || '').slice(0, 300)), '', '', '', '', new Date()]);
   return { folio };
+}
+
+/* La hoja de catering ya existia con ocho columnas. En vez de pedir que se
+   vuelva a correr configurarHojas, la primera escritura agrega los encabezados
+   que falten a la derecha; las filas viejas quedan con esas celdas vacias. */
+function asegurarColumnasCatering_(sh) {
+  const n = sh.getLastColumn();
+  if (n >= CATERING_HEADERS.length) return;
+  const faltan = CATERING_HEADERS.slice(n);
+  sh.getRange(1, n + 1, 1, faltan.length).setValues([faltan]);
+}
+
+/* La fecha llega del sitio como "sábado 3 de octubre (2026-10-03)". Lo que
+   cuenta es la parte ISO; si alguien la escribio a mano en el Sheet como fecha,
+   Sheets la regresa como Date. */
+function fechaIsoCatering_(v) {
+  if (v instanceof Date && !isNaN(v)) return Utilities.formatDate(v, 'America/Mexico_City', 'yyyy-MM-dd');
+  const m = String(v || '').match(/(\d{4})-(\d{2})-(\d{2})/);
+  return m ? m[0] : '';
+}
+
+/* Antes de estas columnas, la direccion viajaba dentro de las notas
+   ("Dirección: X. Total $..."). Se rescata de ahi para las solicitudes viejas. */
+function direccionCatering_(fila) {
+  if (fila.direccion) return String(fila.direccion);
+  const m = String(fila.notas || '').match(/Direcci[oó]n:\s*(.+?)\.\s*Total/);
+  return m ? m[1] : '';
+}
+
+/* Sheets convierte "18:30" en una hora si la celda no va como texto. Se acepta
+   cualquiera de las dos formas. */
+function horaCatering_(v) {
+  if (v instanceof Date && !isNaN(v)) return Utilities.formatDate(v, 'America/Mexico_City', 'HH:mm');
+  const m = String(v || '').trim().match(/^(\d{1,2}):(\d{2})$/);
+  if (!m || Number(m[1]) > 23 || Number(m[2]) > 59) return '';
+  return ('0' + m[1]).slice(-2) + ':' + m[2];
+}
+
+/* Por nombre de columna y no por posicion: la hoja pudo haberse creado antes de
+   que existieran las columnas nuevas. */
+function leerCatering_() {
+  const sh = sheet_(SHEETS.catering);
+  const data = sh.getDataRange().getValues();
+  const col = {};
+  (data[0] || []).forEach(function (h, i) { col[String(h)] = i; });
+  const lista = [];
+  for (let r = 1; r < data.length; r++) {
+    const row = data[r];
+    if (!row[col.folio]) continue;
+    const fila = {};
+    CATERING_HEADERS.forEach(function (h) { fila[h] = col[h] === undefined ? '' : row[col[h]]; });
+    lista.push({ index: r + 1, fila: fila });
+  }
+  return { sh: sh, lista: lista };
+}
+
+function eventoCateringPublico_(fila) {
+  const personas = parseInt(String(fila.personas), 10) || 0;
+  const total = personas * CATALOGO.catering.precio;
+  const creado = fila.creado_en instanceof Date ? fila.creado_en : new Date(fila.creado_en);
+  const estado = String(fila.estado);
+  return {
+    folio: String(fila.folio),
+    nombre: String(fila.nombre || ''),
+    telefono: String(fila.telefono || ''),
+    personas: personas,
+    fecha: fechaIsoCatering_(fila.fecha_evento),
+    hora: horaCatering_(fila.hora),
+    direccion: direccionCatering_(fila),
+    notas: String(fila.notas || ''),
+    estado: CATERING_ESTADOS.indexOf(estado) === -1 ? 'nueva' : estado,
+    total: total,
+    anticipo: Math.round(total * CATALOGO.catering.anticipo),
+    anticipoPagado: String(fila.anticipo_pagado) === 'si',
+    motivo: String(fila.motivo || ''),
+    enCalendario: !!fila.calendario_id,
+    creado: isNaN(creado) ? '' : creado.toISOString()
+  };
+}
+
+/* Lo que ve el Centro de Ventas: todo lo que sigue abierto, los aprobados que
+   aun no pasan y lo cerrado de los ultimos 30 dias como historial. Lo mas viejo
+   se queda en el Sheet y no viaja a la tablet. */
+function listarCatering_() {
+  const hoy = Utilities.formatDate(new Date(), 'America/Mexico_City', 'yyyy-MM-dd');
+  const hace30 = new Date(Date.now() - 30 * 24 * 3600 * 1000);
+  return leerCatering_().lista.map(function (x) { return eventoCateringPublico_(x.fila); })
+    .filter(function (e) {
+      if (e.estado === 'nueva' || e.estado === 'platica') return true;
+      if (e.estado === 'aprobado') return !e.fecha || e.fecha >= hoy;
+      return !!e.creado && new Date(e.creado) >= hace30;
+    });
+}
+
+function filaCatering_(folio) {
+  const datos = leerCatering_();
+  for (let i = 0; i < datos.lista.length; i++) {
+    if (String(datos.lista[i].fila.folio) === String(folio)) {
+      return { sh: datos.sh, index: datos.lista[i].index, fila: datos.lista[i].fila };
+    }
+  }
+  throw new Error('No encontré la solicitud ' + folio);
+}
+
+function escribirCatering_(ref, cambios) {
+  asegurarColumnasCatering_(ref.sh);
+  cambios.actualizado_en = new Date();
+  Object.keys(cambios).forEach(function (h) {
+    const c = CATERING_HEADERS.indexOf(h);
+    if (c === -1) throw new Error('Columna desconocida: ' + h);
+    ref.sh.getRange(ref.index, c + 1).setValue(cambios[h]);
+  });
+}
+
+function calendarioCatering_() {
+  const id = PropertiesService.getScriptProperties().getProperty('CALENDARIO_CATERING') || CALENDARIO_CATERING;
+  const cal = CalendarApp.getCalendarById(id);
+  if (!cal) {
+    throw new Error('No tengo acceso al calendario ' + id + '. El Apps Script tiene que ser de esa cuenta, ' +
+      'o ese calendario tiene que estar compartido con la cuenta del script con permiso de hacer cambios.');
+  }
+  return cal;
+}
+
+/** Corre esto a mano UNA vez despues de pegar el codigo: pide el permiso de
+ *  Calendar y confirma que el calendario de catering es accesible. No crea nada. */
+function probarCalendarioCatering() {
+  const cal = calendarioCatering_();
+  Logger.log('Listo: los eventos aprobados se van a agendar en "' + cal.getName() + '".');
+}
+
+function pesosGs_(n) {
+  return '$' + String(Math.round(n)).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+}
+
+function crearEventoCatering_(e) {
+  const cal = calendarioCatering_();
+  const titulo = 'Catering Mextizza · ' + e.personas + ' personas · ' + e.nombre;
+  const descripcion = [
+    'Folio: ' + e.folio,
+    'Cliente: ' + e.nombre + ' · ' + e.telefono,
+    'WhatsApp: https://wa.me/52' + String(e.telefono).replace(/\D/g, '').slice(-10),
+    'Personas: ' + e.personas,
+    'Total: ' + pesosGs_(e.total) + ' · anticipo ' + pesosGs_(e.anticipo) +
+      (e.anticipoPagado ? ' (pagado)' : ' (POR COBRAR)'),
+    '',
+    'La masa tarda 48 horas: hay que ponerla a más tardar dos días antes.',
+    e.notas ? '\nNotas de la solicitud: ' + e.notas : ''
+  ].join('\n');
+  const opciones = { description: descripcion, location: e.direccion };
+
+  const inicio = Utilities.parseDate(e.fecha + ' ' + e.hora, 'America/Mexico_City', 'yyyy-MM-dd HH:mm');
+  const fin = new Date(inicio.getTime() + CATERING_HORAS_EVENTO * 3600 * 1000);
+  const ev = cal.createEvent(titulo, inicio, fin, opciones);
+  ev.removeAllReminders();
+  CATERING_RECORDATORIOS_MIN.forEach(function (m) {
+    ev.addPopupReminder(m);
+    ev.addEmailReminder(m);
+  });
+  return ev.getId();
+}
+
+function borrarEventoCatering_(id) {
+  if (!id) return;
+  try {
+    const ev = calendarioCatering_().getEventById(id);
+    if (ev) ev.deleteEvent();
+  } catch (err) {
+    // Si alguien ya lo borro a mano del calendario, cancelar no debe fallar por eso.
+    console.error('No se pudo borrar el evento ' + id + ': ' + err);
+  }
+}
+
+/** body: { folio, accion: 'platica'|'aprobar'|'rechazar'|'cancelar', fecha, hora, direccion, anticipo_pagado, motivo } */
+function actualizarCatering_(body) {
+  const ref = filaCatering_(body.folio);
+  const actual = eventoCateringPublico_(ref.fila);
+  const accion = String(body.accion || '');
+  const abierta = actual.estado === 'nueva' || actual.estado === 'platica';
+
+  if (accion === 'platica') {
+    if (actual.estado !== 'nueva') throw new Error(actual.folio + ' ya no está nueva (está ' + actual.estado + ').');
+    escribirCatering_(ref, { estado: 'platica' });
+  } else if (accion === 'aprobar') {
+    if (!abierta) throw new Error(actual.folio + ' no se puede aprobar: está ' + actual.estado + '.');
+    /* Lo que se coordino por WhatsApp puede cambiar lo que pidio el sitio: otra
+       fecha, la hora que el sitio no pregunta, una direccion mas completa. */
+    const fecha = fechaIsoCatering_(body.fecha || actual.fecha);
+    const hora = horaCatering_(body.hora);
+    const direccion = String(body.direccion || actual.direccion || '').trim().slice(0, 300);
+    if (!fecha) throw new Error('Falta la fecha del evento.');
+    if (!hora) throw new Error('Falta la hora del evento.');
+    if (direccion.length < 6) throw new Error('Falta la dirección del evento.');
+    const hoy = Utilities.formatDate(new Date(), 'America/Mexico_City', 'yyyy-MM-dd');
+    if (fecha < hoy) throw new Error('La fecha ' + fecha + ' ya pasó.');
+
+    const e = Object.assign({}, actual, { fecha: fecha, hora: hora, direccion: direccion, anticipoPagado: !!body.anticipo_pagado });
+    /* Primero el calendario: si falla, la solicitud se queda como estaba y el
+       error se ve en la tablet, en vez de un 'aprobado' sin recordatorio. */
+    const calId = crearEventoCatering_(e);
+    const cambios = {
+      estado: 'aprobado',
+      // El apostrofo evita que Sheets convierta "18:30" en una fecha de 1899.
+      hora: "'" + hora,
+      direccion: textoSeguro_(direccion),
+      anticipo_pagado: e.anticipoPagado ? 'si' : 'no',
+      calendario_id: calId
+    };
+    if (fecha !== actual.fecha) cambios.fecha_evento = fecha;
+    escribirCatering_(ref, cambios);
+  } else if (accion === 'rechazar') {
+    if (!abierta) throw new Error(actual.folio + ' no se puede rechazar: está ' + actual.estado + '.');
+    escribirCatering_(ref, { estado: 'rechazado', motivo: textoSeguro_(String(body.motivo || '').slice(0, 300)) });
+  } else if (accion === 'cancelar') {
+    if (actual.estado !== 'aprobado') throw new Error('Solo se cancela un evento aprobado.');
+    borrarEventoCatering_(ref.fila.calendario_id);
+    escribirCatering_(ref, { estado: 'cancelado', calendario_id: '', motivo: textoSeguro_(String(body.motivo || '').slice(0, 300)) });
+  } else {
+    throw new Error('Acción de catering desconocida: ' + accion);
+  }
+  return { evento: eventoCateringPublico_(filaCatering_(body.folio).fila) };
 }
 
 function findOrdenRow_(sh, folio) {
