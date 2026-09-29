@@ -77,7 +77,32 @@ pídela*, *que sea con tu nutriólogo*. Playful beats precise when the two compe
 
 **Accents and punctuation** are always correct: *Menú*, *Pizzería*, *Atizapán*, *jamón*, *arúgula*. `¿` and `¡` open their sentences. Never skip them.
 
-**Emoji: no.** The only emoji anywhere in the sources are the traffic lights 🟢🟡🔴 used as status markers in an internal decision table in the business plan. That is an internal-document convention, not a brand voice element. **Do not use emoji in any customer-facing Mextizza surface.**
+**Emoji: yes, as seasoning.** *(Changed by the founders in September 2026; until then the rule was "no emoji".)*
+The voice does not change: warm first, the fact second, the wink at the end. Emoji add
+context and emphasis on top of that voice. They never replace a word the sentence needs,
+and they never carry the joke on their own — if the line is not funny without the emoji,
+the emoji will not save it.
+
+- **Where:** social captions, WhatsApp messages and statuses, ad copy, push notifications
+  and story text. In the site and the app, only in promotional copy (a banner, a
+  notification, the 2x1 notice) — never in menu names, prices, form labels, errors, legal
+  text or anything the customer has to read to finish an order.
+- **Not on the artwork.** Headlines set in Colo Pro or Bungee on a post, the printed menu,
+  the packaging and the stamps stay without emoji: those fonts have none, and an emoji
+  there reads as a sticker pasted on the brand. The emoji go in the caption next to it.
+- **How many:** one to three per caption, at most one per sentence. At the end of a
+  phrase or opening a line in a list, never in the middle of a word or a price. Never
+  two identical in a row.
+- **The house set** (what the kitchen actually has and does): 🍕 pizza · 🔥 horno, tatemado ·
+  🧀 queso · 🌶️ picante, habanero, macha · 🍍 Aloha · 🍯 miel (Traviesa) · 🍫 brownie ·
+  🛵 envío · 📍 colonias, zona · ⏰ horario · 📲 pedir · 🎉 fiesta, catering · 🎄 posadas ·
+  ⭐ reseñas · 🇲🇽🇮🇹 the two kitchens. Anything else only if it names something real in
+  the sentence.
+- **Avoid:** 🤤 😋 💯 🔝 🙌 and chains of 👉👉 — they are the generic food-account register
+  the voice exists to avoid, the same way *delicioso* is on the banned-words list.
+
+The traffic lights 🟢🟡🔴 in the business plan remain an internal status convention, not
+part of the voice.
 
 **Words the brand uses:** taller, oficio, barrio, hecho a mano, masa, horno, tatemado, fermento, la casa, de la casa, rotativa.
 **Words to avoid:** gourmet, premium, experiencia culinaria, delicioso, exquisito, auténtico (overused), "the best".
@@ -258,7 +283,7 @@ There is **no separate UI icon set** in the sources: no icon font, no sprite she
 
 > ⚠️ **Substitution flagged:** Lucide is *my* choice, not the founders'. If Mextizza has or wants a different icon language, replace it. Use Lucide at `stroke-width: 2`, `currentColor`, 20px or 24px, and never fill it.
 
-**Unicode as icons:** the brand does use bare typographic characters where they read as printed marks — `·` as a separator in taglines and addresses ("Técnica italiana · Alma mexicana"), `→` in flow copy, `≤`/`≥` in operational specs. That is on-brand. Emoji is not (see Content Fundamentals).
+**Unicode as icons:** the brand does use bare typographic characters where they read as printed marks — `·` as a separator in taglines and addresses ("Técnica italiana · Alma mexicana"), `→` in flow copy, `≤`/`≥` in operational specs. That is on-brand. Emoji are allowed in copy (see Content Fundamentals), but they are not icons: interface icons stay the icon set above, and an emoji never stands in for one.
 
 ---
 
