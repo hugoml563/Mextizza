@@ -140,8 +140,9 @@ copyFile('ui_kits/app/bundle.build.js');
 fs.mkdirSync(path.join(outDir, 'vendor'), { recursive: true });
 copyDir(path.join(root, 'vendor', 'fonts'), path.join(outDir, 'vendor', 'fonts'));
 /* Firebase viaja dentro del APK igual que React: la cuenta tiene que poder
-   abrir aunque no haya red para bajar el SDK en ese momento. */
-for (const f of fs.readdirSync(path.join(root, 'vendor')).filter((n) => /^firebase-.*\.js$/.test(n))) {
+   abrir aunque no haya red para bajar el SDK en ese momento. Solo app y auth:
+   messaging es de los avisos del Centro de Ventas, no de la app de clientes. */
+for (const f of fs.readdirSync(path.join(root, 'vendor')).filter((n) => /^firebase-(app|auth)-.*\.js$/.test(n))) {
   fs.copyFileSync(path.join(root, 'vendor', f), path.join(outDir, 'vendor', f));
 }
 for (const [origen, nombre] of [

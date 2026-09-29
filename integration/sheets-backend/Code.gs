@@ -29,6 +29,11 @@
  *    `probarCalendarioCatering` para aceptar el permiso de Google Calendar.
  *    Si el script no es de mextizza@gmail.com, comparte ese calendario con la
  *    cuenta del script con permiso de "Hacer cambios en eventos".
+ * 8. Avisos push (opcional): en la consola de Firebase, Configuración del
+ *    proyecto → Cuentas de servicio → Generar nueva clave privada. Pega el
+ *    JSON completo en Configuración del proyecto (de Apps Script) →
+ *    Propiedades de la secuencia de comandos, con el nombre
+ *    FCM_CUENTA_SERVICIO, y corre `probarCuentaServicioPush`.
  */
 
 const SHEETS = {
@@ -39,6 +44,8 @@ const SHEETS = {
   complementos: 'complementos',
   clientes: 'clientes',
   catering: 'catering',
+  // Los equipos de la cocina que reciben avisos push. Se crea sola al activar el primero.
+  push: 'push_equipos',
   /* Inventarios. `insumos` guarda el saldo como cache; la verdad es la suma
      de `movimientos`, que solo crece y nunca se edita. */
   insumos: 'insumos',
@@ -985,6 +992,18 @@ function doPost(e) {
         requiereAdmin_(nivel);
         result = actualizarCatering_(body);
         break;
+      case 'push_registrar':
+        requiereAdmin_(nivel);
+        result = registrarPush_(body);
+        break;
+      case 'push_baja':
+        requiereAdmin_(nivel);
+        result = bajaPush_(body);
+        break;
+      case 'push_probar':
+        requiereAdmin_(nivel);
+        result = probarPush_(body);
+        break;
       default:
         throw new Error('Acción desconocida: ' + body.action);
     }
@@ -1574,6 +1593,17 @@ function crearOrden_(body, nivel) {
      hacia que un pedido cancelado contara. */
   const tarjeta = premiosDe_(leerTarjeta_(telefono), premiosReservados_(telefono));
 
+  /* Lo que captura la propia cocina no se avisa: quien lo capturo ya sabe. */
+  if (!capturaCocina) {
+    const piezas = (body.items || []).reduce(function (n, it) { return n + (Math.round(Number(it.cantidad)) || 0); }, 0);
+    avisarEquipos_({
+      titulo: 'Pedido nuevo ' + folio + ' · ' + pesosGs_(total),
+      cuerpo: piezas + (piezas === 1 ? ' producto' : ' productos') + ' · ' +
+        (pickup ? 'pasa a recoger' : 'a domicilio') + ' · ' + row.canal,
+      tag: folio
+    });
+  }
+
   return {
     folio: folio, premio: premio, tarjeta: tarjeta,
     // Se pidio un premio sin la cuenta duena del telefono: se cobro completo.
@@ -1890,6 +1920,13 @@ function crearSolicitudCatering_(body) {
   sh.appendRow([folio, textoSeguro_(body.nombre), textoSeguro_(body.telefono), textoSeguro_(body.personas),
     textoSeguro_(body.fecha_evento), textoSeguro_(body.notas), 'nueva', new Date(),
     textoSeguro_(String(body.direccion || '').slice(0, 300)), '', '', '', '', new Date()]);
+  const fecha = fechaCortaGs_(fechaIsoCatering_(body.fecha_evento));
+  avisarEquipos_({
+    titulo: 'Solicitud de catering ' + folio,
+    cuerpo: String(body.personas || '') + (fecha ? ' · para el ' + fecha : ''),
+    url: PUSH_URL_TABLERO + '?vista=eventos',
+    tag: folio
+  });
   return { folio };
 }
 
@@ -2112,6 +2149,201 @@ function actualizarCatering_(body) {
     throw new Error('Acción de catering desconocida: ' + accion);
   }
   return { evento: eventoCateringPublico_(filaCatering_(body.folio).fila) };
+}
+
+/* ============================================================ AVISOS PUSH ===
+   Notificaciones a los telefonos y tablets de la cocina cuando entra un pedido
+   o una solicitud de catering, aunque el Centro de Ventas este cerrado.
+
+   Van por Firebase Cloud Messaging, que es gratis. Cada equipo que activa los
+   avisos desde el Centro de Ventas deja aqui su token de FCM; al entrar un
+   pedido se le manda a todos.
+
+   Para mandar, Google pide una cuenta de servicio del proyecto de Firebase.
+   Su llave es SECRETA y por eso NO vive en este archivo (el repositorio es
+   publico): va en la propiedad del script FCM_CUENTA_SERVICIO, con el JSON
+   completo que baja la consola de Firebase. Sin esa propiedad los pedidos
+   entran igual, solo que sin aviso. */
+const PUSH_HEADERS = ['token', 'nombre', 'creado_en'];
+const PUSH_URL_TABLERO = '/templates/sales-center/SalesCenter.dc.html';
+
+function hojaPush_() {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  let sh = ss.getSheetByName(SHEETS.push);
+  if (!sh) {
+    sh = ss.insertSheet(SHEETS.push);
+    sh.getRange(1, 1, 1, PUSH_HEADERS.length).setValues([PUSH_HEADERS]);
+    sh.setFrozenRows(1);
+  }
+  return sh;
+}
+
+function tokenPushValido_(t) {
+  t = String(t || '');
+  if (t.length < 20 || t.length > 4096 || /[\s'"<>]/.test(t)) throw new Error('Token de avisos inválido.');
+  return t;
+}
+
+/** body: { token_push, nombre } — el equipo que activa los avisos. */
+function registrarPush_(body) {
+  const token = tokenPushValido_(body.token_push);
+  const nombre = textoSeguro_(String(body.nombre || 'Equipo').slice(0, 60));
+  const sh = hojaPush_();
+  const data = sh.getDataRange().getValues();
+  for (let r = 1; r < data.length; r++) {
+    if (String(data[r][0]) === token) {
+      sh.getRange(r + 1, 2).setValue(nombre);
+      return { equipos: data.length - 1 };
+    }
+  }
+  sh.appendRow([token, nombre, new Date()]);
+  return { equipos: data.length };
+}
+
+function borrarTokensPush_(tokens) {
+  if (!tokens.length) return;
+  const sh = hojaPush_();
+  const data = sh.getDataRange().getValues();
+  // De abajo hacia arriba: borrar una fila mueve las de abajo.
+  for (let r = data.length - 1; r >= 1; r--) {
+    if (tokens.indexOf(String(data[r][0])) !== -1) sh.deleteRow(r + 1);
+  }
+}
+
+function bajaPush_(body) {
+  borrarTokensPush_([tokenPushValido_(body.token_push)]);
+  return {};
+}
+
+function cuentaServicioFcm_() {
+  const raw = PropertiesService.getScriptProperties().getProperty('FCM_CUENTA_SERVICIO');
+  if (!raw) return null;
+  let sa;
+  try { sa = JSON.parse(raw); } catch (e) {
+    throw new Error('FCM_CUENTA_SERVICIO no es un JSON válido. Pega el archivo completo que bajó Firebase.');
+  }
+  if (!sa.client_email || !sa.private_key || !sa.project_id) {
+    throw new Error('FCM_CUENTA_SERVICIO no trae client_email, private_key y project_id.');
+  }
+  return sa;
+}
+
+/* Token de acceso de Google para FCM, firmado con la llave de la cuenta de
+   servicio. Vive una hora; se guarda 50 minutos para no pedirlo en cada pedido. */
+function tokenAccesoFcm_(sa) {
+  const cache = CacheService.getScriptCache();
+  const guardado = cache.get('fcm:acceso');
+  if (guardado) return guardado;
+
+  const b64 = function (bytes) { return Utilities.base64EncodeWebSafe(bytes).replace(/=+$/, ''); };
+  const json = function (o) { return b64(Utilities.newBlob(JSON.stringify(o)).getBytes()); };
+  const ahora = Math.floor(Date.now() / 1000);
+  const entrada = json({ alg: 'RS256', typ: 'JWT' }) + '.' + json({
+    iss: sa.client_email,
+    scope: 'https://www.googleapis.com/auth/firebase.messaging',
+    aud: 'https://oauth2.googleapis.com/token',
+    iat: ahora,
+    exp: ahora + 3600
+  });
+  const firma = b64(Utilities.computeRsaSha256Signature(entrada, sa.private_key));
+  const res = UrlFetchApp.fetch('https://oauth2.googleapis.com/token', {
+    method: 'post',
+    payload: { grant_type: 'urn:ietf:params:oauth:grant-type:jwt-bearer', assertion: entrada + '.' + firma },
+    muteHttpExceptions: true
+  });
+  if (res.getResponseCode() !== 200) {
+    throw new Error('Google no aceptó la cuenta de servicio de FCM: ' + res.getContentText().slice(0, 200));
+  }
+  const acceso = JSON.parse(res.getContentText()).access_token;
+  cache.put('fcm:acceso', acceso, 3000);
+  return acceso;
+}
+
+/* Manda un aviso a varios equipos en paralelo. Los tokens que Google ya no
+   reconoce (se desinstalo la app, se borraron los datos del navegador) se
+   borran de la hoja para no seguir intentando. */
+function enviarPush_(tokens, msg) {
+  const sa = cuentaServicioFcm_();
+  if (!sa) throw new Error('Falta la propiedad del script FCM_CUENTA_SERVICIO.');
+  const acceso = tokenAccesoFcm_(sa);
+  const url = 'https://fcm.googleapis.com/v1/projects/' + sa.project_id + '/messages:send';
+  const datos = {
+    titulo: String(msg.titulo || ''),
+    cuerpo: String(msg.cuerpo || ''),
+    url: String(msg.url || PUSH_URL_TABLERO),
+    tag: String(msg.tag || '')
+  };
+  const pedidos = tokens.map(function (t) {
+    return {
+      url: url, method: 'post', contentType: 'application/json', muteHttpExceptions: true,
+      headers: { Authorization: 'Bearer ' + acceso },
+      payload: JSON.stringify({ message: { token: t, data: datos,
+        webpush: { headers: { Urgency: 'high', TTL: '1800' } } } })
+    };
+  });
+  const respuestas = UrlFetchApp.fetchAll(pedidos);
+  const muertos = [];
+  const errores = [];
+  respuestas.forEach(function (r, i) {
+    const code = r.getResponseCode();
+    if (code === 200) return;
+    const texto = r.getContentText();
+    if (code === 404 || /UNREGISTERED|registration-token-not-registered/.test(texto) ||
+        (code === 400 && /token/i.test(texto))) {
+      muertos.push(tokens[i]);
+    } else {
+      errores.push(code + ' ' + texto.slice(0, 200));
+    }
+  });
+  borrarTokensPush_(muertos);
+  return { enviados: tokens.length - muertos.length - errores.length, muertos: muertos.length, errores: errores };
+}
+
+/* Aviso a todos los equipos. NUNCA debe tumbar un pedido: si FCM falla, el
+   pedido ya quedo guardado y el error solo se registra en Ejecuciones. */
+function avisarEquipos_(msg) {
+  try {
+    if (!PropertiesService.getScriptProperties().getProperty('FCM_CUENTA_SERVICIO')) return;
+    const sh = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SHEETS.push);
+    if (!sh || sh.getLastRow() < 2) return;
+    const tokens = sh.getRange(2, 1, sh.getLastRow() - 1, 1).getValues()
+      .map(function (r) { return String(r[0]); }).filter(Boolean);
+    if (!tokens.length) return;
+    const r = enviarPush_(tokens, msg);
+    if (r.errores.length) console.error('Avisos push con error: ' + r.errores.join(' | '));
+  } catch (err) {
+    console.error('No se pudo mandar el aviso push: ' + err);
+  }
+}
+
+/** body: { token_push } — manda un aviso de prueba solo a ese equipo. */
+function probarPush_(body) {
+  const token = tokenPushValido_(body.token_push);
+  const r = enviarPush_([token], {
+    titulo: 'Avisos de Mextizza activos',
+    cuerpo: 'Así te va a llegar cada pedido nuevo, aunque el tablero esté cerrado.',
+    tag: 'prueba'
+  });
+  if (r.muertos) throw new Error('Google ya no reconoce este equipo. Vuelve a activar los avisos.');
+  if (r.errores.length) throw new Error('FCM respondió: ' + r.errores[0]);
+  return { enviado: true };
+}
+
+/** Corre esto a mano despues de pegar FCM_CUENTA_SERVICIO: confirma que Google
+ *  acepta la llave. No manda ningun aviso. */
+function probarCuentaServicioPush() {
+  const sa = cuentaServicioFcm_();
+  if (!sa) throw new Error('Falta la propiedad del script FCM_CUENTA_SERVICIO.');
+  CacheService.getScriptCache().remove('fcm:acceso');
+  tokenAccesoFcm_(sa);
+  Logger.log('Listo: la cuenta ' + sa.client_email + ' puede mandar avisos del proyecto ' + sa.project_id + '.');
+}
+
+function fechaCortaGs_(iso) {
+  const m = String(iso || '').match(/(\d{4})-(\d{2})-(\d{2})/);
+  if (!m) return '';
+  const d = new Date(Date.UTC(Number(m[1]), Number(m[2]) - 1, Number(m[3]), 12));
+  return Utilities.formatDate(d, 'UTC', 'dd/MM');
 }
 
 function findOrdenRow_(sh, folio) {

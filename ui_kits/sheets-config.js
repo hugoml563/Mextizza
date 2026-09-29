@@ -184,6 +184,12 @@ if (!window.__mextizzaSheetsConfigLoaded) {
   const mextizzaActualizarCatering = (folio, accion, datos = {}) =>
     mextizzaApiPost('catering_actualizar', { folio, accion, ...datos }, true);
 
+  /* Avisos push de la cocina (templates/sales-center/avisos-push.js). Admin:
+     registrar un equipo es decidir quien se entera de cada pedido. */
+  const mextizzaPushRegistrar = (token_push, nombre) => mextizzaApiPost('push_registrar', { token_push, nombre }, true);
+  const mextizzaPushBaja = token_push => mextizzaApiPost('push_baja', { token_push }, true);
+  const mextizzaPushProbar = token_push => mextizzaApiPost('push_probar', { token_push }, true);
+
   /* Estado de la tarjeta de un telefono, mas si en este momento corre el 2x1.
      El horario del 2x1 lo decide el servidor y no el reloj del telefono: si el
      cliente tiene mal la hora, la promesa y el cobro discreparian. */
@@ -194,5 +200,5 @@ if (!window.__mextizzaSheetsConfigLoaded) {
 
   const mextizzaTarjeta = (telefono) => mextizzaApiGet('tarjeta', { telefono: telefono || '' });
 
-  Object.assign(window, { mextizzaPickup, mextizzaTarjeta, mextizzaCrearOrden, mextizzaAvanzarEstado, mextizzaCancelarOrden, mextizzaEstadoOrden, mextizzaEstadoPorTelefono, mextizzaCancelarPorCliente, mextizzaListarAbiertas, mextizzaListarHoy, mextizzaSolicitarCatering, mextizzaListarCatering, mextizzaActualizarCatering, mextizzaTokenAdmin, mextizzaGuardarTokenAdmin, mextizzaOlvidarTokenAdmin, mextizzaCapturaCocina, mextizzaInvEstado, mextizzaInvCompra, mextizzaInvLote, mextizzaInvMerma, mextizzaInvConteo, mextizzaLigarTelefono, mextizzaMiCuenta });
+  Object.assign(window, { mextizzaPickup, mextizzaTarjeta, mextizzaCrearOrden, mextizzaAvanzarEstado, mextizzaCancelarOrden, mextizzaEstadoOrden, mextizzaEstadoPorTelefono, mextizzaCancelarPorCliente, mextizzaListarAbiertas, mextizzaListarHoy, mextizzaSolicitarCatering, mextizzaListarCatering, mextizzaActualizarCatering, mextizzaPushRegistrar, mextizzaPushBaja, mextizzaPushProbar, mextizzaTokenAdmin, mextizzaGuardarTokenAdmin, mextizzaOlvidarTokenAdmin, mextizzaCapturaCocina, mextizzaInvEstado, mextizzaInvCompra, mextizzaInvLote, mextizzaInvMerma, mextizzaInvConteo, mextizzaLigarTelefono, mextizzaMiCuenta });
 }

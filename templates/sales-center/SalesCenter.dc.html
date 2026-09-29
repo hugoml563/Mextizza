@@ -16,6 +16,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="theme-color" content="#1A1A1A">
 <script src="../../ui_kits/sheets-config.js"></script>
+<script src="./avisos-push.js"></script>
 <!-- vendor:local -->
 <script>
 /* Generado por scripts/build-sales-center.js. React se sirve desde este
@@ -45,6 +46,7 @@ window.__resources = Object.assign(window.__resources || {}, {
    propio renglon a todo el ancho en vez de salirse de la pantalla. */
 .mx-vistas{order:3;width:100%;margin-left:0!important;flex-wrap:wrap}
 .mx-vistas>*{flex:1 1 40%}
+.mx-avisos-panel{left:auto!important;right:0!important;width:min(310px,calc(100vw - 24px))!important}
 /* En el telefono todo se apila y quien hace scroll es la pagina, no cada
    panel: paneles con scroll propio dentro de un telefono son trampas de dedo. */
 .mx-fila{flex-direction:column!important;min-height:0!important}
@@ -88,15 +90,41 @@ window.__resources = Object.assign(window.__resources || {}, {
 <!-- El sonido de pedido nuevo. Solo la campana: el encabezado de la tablet
      ya no tiene espacio para un boton con texto. Lo que la campana no alcanza
      a decir lo dice la barra de abajo. -->
+<div class="mx-avisos" style="position:relative;flex:none">
 <sc-if value="{{ sonido.activo }}" hint-placeholder-val="{{ false }}">
-<button onClick="{{ sonido.alternar }}" aria-label="Sonido activo. Tocar para apagarlo." title="Sonido activo" style="flex:none;width:44px;height:44px;border:2px solid #2E7D5B;border-radius:6px;background:#2E7D5B;color:#FFFFFF;font-family:'Segoe UI Emoji','Apple Color Emoji','Noto Color Emoji',sans-serif;font-size:19px;line-height:1;cursor:pointer;padding:0">🔔</button>
+<button onClick="{{ avisos.alternar }}" aria-label="Avisos: sonido activo" title="Sonido activo" style="flex:none;width:44px;height:44px;border:2px solid #2E7D5B;border-radius:6px;background:#2E7D5B;color:#FFFFFF;font-family:'Segoe UI Emoji','Apple Color Emoji','Noto Color Emoji',sans-serif;font-size:19px;line-height:1;cursor:pointer;padding:0">🔔</button>
 </sc-if>
 <sc-if value="{{ sonido.bloqueado }}" hint-placeholder-val="{{ false }}">
-<button onClick="{{ sonido.alternar }}" aria-label="Tocar para activar el sonido" title="Toca para activar el sonido" style="flex:none;width:44px;height:44px;border:2px solid #E4007C;border-radius:6px;background:#E4007C;color:#FFFFFF;font-family:'Segoe UI Emoji','Apple Color Emoji','Noto Color Emoji',sans-serif;font-size:19px;line-height:1;cursor:pointer;padding:0;animation:mxpulse 1.4s ease-in-out infinite">🔔</button>
+<button onClick="{{ avisos.alternar }}" aria-label="Avisos: toca para activar el sonido" title="Toca para activar el sonido" style="flex:none;width:44px;height:44px;border:2px solid #E4007C;border-radius:6px;background:#E4007C;color:#FFFFFF;font-family:'Segoe UI Emoji','Apple Color Emoji','Noto Color Emoji',sans-serif;font-size:19px;line-height:1;cursor:pointer;padding:0;animation:mxpulse 1.4s ease-in-out infinite">🔔</button>
 </sc-if>
 <sc-if value="{{ sonido.apagado }}" hint-placeholder-val="{{ true }}">
-<button onClick="{{ sonido.alternar }}" aria-label="Sonido apagado. Tocar para activarlo." title="Sonido apagado" style="flex:none;width:44px;height:44px;border:2px solid #1A1A1A;border-radius:6px;background:transparent;color:#1A1A1A;font-family:'Segoe UI Emoji','Apple Color Emoji','Noto Color Emoji',sans-serif;font-size:19px;line-height:1;cursor:pointer;padding:0" style-hover="background:rgba(0,0,0,.06)">🔕</button>
+<button onClick="{{ avisos.alternar }}" aria-label="Avisos: sonido apagado" title="Sonido apagado" style="flex:none;width:44px;height:44px;border:2px solid #1A1A1A;border-radius:6px;background:transparent;color:#1A1A1A;font-family:'Segoe UI Emoji','Apple Color Emoji','Noto Color Emoji',sans-serif;font-size:19px;line-height:1;cursor:pointer;padding:0" style-hover="background:rgba(0,0,0,.06)">🔕</button>
 </sc-if>
+<sc-if value="{{ avisos.abierto }}" hint-placeholder-val="{{ false }}">
+<div class="mx-avisos-panel" style="position:absolute;top:52px;left:-120px;width:310px;z-index:50;background:#FFFFFF;border:3px solid #1A1A1A;border-radius:8px;padding:14px 16px;box-shadow:0 12px 30px rgba(0,0,0,.25);font-family:'Oswald',sans-serif;color:#1A1A1A">
+<div style="display:flex;align-items:center;gap:10px;font-family:'Bungee',cursive;font-size:12px;letter-spacing:1px;text-transform:uppercase">Avisos de este equipo<span style="flex:1;height:2px;background:#1A1A1A;opacity:.15"></span><button onClick="{{ avisos.cerrar }}" aria-label="Cerrar" style="border:none;background:transparent;font-size:18px;font-weight:700;cursor:pointer;padding:0 4px;min-height:32px;color:#1A1A1A">×</button></div>
+
+<div style="margin-top:10px;font-size:11px;font-weight:700;letter-spacing:1.2px;text-transform:uppercase;color:#C1502E">Sonido</div>
+<div style="font-size:12.5px;font-weight:700;line-height:1.4;margin-top:3px;color:#4A4A4A">{{ avisos.sonidoTexto }}</div>
+<button onClick="{{ avisos.sonidoAccion }}" style="width:100%;margin-top:7px;padding:10px;border:2px solid #1A1A1A;border-radius:6px;background:transparent;color:#1A1A1A;font-family:'Bungee',cursive;font-size:11px;letter-spacing:1px;text-transform:uppercase;cursor:pointer;min-height:42px" style-hover="background:#1A1A1A;color:#F5F0E8">{{ avisos.sonidoBoton }}</button>
+
+<div style="margin-top:14px;padding-top:12px;border-top:2px dashed rgba(0,0,0,.14);font-size:11px;font-weight:700;letter-spacing:1.2px;text-transform:uppercase;color:#C1502E">Notificaciones</div>
+<div style="font-size:12.5px;font-weight:700;line-height:1.4;margin-top:3px;color:#4A4A4A">{{ avisos.pushTexto }}</div>
+<sc-if value="{{ avisos.pushActivable }}" hint-placeholder-val="{{ true }}">
+<button onClick="{{ avisos.pushActivar }}" style="width:100%;margin-top:7px;padding:11px;border:none;border-radius:6px;background:#2E7D5B;color:#FFFFFF;font-family:'Bungee',cursive;font-size:11px;letter-spacing:1px;text-transform:uppercase;cursor:pointer;min-height:44px" style-hover="background:#1A1A1A"><sc-if value="{{ avisos.quieto }}" hint-placeholder-val="{{ true }}">Activar notificaciones</sc-if><sc-if value="{{ avisos.ocupado }}" hint-placeholder-val="{{ false }}"><span class="mx-puntos" aria-label="Activando"><i></i><i></i><i></i></span></sc-if></button>
+</sc-if>
+<sc-if value="{{ avisos.pushActivo }}" hint-placeholder-val="{{ false }}">
+<div style="display:flex;gap:8px;margin-top:7px">
+<button onClick="{{ avisos.pushProbar }}" style="flex:1;padding:10px 6px;border:none;border-radius:6px;background:#1A1A1A;color:#FFFFFF;font-family:'Bungee',cursive;font-size:10.5px;letter-spacing:1px;text-transform:uppercase;cursor:pointer;min-height:42px" style-hover="background:#C1502E"><sc-if value="{{ avisos.quieto }}" hint-placeholder-val="{{ true }}">Mandar prueba</sc-if><sc-if value="{{ avisos.ocupado }}" hint-placeholder-val="{{ false }}"><span class="mx-puntos" aria-label="Mandando"><i></i><i></i><i></i></span></sc-if></button>
+<button onClick="{{ avisos.pushDesactivar }}" style="flex:1;padding:10px 6px;border:2px solid #1A1A1A;border-radius:6px;background:transparent;color:#1A1A1A;font-family:'Bungee',cursive;font-size:10.5px;letter-spacing:1px;text-transform:uppercase;cursor:pointer;min-height:42px" style-hover="background:#E4007C;color:#FFFFFF;border-color:#E4007C">Desactivar</button>
+</div>
+</sc-if>
+<sc-if value="{{ avisos.hayMsg }}" hint-placeholder-val="{{ false }}">
+<div style="margin-top:10px;padding:8px 10px;background:#F7EBD8;border-left:3px solid #C1502E;font-size:12px;font-weight:700;line-height:1.45">{{ avisos.msg }}</div>
+</sc-if>
+</div>
+</sc-if>
+</div>
 <div style="flex:1"></div>
 <div style="display:flex;gap:10px">
 <div style="min-width:104px;padding:8px 14px;background:#FFFFFF;border:2px solid #1A1A1A;border-radius:6px">
@@ -645,7 +673,8 @@ class Component extends DCLogic {
     vista: 'pedidos', inv: null, captura: null, invError: null, aviso: '', guardando: false,
     cat: null, catError: null, catAviso: '', catFiltro: 'atender', catSel: null, catForm: {},
     catGuardando: false, catConfirmar: null,
-    sonidoPref: leerPref(), audioListo: false };
+    sonidoPref: leerPref(), audioListo: false,
+    avisosAbierto: false, pushOcupado: false, pushMsg: '', pushVer: 0 };
 
   total(o) { return o.lineas.reduce((s,l) => s + l.importe, 0); }
 
@@ -698,8 +727,11 @@ class Component extends DCLogic {
     /* El navegador solo deja sonar despues de que alguien toca la pagina. Si
        el sonido ya estaba activado en este equipo, el primer toque en
        cualquier parte lo despierta, sin tener que buscar la campana. */
-    this._alTocar = () => {
+    this._alTocar = (ev) => {
       if (this.state.sonidoPref === '1') this.despertarAudio();
+      if (this.state.avisosAbierto && ev && ev.target && ev.target.closest && !ev.target.closest('.mx-avisos')) {
+        this.setState({ avisosAbierto: false });
+      }
       if (document.title !== TITULO) document.title = TITULO;
     };
     document.addEventListener('pointerdown', this._alTocar, true);
@@ -716,6 +748,16 @@ class Component extends DCLogic {
     if (this.state.sonidoPref === '1') this.despertarAudio();
 
     if (!mextizzaTokenAdmin()) this.pedirTokenAdmin('El Centro de Ventas necesita autorizarse.');
+    /* El aviso de una solicitud de catering abre directo en Eventos. */
+    try {
+      const v = new URLSearchParams(location.search).get('vista');
+      if (['eventos', 'inventario', 'compras'].indexOf(v) !== -1) setTimeout(() => this.cambiarVista(v), 0);
+    } catch (e) {}
+    /* Si este equipo ya recibia avisos, se revisa que su token siga vigente.
+       Despues de la primera carga: el tablero va primero. */
+    this._renovar = setTimeout(() => {
+      if (window.mextizzaAvisosPush) window.mextizzaAvisosPush.renovar();
+    }, 5000);
     this.cargar();
     this.cargarCatering();
     this._tick = 0;
@@ -740,6 +782,8 @@ class Component extends DCLogic {
     clearTimeout(this._catAvisoTmr);
     document.removeEventListener('pointerdown', this._alTocar, true);
     document.removeEventListener('visibilitychange', this._alVolver);
+    clearTimeout(this._renovar);
+    clearTimeout(this._pushMsgTmr);
     if (this._wake) this._wake.release().catch(() => {});
   }
 
@@ -775,6 +819,60 @@ class Component extends DCLogic {
     guardarPref('0');
     this.setState({ sonidoPref: '0' });
     if (this._wake) { this._wake.release().catch(() => {}); this._wake = null; }
+  }
+
+  /* Notificaciones push de este equipo. El trabajo lo hace avisos-push.js;
+     aqui solo se muestra el resultado. activar() se llama sin await previo
+     porque Safari solo pide el permiso si viene directo del toque. */
+  accionPush(fn, exito) {
+    if (this.state.pushOcupado || !window.mextizzaAvisosPush) return;
+    let p;
+    try { p = fn(); } catch (e) { p = Promise.reject(e); }
+    this.setState({ pushOcupado: true, pushMsg: '' });
+    p.then(() => this.avisoPush(exito), err => this.avisoPush(err.message || String(err)));
+  }
+
+  avisoPush(msg) {
+    this.setState({ pushOcupado: false, pushMsg: msg, pushVer: this.state.pushVer + 1 });
+    clearTimeout(this._pushMsgTmr);
+    this._pushMsgTmr = setTimeout(() => this.setState({ pushMsg: '' }), 9000);
+  }
+
+  vistaAvisos() {
+    const ap = window.mextizzaAvisosPush;
+    const st = ap ? ap.estado() : 'no-soportado';
+    const pref = this.state.sonidoPref;
+    const TEXTO = {
+      activo: 'Activas. Te llegan aunque el tablero esté cerrado o el teléfono bloqueado.',
+      inactivo: 'Apagadas en este equipo. Actívalas para enterarte con el tablero cerrado.',
+      bloqueado: 'El navegador las bloqueó para este sitio. Permítelas en los ajustes del navegador (el candado junto a la dirección) y vuelve aquí.',
+      instalar: 'En iPhone solo llegan con Cocina en la pantalla de inicio: en Safari toca Compartir → Agregar a inicio, y ábrela desde ese ícono.',
+      'no-soportado': 'Este navegador no recibe notificaciones.'
+    };
+    return {
+      abierto: this.state.avisosAbierto,
+      alternar: () => {
+        // Tocar la campana con el audio bloqueado ya es el toque que lo despierta.
+        if (this.state.sonidoPref === '1' && !this.state.audioListo) this.despertarAudio();
+        this.setState({ avisosAbierto: !this.state.avisosAbierto, pushMsg: '' });
+      },
+      cerrar: () => this.setState({ avisosAbierto: false }),
+      sonidoTexto: pref !== '1' ? 'Apagado. Solo suena con el tablero abierto.'
+        : (this.state.audioListo ? 'Activo. Suena con el tablero abierto y la pantalla no se apaga.'
+          : 'Activado, pero el navegador lo pausó. Toca la pantalla para despertarlo.'),
+      sonidoBoton: pref === '1' ? 'Apagar el sonido' : 'Activar el sonido',
+      sonidoAccion: () => (pref === '1' ? this.apagarSonido() : this.activarSonido()),
+      pushTexto: TEXTO[st],
+      pushActivable: st === 'inactivo',
+      pushActivo: st === 'activo',
+      ocupado: !!this.state.pushOcupado,
+      quieto: !this.state.pushOcupado,
+      hayMsg: !!this.state.pushMsg,
+      msg: this.state.pushMsg,
+      pushActivar: () => this.accionPush(() => ap.activar(), 'Listo: este equipo va a recibir los pedidos nuevos. Toca "Mandar prueba" para verlo.'),
+      pushProbar: () => this.accionPush(() => ap.probar(), 'Prueba enviada. Debe llegar en unos segundos.'),
+      pushDesactivar: () => this.accionPush(() => ap.desactivar(), 'Este equipo ya no recibe notificaciones.')
+    };
   }
 
   /* Suena por folios que no se habian visto. La primera lectura solo aprende
@@ -1318,6 +1416,7 @@ class Component extends DCLogic {
       verInventario: this.state.vista === 'inventario',
       verCompras: this.state.vista === 'compras',
       verEventos: this.state.vista === 'eventos',
+      avisos: this.vistaAvisos(),
       sonido: {
         activo: this.state.sonidoPref === '1' && this.state.audioListo,
         bloqueado: this.state.sonidoPref === '1' && !this.state.audioListo,
