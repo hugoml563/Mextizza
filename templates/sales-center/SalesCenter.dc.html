@@ -69,7 +69,7 @@ window.__resources = Object.assign(window.__resources || {}, {
 
 <div style="height:8px;background:repeating-linear-gradient(45deg,#E4007C 0 10px,#4A4A4A 10px 20px,#C1502E 20px 30px,#D9A65C 30px 40px);flex:none"></div>
 
-<div class="mx-top" style="flex:none;display:flex;align-items:center;gap:24px;padding:14px 22px;border-bottom:3px solid #1A1A1A;background:#F5F0E8">
+<div class="mx-top" style="flex:none;display:flex;align-items:center;gap:16px;padding:14px 22px;border-bottom:3px solid #1A1A1A;background:#F5F0E8">
 <img src="../../assets/lockup-pala.png" alt="Mextizza" style="height:52px;display:block">
 <div style="flex:none;padding-left:20px;border-left:2px solid rgba(0,0,0,.12)">
 <div style="font-family:'Bungee',cursive;font-size:11px;letter-spacing:2px;text-transform:uppercase;color:#C1502E">Centro de ventas</div>
@@ -85,6 +85,18 @@ window.__resources = Object.assign(window.__resources || {}, {
 </sc-if>
 </sc-for>
 </div>
+<!-- El sonido de pedido nuevo. Solo la campana: el encabezado de la tablet
+     ya no tiene espacio para un boton con texto. Lo que la campana no alcanza
+     a decir lo dice la barra de abajo. -->
+<sc-if value="{{ sonido.activo }}" hint-placeholder-val="{{ false }}">
+<button onClick="{{ sonido.alternar }}" aria-label="Sonido activo. Tocar para apagarlo." title="Sonido activo" style="flex:none;width:44px;height:44px;border:2px solid #2E7D5B;border-radius:6px;background:#2E7D5B;color:#FFFFFF;font-family:'Segoe UI Emoji','Apple Color Emoji','Noto Color Emoji',sans-serif;font-size:19px;line-height:1;cursor:pointer;padding:0">🔔</button>
+</sc-if>
+<sc-if value="{{ sonido.bloqueado }}" hint-placeholder-val="{{ false }}">
+<button onClick="{{ sonido.alternar }}" aria-label="Tocar para activar el sonido" title="Toca para activar el sonido" style="flex:none;width:44px;height:44px;border:2px solid #E4007C;border-radius:6px;background:#E4007C;color:#FFFFFF;font-family:'Segoe UI Emoji','Apple Color Emoji','Noto Color Emoji',sans-serif;font-size:19px;line-height:1;cursor:pointer;padding:0;animation:mxpulse 1.4s ease-in-out infinite">🔔</button>
+</sc-if>
+<sc-if value="{{ sonido.apagado }}" hint-placeholder-val="{{ true }}">
+<button onClick="{{ sonido.alternar }}" aria-label="Sonido apagado. Tocar para activarlo." title="Sonido apagado" style="flex:none;width:44px;height:44px;border:2px solid #1A1A1A;border-radius:6px;background:transparent;color:#1A1A1A;font-family:'Segoe UI Emoji','Apple Color Emoji','Noto Color Emoji',sans-serif;font-size:19px;line-height:1;cursor:pointer;padding:0" style-hover="background:rgba(0,0,0,.06)">🔕</button>
+</sc-if>
 <div style="flex:1"></div>
 <div style="display:flex;gap:10px">
 <div style="min-width:104px;padding:8px 14px;background:#FFFFFF;border:2px solid #1A1A1A;border-radius:6px">
@@ -101,6 +113,13 @@ window.__resources = Object.assign(window.__resources || {}, {
 </div>
 </div>
 </div>
+
+<sc-if value="{{ sonido.preguntar }}" hint-placeholder-val="{{ false }}">
+<div style="flex:none;padding:10px 22px;background:#1A1A1A;color:#F5F0E8;font-size:12.5px;font-weight:700;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap"><span>¿Que suene cuando entre un pedido o una solicitud de catering? Solo suena con el tablero abierto.</span><span style="display:flex;gap:8px"><button onclick="{{ sonido.activar }}" style="flex:none;background:#2E7D5B;color:#FFFFFF;border:none;border-radius:6px;padding:8px 14px;font-family:inherit;font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;cursor:pointer;min-height:40px">Activar sonido</button><button onclick="{{ sonido.noPreguntar }}" style="flex:none;background:transparent;color:#F5F0E8;border:2px solid #F5F0E8;border-radius:6px;padding:6px 12px;font-family:inherit;font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;cursor:pointer;min-height:40px">Ahora no</button></span></div>
+</sc-if>
+<sc-if value="{{ sonido.bloqueado }}" hint-placeholder-val="{{ false }}">
+<div onclick="{{ sonido.alternar }}" style="flex:none;padding:10px 22px;background:#E4007C;color:#FFFFFF;font-size:12.5px;font-weight:700;cursor:pointer">🔔 Toca aquí para activar el sonido. El navegador no deja sonar nada hasta que alguien toca la pantalla.</div>
+</sc-if>
 
 <sc-if value="{{ hayError }}" hint-placeholder-val="{{ false }}">
 <div style="flex:none;padding:10px 22px;background:#E4007C;color:#FFFFFF;font-size:12.5px;font-weight:700;display:flex;align-items:center;justify-content:space-between;gap:12px"><span>{{ error }}</span><button onclick="{{ onConectar }}" style="flex:none;background:#FFFFFF;color:#E4007C;border:none;border-radius:6px;padding:6px 14px;font-family:inherit;font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;cursor:pointer">Conectar</button></div>
@@ -592,11 +611,41 @@ const fechaLarga = d => {
   return s.charAt(0).toUpperCase() + s.slice(1);
 };
 
+/* Sonido de pedido nuevo. Se sintetiza con Web Audio en vez de cargar un mp3:
+   no hay archivo que se pueda quedar sin descargar en plena hora pico. */
+const SONIDO_LS = 'mextizza.cocina.sonido'; // '1' activo, '0' apagado, sin valor: no se ha preguntado
+const leerPref = () => { try { return localStorage.getItem(SONIDO_LS); } catch (e) { return null; } };
+const guardarPref = v => { try { localStorage.setItem(SONIDO_LS, v); } catch (e) {} };
+/* Pedido: dos tonos, dos veces, para que se oiga sobre el ruido de la cocina.
+   Catering: tres notas subiendo, para distinguirlo sin mirar la pantalla. */
+const TONOS = {
+  pedido: [[988, 0], [1319, .16], [988, .5], [1319, .66]],
+  catering: [[784, 0], [988, .18], [1319, .36]]
+};
+function tocar(ctx, tipo) {
+  if (!ctx || ctx.state !== 'running') return false;
+  const t0 = ctx.currentTime + .02;
+  for (const [f, dt] of TONOS[tipo] || TONOS.pedido) {
+    const o = ctx.createOscillator(), g = ctx.createGain();
+    o.type = 'triangle';
+    o.frequency.value = f;
+    g.gain.setValueAtTime(.0001, t0 + dt);
+    g.gain.exponentialRampToValueAtTime(.7, t0 + dt + .015);
+    g.gain.exponentialRampToValueAtTime(.0001, t0 + dt + .3);
+    o.connect(g).connect(ctx.destination);
+    o.start(t0 + dt);
+    o.stop(t0 + dt + .32);
+  }
+  return true;
+}
+const TITULO = 'Mextizza — Cocina';
+
 class Component extends DCLogic {
   state = { ordenes: [], filtro: 'activas', reloj: '20:34', fechaViva: fechaLarga(new Date()), error: null,
     vista: 'pedidos', inv: null, captura: null, invError: null, aviso: '', guardando: false,
     cat: null, catError: null, catAviso: '', catFiltro: 'atender', catSel: null, catForm: {},
-    catGuardando: false, catConfirmar: null };
+    catGuardando: false, catConfirmar: null,
+    sonidoPref: leerPref(), audioListo: false };
 
   total(o) { return o.lineas.reduce((s,l) => s + l.importe, 0); }
 
@@ -633,6 +682,7 @@ class Component extends DCLogic {
         ordenes: ordenes.map(o => ({ ...o, tipo: o.pickup ? 'Recoge' : 'Reparto' })),
         error: null,
       });
+      this.detectarNuevos('pedido', ordenes.filter(o => o.estado === 'recibida').map(o => o.folio));
     } catch (err) {
       const noAutorizado = /No autorizado|Token inválido/i.test(err.message);
       this.setState({
@@ -645,6 +695,26 @@ class Component extends DCLogic {
   }
 
   componentDidMount() {
+    /* El navegador solo deja sonar despues de que alguien toca la pagina. Si
+       el sonido ya estaba activado en este equipo, el primer toque en
+       cualquier parte lo despierta, sin tener que buscar la campana. */
+    this._alTocar = () => {
+      if (this.state.sonidoPref === '1') this.despertarAudio();
+      if (document.title !== TITULO) document.title = TITULO;
+    };
+    document.addEventListener('pointerdown', this._alTocar, true);
+    /* La pantalla se apaga sola y con ella se pausa el tablero. Mientras el
+       sonido este activo se le pide al telefono que no se duerma; al volver
+       a la pestana hay que pedirlo otra vez, porque el sistema lo suelta. */
+    this._alVolver = () => {
+      if (document.visibilityState === 'visible') {
+        this.mantenerDespierta();
+        if (document.title !== TITULO) document.title = TITULO;
+      }
+    };
+    document.addEventListener('visibilitychange', this._alVolver);
+    if (this.state.sonidoPref === '1') this.despertarAudio();
+
     if (!mextizzaTokenAdmin()) this.pedirTokenAdmin('El Centro de Ventas necesita autorizarse.');
     this.cargar();
     this.cargarCatering();
@@ -668,6 +738,63 @@ class Component extends DCLogic {
     clearInterval(this._reloj);
     clearTimeout(this._avisoTmr);
     clearTimeout(this._catAvisoTmr);
+    document.removeEventListener('pointerdown', this._alTocar, true);
+    document.removeEventListener('visibilitychange', this._alVolver);
+    if (this._wake) this._wake.release().catch(() => {});
+  }
+
+  /* Crea o reanuda el audio. Solo funciona dentro de un toque: fuera de uno,
+     el navegador lo deja suspendido y la campana se queda en rosa. */
+  despertarAudio() {
+    try {
+      const AC = window.AudioContext || window.webkitAudioContext;
+      if (!AC) return;
+      if (!this._audio) this._audio = new AC();
+      const listo = () => this.setState({ audioListo: this._audio.state === 'running' });
+      if (this._audio.state === 'running') listo();
+      else this._audio.resume().then(listo).catch(listo);
+      this.mantenerDespierta();
+    } catch (e) { /* sin Web Audio no hay sonido; el tablero sigue igual */ }
+  }
+
+  async mantenerDespierta() {
+    if (this.state.sonidoPref !== '1' || !navigator.wakeLock || document.visibilityState !== 'visible') return;
+    if (this._wake && !this._wake.released) return;
+    try { this._wake = await navigator.wakeLock.request('screen'); } catch (e) { this._wake = null; }
+  }
+
+  activarSonido() {
+    guardarPref('1');
+    this.setState({ sonidoPref: '1' });
+    this.despertarAudio();
+    // Una muestra al activarlo: asi se sabe de una vez si el volumen alcanza.
+    setTimeout(() => tocar(this._audio, 'pedido'), 150);
+  }
+
+  apagarSonido() {
+    guardarPref('0');
+    this.setState({ sonidoPref: '0' });
+    if (this._wake) { this._wake.release().catch(() => {}); this._wake = null; }
+  }
+
+  /* Suena por folios que no se habian visto. La primera lectura solo aprende
+     lo que ya estaba: abrir el tablero con tres pedidos esperando no debe
+     sonar como si hubieran llegado en ese instante. */
+  detectarNuevos(tipo, folios) {
+    this._vistos = this._vistos || {};
+    const vistos = this._vistos[tipo];
+    this._vistos[tipo] = new Set([...(vistos || []), ...folios]);
+    if (!vistos) return;
+    const nuevos = folios.filter(f => !vistos.has(f));
+    if (!nuevos.length) return;
+    if (this.state.sonidoPref === '1') {
+      tocar(this._audio, tipo);
+      try { navigator.vibrate && navigator.vibrate([220, 120, 220]); } catch (e) {}
+    }
+    // El titulo avisa aunque el sonido este apagado o la pestana en segundo plano.
+    document.title = (tipo === 'pedido'
+      ? (nuevos.length === 1 ? '● Pedido nuevo' : '● ' + nuevos.length + ' pedidos nuevos')
+      : '● Catering nuevo') + ' — Cocina';
   }
 
   /* El estado avanza en pantalla ANTES de que el servidor conteste. Apps Script
@@ -914,6 +1041,7 @@ class Component extends DCLogic {
     try {
       const { eventos } = await mextizzaListarCatering();
       this.setState({ cat: eventos, catError: null });
+      this.detectarNuevos('catering', eventos.filter(e => e.estado === 'nueva').map(e => e.folio));
     } catch (err) {
       this.setState({ catError: 'No se pudieron leer los eventos: ' + err.message });
     }
@@ -1190,6 +1318,19 @@ class Component extends DCLogic {
       verInventario: this.state.vista === 'inventario',
       verCompras: this.state.vista === 'compras',
       verEventos: this.state.vista === 'eventos',
+      sonido: {
+        activo: this.state.sonidoPref === '1' && this.state.audioListo,
+        bloqueado: this.state.sonidoPref === '1' && !this.state.audioListo,
+        apagado: this.state.sonidoPref !== '1',
+        preguntar: this.state.sonidoPref === null,
+        activar: () => this.activarSonido(),
+        noPreguntar: () => this.apagarSonido(),
+        alternar: () => {
+          if (this.state.sonidoPref !== '1') return this.activarSonido();
+          if (!this.state.audioListo) return this.despertarAudio();
+          this.apagarSonido();
+        }
+      },
       cat: this.vistaEventos(),
       compras: this.vistaCompras(),
       capacidad: capacidad,
