@@ -2602,7 +2602,7 @@ function CartaApp({
       color: '#3d3a36',
       margin: '0 0 16px'
     }
-  }, "Todas salen del horno de piedra cuando entra tu pedido. Env\xEDo incluido en el precio."), /*#__PURE__*/React.createElement("div", {
+  }, "Todas son tama\xF1o ", MEXTIZZA_FACTS.tamanoPizza.toLowerCase(), " y salen del horno de piedra cuando entra tu pedido. Env\xEDo incluido en el precio."), /*#__PURE__*/React.createElement("div", {
     style: {
       display: 'flex',
       gap: 8,
@@ -2698,7 +2698,18 @@ function CartaApp({
     }
   }, /*#__PURE__*/React.createElement("span", {
     style: precio
-  }, "$", it.price), /*#__PURE__*/React.createElement(Button, {
+  }, "$", it.price, /*#__PURE__*/React.createElement("span", {
+    style: {
+      display: 'block',
+      fontFamily: 'var(--font-body)',
+      fontWeight: 600,
+      fontSize: 11,
+      letterSpacing: 0.9,
+      textTransform: 'uppercase',
+      color: 'var(--text-muted)',
+      marginTop: 2
+    }
+  }, MEXTIZZA_FACTS.tamanoPizza)), /*#__PURE__*/React.createElement(Button, {
     size: "md",
     tone: added === it.id ? 'dark' : 'outline',
     onClick: agregar(it)
@@ -2960,7 +2971,9 @@ function AppDetail({
       marginTop: 18,
       flexWrap: 'wrap'
     }
-  }, /*#__PURE__*/React.createElement(Badge, {
+  }, mextizzaEsPizza(item.id) && /*#__PURE__*/React.createElement(Badge, {
+    tone: "quiet"
+  }, 'Tamaño ' + MEXTIZZA_FACTS.tamanoPizza.toLowerCase()), /*#__PURE__*/React.createElement(Badge, {
     tone: "quiet"
   }, "Horno de piedra"), /*#__PURE__*/React.createElement(Badge, {
     tone: "quiet"

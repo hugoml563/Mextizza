@@ -61,6 +61,10 @@ const MEXTIZZA_ADDONS = [
 ];
 const MEXTIZZA_FACTS = {
   envioIncluido: true,
+  /* Todas las pizzas son de un solo tamano. Se dice en la carta porque casi
+     toda la competencia vende por tamano, y sin el dato un precio de $229 no
+     se puede comparar contra "grande $352" o "familiar $260". */
+  tamanoPizza: 'Grande',
   /* Tiempo prometido puerta a puerta. Es el numero OFICIAL: la pantalla de
      comandas colorea contra el, y aparece en el menu impreso, el sitio y la app.
      Cambiarlo aqui no basta para el bundle compilado (_ds_bundle.js) — hay que

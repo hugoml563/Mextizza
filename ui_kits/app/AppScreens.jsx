@@ -152,7 +152,7 @@ function CartaApp({ onAdd, onOpen, added }) {
     <div ref={scroll} style={{ flex: 1, overflowY: 'auto', padding: '20px 16px 28px', background: 'var(--surface-sunken)' }}>
       <h2 style={{ fontFamily: 'var(--font-display)', fontWeight: 400, fontSize: 34, lineHeight: 1.05, margin: '0 0 8px' }}>La carta</h2>
       <p style={{ fontFamily: 'var(--font-body)', fontSize: 15.5, lineHeight: 1.5, color: '#3d3a36', margin: '0 0 16px' }}>
-        Todas salen del horno de piedra cuando entra tu pedido. Envío incluido en el precio.
+        Todas son tamaño {MEXTIZZA_FACTS.tamanoPizza.toLowerCase()} y salen del horno de piedra cuando entra tu pedido. Envío incluido en el precio.
       </p>
       <div style={{ display: 'flex', gap: 8, marginBottom: 18 }}>
         <button style={chip(true)} onClick={() => brincar('app-carta-pizzas')}>Pizzas</button>
@@ -178,7 +178,10 @@ function CartaApp({ onAdd, onOpen, added }) {
               <div style={{ fontFamily: 'var(--font-display)', fontSize: 22, lineHeight: 1.1 }}>{it.name.replace(/^Pizza /, '')}</div>
               <div style={{ fontFamily: 'var(--font-body)', fontSize: 14.5, lineHeight: 1.45, color: '#3d3a36', flex: 1 }}>{it.desc}</div>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, marginTop: 4 }}>
-                <span style={precio}>${it.price}</span>
+                <span style={precio}>${it.price}
+                  <span style={{ display: 'block', fontFamily: 'var(--font-body)', fontWeight: 600, fontSize: 11, letterSpacing: 0.9,
+                    textTransform: 'uppercase', color: 'var(--text-muted)', marginTop: 2 }}>{MEXTIZZA_FACTS.tamanoPizza}</span>
+                </span>
                 <Button size="md" tone={added === it.id ? 'dark' : 'outline'} onClick={agregar(it)}>
                   {added === it.id ? 'Agregado' : 'Agregar'}
                 </Button>
@@ -263,6 +266,7 @@ function AppDetail({ item, onBack, onAdd, onCustomize }) {
         <p style={{ fontFamily: 'var(--font-body)', fontSize: 14, lineHeight: 1.6, color: 'var(--text-muted)', marginTop: 8 }}>{item.desc}</p>
         <div style={{ fontFamily: 'var(--font-body)', fontWeight: 800, fontSize: 26, color: 'var(--text-price)', marginTop: 16 }}>${item.price}</div>
         <div style={{ display: 'flex', gap: 8, marginTop: 18, flexWrap: 'wrap' }}>
+          {mextizzaEsPizza(item.id) && <Badge tone="quiet">{'Tamaño ' + MEXTIZZA_FACTS.tamanoPizza.toLowerCase()}</Badge>}
           <Badge tone="quiet">Horno de piedra</Badge><Badge tone="quiet">Masa de 48h</Badge><Badge tone="quiet">Horneada al pedido</Badge>
         </div>
         {mextizzaAceptaComplementos(item) && (

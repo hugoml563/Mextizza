@@ -212,7 +212,7 @@ function WebMenu({ onAdd, onCustomize, added }) {
     <section id="menu" className="reveal" style={{ background: 'var(--surface-sunken)', paddingTop: 64, paddingBottom: 72 }}>
       <div style={webShell.page}>
         <h2 className="carta-titulo">La carta</h2>
-        <p className="carta-bajada">Todas salen del horno de piedra cuando entra tu pedido. Envío incluido en el precio.</p>
+        <p className="carta-bajada">Todas son tamaño {MEXTIZZA_FACTS.tamanoPizza.toLowerCase()} y salen del horno de piedra cuando entra tu pedido. Envío incluido en el precio.</p>
         <nav className="carta-chips" aria-label="Grupos de la carta">
           <a className="activo" href="#carta-pizzas" onClick={brincar('carta-pizzas')}>Pizzas</a>
           <a href="#carta-cierre" onClick={brincar('carta-cierre')}>Postres y bebidas</a>
@@ -230,7 +230,7 @@ function WebMenu({ onAdd, onCustomize, added }) {
                 <h3>{it.name.replace(/^Pizza /, '')}</h3>
                 <p>{it.desc}</p>
                 <div className="carta-fila">
-                  <span className="carta-precio">${it.price}</span>
+                  <span className="carta-precio">${it.price}<small>{MEXTIZZA_FACTS.tamanoPizza}</small></span>
                   <BotonAgregar it={it} onAdd={onAdd} onCustomize={onCustomize} added={added} />
                 </div>
               </div>

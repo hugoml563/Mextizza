@@ -464,7 +464,7 @@ function WebMenu({
     className: "carta-titulo"
   }, "La carta"), /*#__PURE__*/React.createElement("p", {
     className: "carta-bajada"
-  }, "Todas salen del horno de piedra cuando entra tu pedido. Env\xEDo incluido en el precio."), /*#__PURE__*/React.createElement("nav", {
+  }, "Todas son tama\xF1o ", MEXTIZZA_FACTS.tamanoPizza.toLowerCase(), " y salen del horno de piedra cuando entra tu pedido. Env\xEDo incluido en el precio."), /*#__PURE__*/React.createElement("nav", {
     className: "carta-chips",
     "aria-label": "Grupos de la carta"
   }, /*#__PURE__*/React.createElement("a", {
@@ -497,7 +497,7 @@ function WebMenu({
     className: "carta-fila"
   }, /*#__PURE__*/React.createElement("span", {
     className: "carta-precio"
-  }, "$", it.price), /*#__PURE__*/React.createElement(BotonAgregar, {
+  }, "$", it.price, /*#__PURE__*/React.createElement("small", null, MEXTIZZA_FACTS.tamanoPizza)), /*#__PURE__*/React.createElement(BotonAgregar, {
     it: it,
     onAdd: onAdd,
     onCustomize: onCustomize,
