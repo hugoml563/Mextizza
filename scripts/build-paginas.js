@@ -29,14 +29,15 @@ const esc = (s) => {
     .replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 };
 
-// Distancia real, para no prometer colonias que quedan fuera del radio.
+// Distancia real, para no prometer colonias que quedan fuera del radio. Se redondea
+// a 0.1 km igual que zonaEvaluar, para que la página y el formulario coincidan.
 function km(c) {
   const R = 6371, r = (x) => (x * Math.PI) / 180;
   const dLat = r(c.lat - MEXTIZZA_ZONE.centro.lat);
   const dLng = r(c.lng - MEXTIZZA_ZONE.centro.lng);
   const h = Math.sin(dLat / 2) ** 2 +
     Math.cos(r(MEXTIZZA_ZONE.centro.lat)) * Math.cos(r(c.lat)) * Math.sin(dLng / 2) ** 2;
-  return 2 * R * Math.asin(Math.sqrt(h));
+  return Math.round(2 * R * Math.asin(Math.sqrt(h)) * 10) / 10;
 }
 
 const colonias = MEXTIZZA_ZONE.colonias.map((c) => ({ ...c, km: km(c) })).sort((a, b) => a.km - b.km);
