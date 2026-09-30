@@ -301,7 +301,7 @@ function WebTarjeta() {
           </div>
           <div className="tarjeta-ligas">
             <a href="/promociones/">Ver las bases</a>
-            <a href="/app">Tu tarjeta también vive en la app</a>
+            <a href="/app" className="tarjeta-app">Tu tarjeta también vive en la app</a>
           </div>
         </div>
       </div>

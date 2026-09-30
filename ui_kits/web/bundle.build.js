@@ -607,7 +607,8 @@ function WebTarjeta() {
   }, /*#__PURE__*/React.createElement("a", {
     href: "/promociones/"
   }, "Ver las bases"), /*#__PURE__*/React.createElement("a", {
-    href: "/app"
+    href: "/app",
+    className: "tarjeta-app"
   }, "Tu tarjeta tambi\xE9n vive en la app")))));
 }
 

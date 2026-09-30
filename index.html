@@ -139,6 +139,36 @@ body{background:var(--surface-page)}
 .tarjeta-2x1-texto span{font-size:15px;color:#3d3a36;line-height:1.4}
 .tarjeta-ligas{display:flex;gap:18px;flex-wrap:wrap;margin-top:18px;font-family:var(--font-body);font-size:15px}
 .tarjeta-ligas a{color:var(--negro-carbon);font-weight:600}
+/* En el celular la liga de la app se vuelve boton y late: un aro rosa que
+   crece y se desvanece, y descansa entre latido y latido para no cansar.
+   Arranca cuando la seccion entra en pantalla (.is-visible del reveal). */
+@media (max-width:700px){
+  .tarjeta-ligas{align-items:center}
+  .tarjeta-ligas a.tarjeta-app{order:-1;position:relative;display:inline-flex;align-items:center;gap:8px;
+    min-height:46px;padding:0 20px;border-radius:999px;background:var(--rosa-mexicano);color:var(--blanco);
+    border:2px solid var(--negro-carbon);box-shadow:0 4px 0 var(--negro-carbon);text-decoration:none;
+    transition:transform .12s ease-out,box-shadow .12s ease-out;-webkit-tap-highlight-color:transparent}
+  .tarjeta-ligas a.tarjeta-app::after{content:"\2192";font-size:17px;line-height:1}
+  .tarjeta-ligas a.tarjeta-app::before{content:"";position:absolute;inset:-2px;border-radius:inherit;
+    pointer-events:none;box-shadow:0 0 0 0 rgba(228,0,124,.55)}
+  .tarjeta-portada.is-visible a.tarjeta-app::before{animation:app-late 2.6s ease-out .6s infinite}
+  .tarjeta-portada.is-visible a.tarjeta-app{animation:app-empuje 2.6s ease-in-out .6s infinite}
+  .tarjeta-ligas a.tarjeta-app:active{transform:translateY(3px);box-shadow:0 1px 0 var(--negro-carbon);animation:none}
+}
+@keyframes app-late{
+  0%{box-shadow:0 0 0 0 rgba(228,0,124,.75)}
+  45%{box-shadow:0 0 0 16px rgba(228,0,124,0)}
+  100%{box-shadow:0 0 0 16px rgba(228,0,124,0)}
+}
+@keyframes app-empuje{
+  0%,50%,100%{transform:scale(1)}
+  12%{transform:scale(1.045)}
+  24%{transform:scale(1)}
+}
+@media (prefers-reduced-motion: reduce){
+  .tarjeta-portada.is-visible a.tarjeta-app,
+  .tarjeta-portada.is-visible a.tarjeta-app::before{animation:none}
+}
 .reveal{opacity:0;transform:translateY(16px);transition:opacity .4s ease-out,transform .4s ease-out}
 .reveal.is-visible{opacity:1;transform:none}
 
