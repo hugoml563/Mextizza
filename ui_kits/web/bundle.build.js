@@ -1960,7 +1960,7 @@ function DeliveryForm({
     value: colonia,
     onChange: e => setColonia(e.target.value),
     invalid: attempted && !zonaOk,
-    options: ['', ...MEXTIZZA_ZONE.colonias.map(c => c.name)],
+    options: ['', ...MEXTIZZA_ZONE.colonias.map(c => c.name), MEXTIZZA_ZONE.otraColonia],
     style: {
       marginTop: gap
     }
@@ -1970,7 +1970,17 @@ function DeliveryForm({
     style: {
       marginTop: 12
     }
-  }, zona.detalle) : /*#__PURE__*/React.createElement("div", {
+  }, zona.detalle, zona.estado === 'limite' && typeof mextizzaWhatsappLink === 'function' && /*#__PURE__*/React.createElement("a", {
+    href: mextizzaWhatsappLink('Hola, quiero pedir a domicilio. Mi dirección: ' + [calle.trim(), zona.colonia === MEXTIZZA_ZONE.otraColonia ? '' : zona.colonia].filter(Boolean).join(', ') + '. ¿Entra en su zona de reparto?'),
+    target: "_blank",
+    rel: "noopener",
+    style: {
+      display: 'inline-block',
+      marginTop: 8,
+      fontWeight: 700,
+      color: 'inherit'
+    }
+  }, "Escribir por WhatsApp")) : /*#__PURE__*/React.createElement("div", {
     style: {
       display: 'flex',
       alignItems: 'center',

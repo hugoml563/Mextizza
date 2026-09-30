@@ -157,7 +157,7 @@ const p1 = documento({
   title: 'Pizza a domicilio en Atizapán de Zaragoza | Mextizza',
   description:
     'Pizza de horno de piedra con masa fermentada 48 horas, a domicilio en Lomas Lindas, ' +
-    'Villas de la Hacienda y colonias vecinas de Atizapán. Envío incluido.',
+    'Las Águilas, Villa de las Palmas y colonias vecinas de Atizapán. Envío incluido.',
   jsonld: {
     '@context': 'https://schema.org',
     ...negocioBase,
@@ -178,9 +178,9 @@ Estas son las colonias que quedan dentro, con su distancia real a la cocina:</p>
 <ul>
 ${dentro.map((c) => `  <li><b>${esc(c.name)}</b> · a ${c.km.toFixed(1)} km</li>`).join('\n')}
 </ul>
-${excepcion.length ? `<p>${excepcion.map((c) => '<b>' + esc(c.name) + '</b>').join(' y ')}
-quedan justo afuera del radio, entre ${MEXTIZZA_ZONE.radioKm} y ${MEXTIZZA_ZONE.radioMaximoKm} km.
-No los tomamos en automático, pero escríbenos por WhatsApp y lo confirmamos a mano.</p>` : ''}
+${excepcion.length ? `<p>Estas quedan justo afuera del radio, entre ${MEXTIZZA_ZONE.radioKm} y ${MEXTIZZA_ZONE.radioMaximoKm} km:
+${excepcion.map((c) => esc(c.name)).join(', ')}. No las tomamos en automático, pero
+escríbenos por WhatsApp y lo confirmamos a mano. Si tu colonia no aparece, también.</p>` : ''}
 
 <h2>Cuánto tarda</h2>
 <p>${esc(MEXTIZZA_FACTS.promesaMin)} minutos o menos, puerta a puerta. La pizza entra al

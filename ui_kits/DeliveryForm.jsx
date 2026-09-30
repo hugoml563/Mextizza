@@ -123,7 +123,7 @@ function DeliveryForm({ compact = false, attempted = false, onValidChange, onDat
           <Field label="Colonia" as="select" required value={colonia}
             onChange={e => setColonia(e.target.value)}
             invalid={attempted && !zonaOk}
-            options={['', ...MEXTIZZA_ZONE.colonias.map(c => c.name)]}
+            options={['', ...MEXTIZZA_ZONE.colonias.map(c => c.name), MEXTIZZA_ZONE.otraColonia]}
             style={{ marginTop: gap }} />
         </>
       )}
@@ -131,6 +131,17 @@ function DeliveryForm({ compact = false, attempted = false, onValidChange, onDat
       {pickup ? null : zona ? (
         <StatusNote tone={tone} title={zona.titulo} style={{ marginTop: 12 }}>
           {zona.detalle}
+          {/* En la franja de excepcion el pedido no se procesa en automatico:
+              el enlace lleva la colonia y la calle para no hacerlas repetir. */}
+          {zona.estado === 'limite' && typeof mextizzaWhatsappLink === 'function' && (
+            <a href={mextizzaWhatsappLink('Hola, quiero pedir a domicilio. Mi dirección: ' +
+                [calle.trim(), zona.colonia === MEXTIZZA_ZONE.otraColonia ? '' : zona.colonia]
+                  .filter(Boolean).join(', ') + '. ¿Entra en su zona de reparto?')}
+              target="_blank" rel="noopener"
+              style={{ display: 'inline-block', marginTop: 8, fontWeight: 700, color: 'inherit' }}>
+              Escribir por WhatsApp
+            </a>
+          )}
         </StatusNote>
       ) : (
         <div style={{
