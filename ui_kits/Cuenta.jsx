@@ -56,7 +56,7 @@ const estiloEnlace = {
 };
 
 function DialogoCuenta({ abierto, onCerrar, fijo = true, telefonoSugerido = '' }) {
-  const { usuario, googleDisponible, telefono: ligado, tarjeta, cargandoTelefono } = useCuenta();
+  const { usuario, googleDisponible, telefono: ligado, tarjeta, cargandoTelefono, wallet } = useCuenta();
   const [modo, setModo] = React.useState('entrar'); // entrar | crear | recuperar
   const [nombre, setNombre] = React.useState('');
   const [correo, setCorreo] = React.useState('');
@@ -197,6 +197,27 @@ function DialogoCuenta({ abierto, onCerrar, fijo = true, telefonoSugerido = '' }
                   <div style={{ marginTop: 4, fontSize: 12.5, color: 'var(--gris-tinta, #4A4A4A)' }}>
                     Tus premios se cobran solos cuando pides con este número y tu cuenta abierta.
                   </div>
+                  {/* Google Wallet no existe en iPhone: ahi el boton no lleva a nada. */}
+                  {wallet && !/iPhone|iPad|iPod/.test(navigator.userAgent) && (
+                    <button type="button" disabled={ocupado} onClick={() => correr(async () => {
+                      let r;
+                      try { r = await window.mextizzaWalletEnlace(); }
+                      catch (err) {
+                        const e = new Error(String(err && err.message || err).replace(/^(Error:\s*)+/, ''));
+                        e.code = 'servidor';
+                        throw e;
+                      }
+                      // Google abre su pantalla para guardar; en la app sale al navegador.
+                      window.location.href = r.url;
+                    })} style={{
+                      marginTop: 12, width: '100%', minHeight: 46, borderRadius: 999, border: 0, cursor: 'pointer',
+                      background: '#1F1F1F', color: '#fff', fontFamily: 'var(--font-body)', fontWeight: 600, fontSize: 15,
+                      display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8
+                    }}>
+                      {ocupado ? <span className="mx-puntos" aria-label="Preparando tu tarjeta"><i></i><i></i><i></i></span>
+                        : 'Agregar a Google Wallet'}
+                    </button>
+                  )}
                 </div>
               ) : (
                 <form onSubmit={(e) => { e.preventDefault(); correr(async () => {

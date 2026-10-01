@@ -967,5 +967,110 @@ console.log('\nLO QUE MANDA EL NAVEGADOR NO ENTRA COMO FORMULA NI COMO PRECIO RA
     [{ producto_id: 'roni', cantidad: 1, addons: [{ id: 'constructor' }] }])), true);
 }
 
+/* Google Wallet: el pase es una copia de la tarjeta para el telefono. Lo que
+   importa probar es que se pinta con los datos correctos, que no lleva el
+   numero en el id, que solo lo ve quien debe, y que si Wallet falla la entrega
+   se sella igual. Google se simula: se anota cada llamada. */
+{
+  console.log('\nGOOGLE WALLET');
+  const WALLET = { llamadas: [], caido: false, objetos: {}, clase: false };
+  const fetchReal = ctx.UrlFetchApp.fetch;
+  ctx.UrlFetchApp.fetch = (url, opts) => {
+    const r = (code, cuerpo) => ({ getResponseCode: () => code, getContentText: () => JSON.stringify(cuerpo || {}) });
+    if (url.indexOf('oauth2.googleapis.com') !== -1) return r(200, { access_token: 'acceso-falso' });
+    if (url.indexOf('walletobjects') === -1) return fetchReal(url, opts);
+    const metodo = (opts.method || 'get').toLowerCase();
+    WALLET.llamadas.push({ metodo, ruta: url.split('/v1')[1], cuerpo: opts.payload ? JSON.parse(opts.payload) : null });
+    if (WALLET.caido) return r(500, { error: 'caido' });
+    const ruta = url.split('/v1')[1];
+    if (ruta.indexOf('/loyaltyClass') === 0) {
+      if (metodo === 'get') return WALLET.clase ? r(200) : r(404);
+      if (/addMessage/.test(ruta)) return r(200);
+      WALLET.clase = true; return r(200);
+    }
+    if (/addMessage/.test(ruta)) return r(200);
+    if (metodo === 'put') {
+      const id = decodeURIComponent(ruta.split('/loyaltyObject/')[1]);
+      if (!WALLET.objetos[id]) return r(404);
+      WALLET.objetos[id] = JSON.parse(opts.payload); return r(200);
+    }
+    if (metodo === 'post') { const o = JSON.parse(opts.payload); WALLET.objetos[o.id] = o; return r(200); }
+    return r(400);
+  };
+  Object.assign(ctx.Utilities, {
+    newBlob: (s) => ({ getBytes: () => Array.from(Buffer.from(s, 'utf8')) }),
+    computeRsaSha256Signature: () => [1, 2, 3],
+  });
+  const llamadasA = (re) => WALLET.llamadas.filter((l) => re.test(l.ruta));
+
+  const TW = '5587654321';
+  const tok = asegurarCuenta(TW);
+  const yo = { uid: 'uid-' + TW, correo: TW + '@prueba.mx' };
+
+  comparar('sin emisor, nadie ve el boton', ctx.walletVisible_(yo), false);
+  props.WALLET_ISSUER_ID = '3388000000012345678';
+  comparar('con emisor pero apagado, tampoco', ctx.walletVisible_(yo), false);
+  props.WALLET_MODO = 'demo';
+  props.WALLET_PROBADORES = 'Otra@prueba.mx, ' + TW.toUpperCase() + '@PRUEBA.MX';
+  comparar('en demo lo ve un probador (sin importar mayusculas)', ctx.walletVisible_(yo), true);
+  comparar('en demo no lo ve un cliente cualquiera', ctx.walletVisible_({ uid: 'x', correo: 'cliente@gmail.com' }), false);
+  props.WALLET_MODO = 'on';
+  comparar('encendido lo ve todo el mundo', ctx.walletVisible_({ uid: 'x', correo: 'cliente@gmail.com' }), true);
+  props.WALLET_MODO = 'demo';
+
+  const id = ctx.walletIdObjeto_(props.WALLET_ISSUER_ID, TW);
+  comparar('el id del pase no lleva el telefono', id.indexOf(TW) === -1 && id.indexOf(TW.slice(-4)) === -1, true);
+  comparar('el id del pase empieza con el emisor', id.indexOf(props.WALLET_ISSUER_ID + '.c') === 0, true);
+  comparar('el mismo telefono da siempre el mismo pase', ctx.walletIdObjeto_(props.WALLET_ISSUER_ID, TW), id);
+
+  const pintado = ctx.walletObjeto_(props.WALLET_ISSUER_ID, TW,
+    { dias: 5, brownie: true, pizza: false, faltanBrownie: 0, faltanPizza: 4, ciclos: 0 });
+  comparar('el pase dice cuantas rebanadas lleva', pintado.loyaltyPoints.balance.string, '5 de 9');
+  comparar('y si el brownie esta listo', pintado.secondaryLoyaltyPoints.balance.string, 'Listo');
+  comparar('y cuantas le faltan para la pizza', pintado.textModulesData[0].header, 'Te faltan 4 rebanadas');
+  comparar('el pase muestra solo la terminacion del telefono', pintado.accountId, '4321');
+
+  // Sin cuenta ligada no hay enlace; con cuenta ligada, si.
+  GOOGLE.cuentas['tok-sin-tel'] = { localId: 'uid-sin-tel', email: 'otra@prueba.mx' };
+  let error = '';
+  try { ctx.walletEnlace_({ idToken: 'tok-sin-tel' }); } catch (e) { error = String(e.message); }
+  comparar('sin telefono ligado no hay pase', /liga tu teléfono/.test(error), true);
+
+  props.FCM_CUENTA_SERVICIO = JSON.stringify({ client_email: 'sa@proyecto.iam.gserviceaccount.com', private_key: 'llave', project_id: 'proyecto' });
+  comparar('mi_cuenta avisa que hay Wallet para el probador', ctx.miCuenta_({ idToken: tok }).wallet, true);
+  const enlace = ctx.walletEnlace_({ idToken: tok });
+  comparar('el enlace va a Google Wallet', enlace.url.indexOf('https://pay.google.com/gp/v/save/') === 0, true);
+  comparar('la clase se creo una vez', llamadasA(/^\/loyaltyClass$/).length, 1);
+  comparar('el pase quedo creado', !!WALLET.objetos[id], true);
+  comparar('el cliente queda marcado para actualizar su pase', ctx.leerTarjeta_(TW).wallet, true);
+  ctx.walletEnlace_({ idToken: tok });
+  comparar('pedir el enlace otra vez no crea otra clase', llamadasA(/^\/loyaltyClass$/).length, 1);
+
+  // Una entrega pinta el pase y avisa la rebanada nueva.
+  WALLET.llamadas = [];
+  pedir([{ producto_id: 'roni', cantidad: 1 }], { tel: TW, cuando: DIA(12) });
+  comparar('al entregar se actualiza el pase', WALLET.objetos[id].loyaltyPoints.balance.string, '1 de 9');
+  const avisos = llamadasA(/addMessage/);
+  comparar('y llega un aviso', avisos.length, 1);
+  comparar('que dice que se horneo otra rebanada', avisos[0] && avisos[0].cuerpo.message.header, 'Se horneó otra rebanada');
+  comparar('el aviso es de los que suenan', avisos[0] && avisos[0].cuerpo.message.messageType, 'TEXT_AND_NOTIFY');
+
+  // Wallet caido: la entrega se sella igual.
+  WALLET.caido = true;
+  const antes = tarjetaDe(TW).dias;
+  const r = pedir([{ producto_id: 'roni', cantidad: 1 }], { tel: TW, cuando: DIA(13) });
+  comparar('con Wallet caido la entrega se sella igual', tarjetaDe(TW).dias, antes + 1);
+  comparar('y el pedido queda contado', campoDe(r.folio, 'sello'), 'contado');
+  WALLET.caido = false;
+
+  // Quien no guardo el pase no genera llamadas a Wallet.
+  WALLET.llamadas = [];
+  pedir([{ producto_id: 'roni', cantidad: 1 }], { tel: '5500000001', cuando: DIA(12) });
+  comparar('sin pase guardado no se llama a Wallet', WALLET.llamadas.length, 0);
+
+  ctx.UrlFetchApp.fetch = fetchReal;
+  ['WALLET_ISSUER_ID', 'WALLET_MODO', 'WALLET_PROBADORES', 'FCM_CUENTA_SERVICIO', 'WALLET_CLASE_LISTA'].forEach((k) => { delete props[k]; });
+}
+
 console.log('\n  ' + ok + ' pruebas ok, ' + mal + ' mal\n');
 process.exit(mal ? 1 : 0);

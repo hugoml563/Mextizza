@@ -173,6 +173,8 @@ if (!window.__mextizzaSheetsConfigLoaded) {
   const mextizzaLigarTelefono = ({ telefono, folio }) => conCuenta('ligar_telefono', { telefono, folio });
   /** El telefono ligado a la cuenta y su tarjeta. */
   const mextizzaMiCuenta = () => conCuenta('mi_cuenta', {});
+  /** Enlace para guardar la tarjeta en Google Wallet. Solo la cuenta duena del telefono. */
+  const mextizzaWalletEnlace = () => conCuenta('wallet_enlace', {});
 
   const mextizzaSolicitarCatering = ({ nombre, telefono, personas, fecha_evento, notas, direccion }) =>
     mextizzaApiPost('solicitar_catering', { nombre, telefono, personas, fecha_evento, notas, direccion });
@@ -200,5 +202,5 @@ if (!window.__mextizzaSheetsConfigLoaded) {
 
   const mextizzaTarjeta = (telefono) => mextizzaApiGet('tarjeta', { telefono: telefono || '' });
 
-  Object.assign(window, { mextizzaPickup, mextizzaTarjeta, mextizzaCrearOrden, mextizzaAvanzarEstado, mextizzaCancelarOrden, mextizzaEstadoOrden, mextizzaEstadoPorTelefono, mextizzaCancelarPorCliente, mextizzaListarAbiertas, mextizzaListarHoy, mextizzaSolicitarCatering, mextizzaListarCatering, mextizzaActualizarCatering, mextizzaPushRegistrar, mextizzaPushBaja, mextizzaPushProbar, mextizzaTokenAdmin, mextizzaGuardarTokenAdmin, mextizzaOlvidarTokenAdmin, mextizzaCapturaCocina, mextizzaInvEstado, mextizzaInvCompra, mextizzaInvLote, mextizzaInvMerma, mextizzaInvConteo, mextizzaLigarTelefono, mextizzaMiCuenta });
+  Object.assign(window, { mextizzaPickup, mextizzaTarjeta, mextizzaCrearOrden, mextizzaAvanzarEstado, mextizzaCancelarOrden, mextizzaEstadoOrden, mextizzaEstadoPorTelefono, mextizzaCancelarPorCliente, mextizzaListarAbiertas, mextizzaListarHoy, mextizzaSolicitarCatering, mextizzaListarCatering, mextizzaActualizarCatering, mextizzaPushRegistrar, mextizzaPushBaja, mextizzaPushProbar, mextizzaTokenAdmin, mextizzaGuardarTokenAdmin, mextizzaOlvidarTokenAdmin, mextizzaCapturaCocina, mextizzaInvEstado, mextizzaInvCompra, mextizzaInvLote, mextizzaInvMerma, mextizzaInvConteo, mextizzaLigarTelefono, mextizzaMiCuenta, mextizzaWalletEnlace });
 }

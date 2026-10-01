@@ -80,7 +80,7 @@ const ORDEN_ITEMS_HEADERS = ['linea_id', 'folio', 'producto_id', 'producto_nombr
 const ITEM_COMPLEMENTOS_HEADERS = ['linea_id', 'complemento_id', 'complemento_nombre', 'precio'];
 const PRODUCTOS_HEADERS = ['id', 'nombre', 'descripcion', 'categoria', 'precio', 'activo', 'foto'];
 const COMPLEMENTOS_HEADERS = ['id', 'nombre', 'grupo', 'precio', 'activo'];
-const CLIENTES_HEADERS = ['telefono', 'nombre', 'direccion', 'colonia', 'notas', 'pedidos', 'dias_ciclo', 'ultimo_dia', 'brownie_usado', 'pizza_usada', 'ciclos', 'brownie_guardado', 'uid'];
+const CLIENTES_HEADERS = ['telefono', 'nombre', 'direccion', 'colonia', 'notas', 'pedidos', 'dias_ciclo', 'ultimo_dia', 'brownie_usado', 'pizza_usada', 'ciclos', 'brownie_guardado', 'uid', 'wallet'];
 /* Las columnas despues de creado_en son del Centro de Ventas: lo que se
    coordina con el cliente antes de aprobar y el enlace al evento del calendario.
    Van al final para que las solicitudes que ya existen no se muevan. */
@@ -985,6 +985,9 @@ function doPost(e) {
       case 'mi_cuenta':
         result = miCuenta_(body);
         break;
+      case 'wallet_enlace':
+        result = walletEnlace_(body);
+        break;
       case 'solicitar_catering':
         result = crearSolicitudCatering_(body);
         break;
@@ -1458,7 +1461,9 @@ function miCuenta_(body) {
   const tel = telefonoDeCuenta_(cuenta.uid);
   return {
     telefono: tel,
-    tarjeta: tel ? premiosDe_(leerTarjeta_(tel), premiosReservados_(tel)) : null
+    tarjeta: tel ? premiosDe_(leerTarjeta_(tel), premiosReservados_(tel)) : null,
+    // Si a esta cuenta se le ofrece guardar la tarjeta en Google Wallet.
+    wallet: !!tel && walletVisible_(cuenta)
   };
 }
 
@@ -1633,7 +1638,9 @@ function leerTarjeta_(telefono) {
       brownieUsado: data[r][c.indexOf('brownie_usado')] === true || data[r][c.indexOf('brownie_usado')] === 'si',
       pizzaUsada: data[r][c.indexOf('pizza_usada')] === true || data[r][c.indexOf('pizza_usada')] === 'si',
       ciclos: Number(data[r][c.indexOf('ciclos')]) || 0,
-      brownieGuardado: data[r][c.indexOf('brownie_guardado')] === true || data[r][c.indexOf('brownie_guardado')] === 'si'
+      brownieGuardado: data[r][c.indexOf('brownie_guardado')] === true || data[r][c.indexOf('brownie_guardado')] === 'si',
+      // Guardo la tarjeta en Google Wallet: cada entrega actualiza su pase.
+      wallet: data[r][c.indexOf('wallet')] === 'si'
     };
   }
   return vacia;
@@ -1854,11 +1861,14 @@ function avanzarEstado_(body) {
   /* Aqui, y solo aqui, se sella la tarjeta. Un pedido cancelado o que se quedo
      a medias no cuenta, que es justo lo que se pedia. */
   if (nuevo === 'entregada' && row[ORDENES_HEADERS.indexOf('sello')] === 'pendiente') {
-    liquidarPedido_(
-      row[ORDENES_HEADERS.indexOf('cliente_telefono')],
+    const telSello = row[ORDENES_HEADERS.indexOf('cliente_telefono')];
+    const antes = premiosDe_(leerTarjeta_(telSello));
+    const despues = liquidarPedido_(
+      telSello,
       String(row[ORDENES_HEADERS.indexOf('premio')] || ''),
       new Date(), true);
     sh.getRange(index, ORDENES_HEADERS.indexOf('sello') + 1).setValue('contado');
+    if (despues) walletAlEntregar_(telSello, antes, despues, true);
   }
 
   if (nuevo === 'entregada' && row[ORDENES_HEADERS.indexOf('uid')]) {
@@ -2231,8 +2241,14 @@ function cuentaServicioFcm_() {
 /* Token de acceso de Google para FCM, firmado con la llave de la cuenta de
    servicio. Vive una hora; se guarda 50 minutos para no pedirlo en cada pedido. */
 function tokenAccesoFcm_(sa) {
+  return tokenAccesoGoogle_(sa, 'https://www.googleapis.com/auth/firebase.messaging', 'fcm:acceso');
+}
+
+/* El mismo token sirve para cualquier API de Google; solo cambia el permiso
+   (scope) que se pide. Cada permiso se guarda aparte: el de FCM no abre Wallet. */
+function tokenAccesoGoogle_(sa, scope, claveCache) {
   const cache = CacheService.getScriptCache();
-  const guardado = cache.get('fcm:acceso');
+  const guardado = cache.get(claveCache);
   if (guardado) return guardado;
 
   const b64 = function (bytes) { return Utilities.base64EncodeWebSafe(bytes).replace(/=+$/, ''); };
@@ -2240,7 +2256,7 @@ function tokenAccesoFcm_(sa) {
   const ahora = Math.floor(Date.now() / 1000);
   const entrada = json({ alg: 'RS256', typ: 'JWT' }) + '.' + json({
     iss: sa.client_email,
-    scope: 'https://www.googleapis.com/auth/firebase.messaging',
+    scope: scope,
     aud: 'https://oauth2.googleapis.com/token',
     iat: ahora,
     exp: ahora + 3600
@@ -2252,10 +2268,10 @@ function tokenAccesoFcm_(sa) {
     muteHttpExceptions: true
   });
   if (res.getResponseCode() !== 200) {
-    throw new Error('Google no aceptó la cuenta de servicio de FCM: ' + res.getContentText().slice(0, 200));
+    throw new Error('Google no aceptó la cuenta de servicio: ' + res.getContentText().slice(0, 200));
   }
   const acceso = JSON.parse(res.getContentText()).access_token;
-  cache.put('fcm:acceso', acceso, 3000);
+  cache.put(claveCache, acceso, 3000);
   return acceso;
 }
 
@@ -2337,6 +2353,252 @@ function probarCuentaServicioPush() {
   CacheService.getScriptCache().remove('fcm:acceso');
   tokenAccesoFcm_(sa);
   Logger.log('Listo: la cuenta ' + sa.client_email + ' puede mandar avisos del proyecto ' + sa.project_id + '.');
+}
+
+/* ---- Google Wallet ------------------------------------------------------
+   La tarjeta de la pizza como pase de Google Wallet: el cliente la guarda una
+   vez y se actualiza sola cada que le entregamos, con un aviso en el telefono
+   cuando se hornea una rebanada o se gana un premio. La API es gratis.
+
+   La firma la hace la MISMA cuenta de servicio de FCM_CUENTA_SERVICIO. Para que
+   Google la acepte, en el proyecto de Firebase tiene que estar activada la
+   Google Wallet API, y esa cuenta invitada como usuario en la consola de
+   Google Pay & Wallet.
+
+   Propiedades del script (ninguna es secreta; la llave sigue siendo la de FCM):
+     WALLET_ISSUER_ID     el numero de emisor que da la consola.
+     WALLET_MODO          vacio = apagado; 'demo' = solo los probadores;
+                          'on' = todos (cuando Google apruebe la publicacion).
+     WALLET_PROBADORES    correos separados por coma, para el modo demo.
+
+   El sello lo sigue decidiendo la hoja. El pase es una copia que se pinta
+   para el cliente: si Wallet falla, el pedido y la tarjeta no se enteran. */
+const WALLET_API = 'https://walletobjects.googleapis.com/walletobjects/v1';
+const WALLET_SCOPE = 'https://www.googleapis.com/auth/wallet_object.issuer';
+// Cambiar el diseño del programa pide una clase nueva: se sube el numero.
+const WALLET_CLASE = 'tarjeta_pizza_v1';
+
+function walletConfig_() {
+  const p = PropertiesService.getScriptProperties();
+  return {
+    emisor: String(p.getProperty('WALLET_ISSUER_ID') || '').trim(),
+    modo: String(p.getProperty('WALLET_MODO') || '').trim().toLowerCase(),
+    probadores: String(p.getProperty('WALLET_PROBADORES') || '').toLowerCase()
+      .split(',').map(function (s) { return s.trim(); }).filter(Boolean)
+  };
+}
+
+/* Si a esta cuenta se le ofrece el boton. En demo, Google solo deja guardar el
+   pase a las cuentas de prueba: ensenarselo a un cliente seria un boton roto. */
+function walletVisible_(cuenta) {
+  const w = walletConfig_();
+  if (!w.emisor) return false;
+  if (w.modo === 'on') return true;
+  if (w.modo === 'demo') return !!(cuenta && cuenta.correo && w.probadores.indexOf(cuenta.correo.toLowerCase()) !== -1);
+  return false;
+}
+
+/* El id del pase NO lleva el telefono: viaja dentro del enlace y queda en los
+   registros de Google. Se usa una huella del numero, que no se puede revertir. */
+function walletIdObjeto_(emisor, telefono) {
+  const bytes = Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256,
+    'mextizza:' + emisor + ':' + soloDigitos_(telefono), Utilities.Charset.UTF_8);
+  const hex = bytes.map(function (b) { return ((b + 256) % 256).toString(16).padStart(2, '0'); }).join('');
+  return emisor + '.c' + hex.slice(0, 32);
+}
+
+function walletTexto_(valor) {
+  return { defaultValue: { language: 'es-419', value: valor } };
+}
+
+function walletClase_(emisor) {
+  return {
+    id: emisor + '.' + WALLET_CLASE,
+    issuerName: 'Mextizza',
+    programName: 'Completa la pizza',
+    programLogo: {
+      sourceUri: { uri: 'https://mextizza.com/assets/social/mextizza-app-icon-512.png' },
+      contentDescription: walletTexto_('Mextizza')
+    },
+    hexBackgroundColor: '#E4007C',
+    countryCode: 'MX',
+    reviewStatus: 'UNDER_REVIEW',
+    multipleDevicesAndHoldersAllowedStatus: 'ONE_USER_ALL_DEVICES',
+    homepageUri: { uri: 'https://mextizza.com/', description: 'Pedir pizza' }
+  };
+}
+
+/* t es lo que regresa premiosDe_: dias, brownie, pizza, faltanBrownie, faltanPizza. */
+function walletObjeto_(emisor, telefono, t) {
+  const meta = PREMIOS.pizza.dia;
+  const traviesa = (delCatalogo_(CATALOGO.productos, PREMIOS.pizza.producto) || {}).nombre || 'Pizza Traviesa';
+  const llevas = Math.min(t.dias, meta);
+  const premio = t.pizza
+    ? { header: 'Completaste la pizza', body: 'La ' + traviesa + ' va por nuestra cuenta. Pídela con tu cuenta abierta.' }
+    : { header: 'Te faltan ' + t.faltanPizza + (t.faltanPizza === 1 ? ' rebanada' : ' rebanadas'),
+        body: 'Con la ' + meta + ' la ' + traviesa + ' va por nuestra cuenta.' };
+  const tel = soloDigitos_(telefono);
+  return {
+    id: walletIdObjeto_(emisor, telefono),
+    classId: emisor + '.' + WALLET_CLASE,
+    state: 'ACTIVE',
+    accountId: tel.slice(-4),
+    accountName: 'Teléfono terminación ' + tel.slice(-4),
+    loyaltyPoints: { label: 'Rebanadas', balance: { string: llevas + ' de ' + meta } },
+    secondaryLoyaltyPoints: {
+      label: 'Brownie',
+      balance: { string: t.brownie ? 'Listo' : (t.faltanBrownie > 0 ? 'En la ' + PREMIOS.brownie.dia : 'Cobrado') }
+    },
+    textModulesData: [
+      { id: 'premio', header: premio.header, body: premio.body },
+      { id: 'como', header: 'Cómo se llena',
+        body: 'Cada día que te llevamos pizza se hornea una rebanada. En la ' + PREMIOS.brownie.dia +
+          ' te toca un brownie y con la ' + meta + ' la pizza está completa. Los premios se cobran solos cuando pides con tu cuenta abierta.' }
+    ],
+    linksModuleData: { uris: [{ id: 'pedir', uri: 'https://mextizza.com/', description: 'Pedir pizza' }] }
+  };
+}
+
+function walletPedir_(metodo, ruta, cuerpo) {
+  const sa = cuentaServicioFcm_();
+  if (!sa) throw new Error('Falta la propiedad del script FCM_CUENTA_SERVICIO.');
+  const opciones = {
+    method: metodo, muteHttpExceptions: true, contentType: 'application/json',
+    headers: { Authorization: 'Bearer ' + tokenAccesoGoogle_(sa, WALLET_SCOPE, 'wallet:acceso') }
+  };
+  if (cuerpo) opciones.payload = JSON.stringify(cuerpo);
+  const res = UrlFetchApp.fetch(WALLET_API + ruta, opciones);
+  return { code: res.getResponseCode(), texto: res.getContentText() };
+}
+
+/* La clase (el diseño del programa) se crea una sola vez. Se recuerda en una
+   propiedad para no preguntarle a Google en cada pase. */
+function asegurarClaseWallet_(emisor) {
+  const p = PropertiesService.getScriptProperties();
+  const id = emisor + '.' + WALLET_CLASE;
+  if (p.getProperty('WALLET_CLASE_LISTA') === id) return;
+  const r = walletPedir_('get', '/loyaltyClass/' + encodeURIComponent(id));
+  if (r.code === 404) {
+    const n = walletPedir_('post', '/loyaltyClass', walletClase_(emisor));
+    if (n.code !== 200) throw new Error('Google Wallet no creó la clase: ' + n.code + ' ' + n.texto.slice(0, 300));
+  } else if (r.code !== 200) {
+    throw new Error('Google Wallet no respondió por la clase: ' + r.code + ' ' + r.texto.slice(0, 300));
+  }
+  p.setProperty('WALLET_CLASE_LISTA', id);
+}
+
+/* Crea el pase o, si ya existe, le pone los datos de hoy. */
+function guardarObjetoWallet_(obj) {
+  const ruta = '/loyaltyObject/' + encodeURIComponent(obj.id);
+  const r = walletPedir_('put', ruta, obj);
+  if (r.code === 200) return;
+  if (r.code === 404) {
+    const n = walletPedir_('post', '/loyaltyObject', obj);
+    if (n.code === 200) return;
+    throw new Error('Google Wallet no creó el pase: ' + n.code + ' ' + n.texto.slice(0, 300));
+  }
+  throw new Error('Google Wallet no actualizó el pase: ' + r.code + ' ' + r.texto.slice(0, 300));
+}
+
+/* Un aviso que llega al telefono. Google deja unos tres por pase al dia; con un
+   sello por dia de entrega no se llega a ese tope. */
+function avisoWalletObjeto_(idObjeto, titulo, cuerpo) {
+  const r = walletPedir_('post', '/loyaltyObject/' + encodeURIComponent(idObjeto) + '/addMessage', {
+    message: { id: 'm' + Date.now(), header: titulo, body: cuerpo, messageType: 'TEXT_AND_NOTIFY' }
+  });
+  if (r.code !== 200) console.error('Aviso de Wallet no enviado: ' + r.code + ' ' + r.texto.slice(0, 200));
+}
+
+/* body: { idToken } — el enlace "Guardar en Google Wallet" de la cuenta. Solo
+   para la duena del telefono: el pase muestra sus premios. */
+function walletEnlace_(body) {
+  const cuenta = usuarioDeToken_(body.idToken);
+  if (!cuenta) throw new Error('Entra con tu cuenta.');
+  if (!walletVisible_(cuenta)) throw new Error('Google Wallet todavía no está disponible.');
+  const tel = telefonoDeCuenta_(cuenta.uid);
+  if (!tel) throw new Error('Primero liga tu teléfono a tu cuenta.');
+  const sa = cuentaServicioFcm_();
+  if (!sa) throw new Error('Falta la propiedad del script FCM_CUENTA_SERVICIO.');
+  const emisor = walletConfig_().emisor;
+
+  asegurarClaseWallet_(emisor);
+  const t = leerTarjeta_(tel);
+  const obj = walletObjeto_(emisor, tel, premiosDe_(t, premiosReservados_(tel)));
+  guardarObjetoWallet_(obj);
+  // Desde aqui, cada entrega actualiza su pase.
+  if (t.fila && !t.wallet) {
+    sheet_(SHEETS.clientes).getRange(t.fila, CLIENTES_HEADERS.indexOf('wallet') + 1).setValue('si');
+  }
+
+  /* El enlace solo nombra el pase que ya existe; los datos no viajan en el. */
+  const b64 = function (bytes) { return Utilities.base64EncodeWebSafe(bytes).replace(/=+$/, ''); };
+  const json = function (o) { return b64(Utilities.newBlob(JSON.stringify(o)).getBytes()); };
+  const entrada = json({ alg: 'RS256', typ: 'JWT' }) + '.' + json({
+    iss: sa.client_email,
+    aud: 'google',
+    typ: 'savetowallet',
+    iat: Math.floor(Date.now() / 1000),
+    origins: ['https://mextizza.com'],
+    payload: { loyaltyObjects: [{ id: obj.id }] }
+  });
+  const firma = b64(Utilities.computeRsaSha256Signature(entrada, sa.private_key));
+  return { url: 'https://pay.google.com/gp/v/save/' + entrada + '.' + firma };
+}
+
+/* Al entregar: pinta el pase con la tarjeta nueva y avisa lo que cambio. antes
+   y despues son premiosDe_ de antes y despues de liquidar. Nunca tumba la
+   entrega: cualquier error se queda en Ejecuciones. */
+function walletAlEntregar_(telefono, antes, despues, conSello) {
+  try {
+    const t = leerTarjeta_(telefono);
+    if (!t.wallet) return;
+    const emisor = walletConfig_().emisor;
+    if (!emisor || !cuentaServicioFcm_()) return;
+    const obj = walletObjeto_(emisor, telefono, despues);
+    guardarObjetoWallet_(obj);
+
+    let aviso = null;
+    if (despues.pizza && !antes.pizza) {
+      aviso = ['Completaste la pizza', 'Tu próxima ' + ((delCatalogo_(CATALOGO.productos, PREMIOS.pizza.producto) || {}).nombre || 'pizza') + ' va por nuestra cuenta. Pídela con tu cuenta abierta.'];
+    } else if (despues.brownie && !antes.brownie) {
+      aviso = ['Te ganaste un brownie', 'Agrégalo en tu próximo pedido con tu cuenta abierta y va por nuestra cuenta.'];
+    } else if (conSello && despues.dias > antes.dias) {
+      aviso = ['Se horneó otra rebanada', 'Llevas ' + Math.min(despues.dias, PREMIOS.pizza.dia) + ' de ' + PREMIOS.pizza.dia +
+        '. Te faltan ' + despues.faltanPizza + ' para completar la pizza.'];
+    }
+    if (aviso) avisoWalletObjeto_(obj.id, aviso[0], aviso[1]);
+  } catch (e) {
+    console.error('No se pudo actualizar el pase de Wallet: ' + e);
+  }
+}
+
+/** Corre esto a mano despues de configurar Wallet: confirma que Google acepta
+ *  la cuenta de servicio y deja creada la clase. No crea ningun pase. */
+function probarWallet() {
+  const w = walletConfig_();
+  if (!w.emisor) throw new Error('Falta la propiedad del script WALLET_ISSUER_ID.');
+  const sa = cuentaServicioFcm_();
+  if (!sa) throw new Error('Falta la propiedad del script FCM_CUENTA_SERVICIO.');
+  CacheService.getScriptCache().remove('wallet:acceso');
+  PropertiesService.getScriptProperties().deleteProperty('WALLET_CLASE_LISTA');
+  asegurarClaseWallet_(w.emisor);
+  Logger.log('Listo: ' + sa.client_email + ' firma pases del emisor ' + w.emisor +
+    '. Modo: ' + (w.modo || 'apagado') + '. Probadores: ' + (w.probadores.join(', ') || 'ninguno') + '.');
+}
+
+/** Aviso a TODOS los que guardaron la tarjeta (por ejemplo, el 2x1). Se corre a
+ *  mano desde el editor, cambiando el texto. Google limita los avisos por pase:
+ *  usalo con medida. */
+function avisoWalletATodos() {
+  const titulo = 'Hoy es miércoles de 2x1';
+  const cuerpo = 'Desde las 7 pm, pide dos pizzas y la de menor precio va por la casa.';
+  const w = walletConfig_();
+  if (!w.emisor) throw new Error('Falta la propiedad del script WALLET_ISSUER_ID.');
+  const r = walletPedir_('post', '/loyaltyClass/' + encodeURIComponent(w.emisor + '.' + WALLET_CLASE) + '/addMessage', {
+    message: { id: 'm' + Date.now(), header: titulo, body: cuerpo, messageType: 'TEXT_AND_NOTIFY' }
+  });
+  if (r.code !== 200) throw new Error('Google Wallet no mandó el aviso: ' + r.code + ' ' + r.texto.slice(0, 300));
+  Logger.log('Aviso enviado a los pases de la clase ' + WALLET_CLASE + '.');
 }
 
 function fechaCortaGs_(iso) {

@@ -1682,7 +1682,8 @@ function DialogoCuenta({
     googleDisponible,
     telefono: ligado,
     tarjeta,
-    cargandoTelefono
+    cargandoTelefono,
+    wallet
   } = useCuenta();
   const [modo, setModo] = React.useState('entrar'); // entrar | crear | recuperar
   const [nombre, setNombre] = React.useState('');
@@ -1920,7 +1921,42 @@ function DialogoCuenta({
       fontSize: 12.5,
       color: 'var(--gris-tinta, #4A4A4A)'
     }
-  }, "Tus premios se cobran solos cuando pides con este n\xFAmero y tu cuenta abierta.")) : /*#__PURE__*/React.createElement("form", {
+  }, "Tus premios se cobran solos cuando pides con este n\xFAmero y tu cuenta abierta."), wallet && !/iPhone|iPad|iPod/.test(navigator.userAgent) && /*#__PURE__*/React.createElement("button", {
+    type: "button",
+    disabled: ocupado,
+    onClick: () => correr(async () => {
+      let r;
+      try {
+        r = await window.mextizzaWalletEnlace();
+      } catch (err) {
+        const e = new Error(String(err && err.message || err).replace(/^(Error:\s*)+/, ''));
+        e.code = 'servidor';
+        throw e;
+      }
+      // Google abre su pantalla para guardar; en la app sale al navegador.
+      window.location.href = r.url;
+    }),
+    style: {
+      marginTop: 12,
+      width: '100%',
+      minHeight: 46,
+      borderRadius: 999,
+      border: 0,
+      cursor: 'pointer',
+      background: '#1F1F1F',
+      color: '#fff',
+      fontFamily: 'var(--font-body)',
+      fontWeight: 600,
+      fontSize: 15,
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      gap: 8
+    }
+  }, ocupado ? /*#__PURE__*/React.createElement("span", {
+    className: "mx-puntos",
+    "aria-label": "Preparando tu tarjeta"
+  }, /*#__PURE__*/React.createElement("i", null), /*#__PURE__*/React.createElement("i", null), /*#__PURE__*/React.createElement("i", null)) : 'Agregar a Google Wallet')) : /*#__PURE__*/React.createElement("form", {
     onSubmit: e => {
       e.preventDefault();
       correr(async () => {

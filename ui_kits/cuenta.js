@@ -90,6 +90,8 @@ if (!window.__mextizzaCuentaLoaded) {
     telefono: ligado.telefono,
     tarjeta: ligado.tarjeta,
     cargandoTelefono: ligado.cargando,
+    // El servidor decide si a esta cuenta se le ofrece Google Wallet.
+    wallet: !!ligado.wallet,
     // Una app vieja, instalada antes del plugin, no ofrece Google en vez de
     // fallar al tocarlo: esa persona puede entrar con su correo.
     googleDisponible: !esApp() || !!pluginSocial()
@@ -145,7 +147,7 @@ if (!window.__mextizzaCuentaLoaded) {
     ligado = Object.assign({}, ligado, { cargando: true });
     avisar();
     return window.mextizzaMiCuenta()
-      .then((r) => { ligado = { telefono: r.telefono || '', tarjeta: r.tarjeta || null, cargando: false }; })
+      .then((r) => { ligado = { telefono: r.telefono || '', tarjeta: r.tarjeta || null, wallet: !!r.wallet, cargando: false }; })
       .catch(() => { ligado = Object.assign({}, ligado, { cargando: false }); })
       .then(avisar);
   }
@@ -284,6 +286,8 @@ if (!window.__mextizzaCuentaLoaded) {
         const r = await window.mextizzaLigarTelefono({ telefono, folio });
         ligado = { telefono: r.telefono || '', tarjeta: r.tarjeta || null, cargando: false };
         avisar();
+        // Ligar no dice si hay Google Wallet; mi_cuenta si.
+        refrescarLigado();
       } catch (err) {
         const e = new Error(String(err && err.message || err).replace(/^(Error:\s*)+/, ''));
         e.code = 'servidor';
