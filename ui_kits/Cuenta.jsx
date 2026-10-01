@@ -209,13 +209,16 @@ function DialogoCuenta({ abierto, onCerrar, fijo = true, telefonoSugerido = '' }
                       }
                       // Google abre su pantalla para guardar; en la app sale al navegador.
                       window.location.href = r.url;
-                    })} style={{
-                      marginTop: 12, width: '100%', minHeight: 46, borderRadius: 999, border: 0, cursor: 'pointer',
-                      background: '#1F1F1F', color: '#fff', fontFamily: 'var(--font-body)', fontWeight: 600, fontSize: 15,
-                      display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8
+                    })} aria-busy={ocupado} style={{
+                      /* El boton oficial de Google, tal cual: Google no deja cambiarle
+                         letra, esquinas ni margenes, pide 8 de aire alrededor y minimo
+                         48 de alto. Es la version compacta (239 x 55) porque la larga
+                         no cabe en el panel del celular sin bajar de esos 48. */
+                      display: 'block', margin: '20px auto 8px', padding: 0, border: 0, background: 'none',
+                      cursor: 'pointer', borderRadius: 28, opacity: ocupado ? 0.6 : 1, transition: 'opacity .15s ease-out'
                     }}>
-                      {ocupado ? <span className="mx-puntos" aria-label="Preparando tu tarjeta"><i></i><i></i><i></i></span>
-                        : 'Agregar a Google Wallet'}
+                      <img src="/assets/wallet/agregar-a-google-wallet.svg" width={239} height={55}
+                        alt="Agregar a la Billetera de Google" style={{ display: 'block' }} />
                     </button>
                   )}
                 </div>
