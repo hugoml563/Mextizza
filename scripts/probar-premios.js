@@ -1028,7 +1028,10 @@ console.log('\nLO QUE MANDA EL NAVEGADOR NO ENTRA COMO FORMULA NI COMO PRECIO RA
   comparar('el pase dice cuantas rebanadas lleva', pintado.loyaltyPoints.balance.string, '5 de 9');
   comparar('y si el brownie esta listo', pintado.secondaryLoyaltyPoints.balance.string, 'Listo');
   comparar('y cuantas le faltan para la pizza', pintado.textModulesData[0].header, 'Te faltan 4 rebanadas');
-  comparar('el pase muestra solo la terminacion del telefono', pintado.accountId, '4321');
+  comparar('el pase no muestra el telefono', pintado.accountId === undefined && pintado.accountName === undefined, true);
+  comparar('la pizza del pase va con sus rebanadas y el brownie listo', pintado.heroImage.sourceUri.uri, 'https://mextizza.com/assets/wallet/pizza-5-brownie.png');
+  comparar('cada imagen que pide el pase existe', [0, 1, 4, 9].every((n) => ['', '-brownie'].every((b) =>
+    fs.existsSync(path.join(RAIZ, 'assets/wallet/pizza-' + n + b + '.png')))), true);
 
   // Sin cuenta ligada no hay enlace; con cuenta ligada, si.
   GOOGLE.cuentas['tok-sin-tel'] = { localId: 'uid-sin-tel', email: 'otra@prueba.mx' };

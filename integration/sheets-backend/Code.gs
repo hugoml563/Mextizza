@@ -2432,19 +2432,24 @@ function walletClase_(emisor) {
 function walletObjeto_(emisor, telefono, t) {
   const meta = PREMIOS.pizza.dia;
   const traviesa = (delCatalogo_(CATALOGO.productos, PREMIOS.pizza.producto) || {}).nombre || 'Pizza Traviesa';
-  const llevas = Math.min(t.dias, meta);
+  const llenas = Math.min(t.dias, meta);
   const premio = t.pizza
     ? { header: 'Completaste la pizza', body: 'La ' + traviesa + ' va por nuestra cuenta. Pídela con tu cuenta abierta.' }
     : { header: 'Te faltan ' + t.faltanPizza + (t.faltanPizza === 1 ? ' rebanada' : ' rebanadas'),
         body: 'Con la ' + meta + ' la ' + traviesa + ' va por nuestra cuenta.' };
-  const tel = soloDigitos_(telefono);
+  /* La pizza de la tarjeta, ya dibujada para cada estado por
+     scripts/build-wallet.js. Sin accountId ni accountName: Google los pinta en
+     un recuadro grande con etiquetas en ingles, y al cliente no le dicen nada. */
+  const imagen = 'pizza-' + llenas + (t.brownie && llenas >= PREMIOS.brownie.dia ? '-brownie' : '') + '.png';
   return {
     id: walletIdObjeto_(emisor, telefono),
     classId: emisor + '.' + WALLET_CLASE,
     state: 'ACTIVE',
-    accountId: tel.slice(-4),
-    accountName: 'Teléfono terminación ' + tel.slice(-4),
-    loyaltyPoints: { label: 'Rebanadas', balance: { string: llevas + ' de ' + meta } },
+    heroImage: {
+      sourceUri: { uri: 'https://mextizza.com/assets/wallet/' + imagen },
+      contentDescription: walletTexto_('Tu pizza lleva ' + llenas + ' de ' + meta + ' rebanadas')
+    },
+    loyaltyPoints: { label: 'Rebanadas', balance: { string: llenas + ' de ' + meta } },
     secondaryLoyaltyPoints: {
       label: 'Brownie',
       balance: { string: t.brownie ? 'Listo' : (t.faltanBrownie > 0 ? 'En la ' + PREMIOS.brownie.dia : 'Cobrado') }
