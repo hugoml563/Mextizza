@@ -2577,6 +2577,12 @@ function walletAlEntregar_(telefono, antes, despues, conSello) {
 function probarWallet() {
   const w = walletConfig_();
   if (!w.emisor) throw new Error('Falta la propiedad del script WALLET_ISSUER_ID.');
+  /* El ID que se confunde es el del perfil de comerciante (letras, como
+     BCR2DN...). El de Wallet es solo numeros y sale en Google Wallet API. */
+  if (!/^\d{10,25}$/.test(w.emisor)) {
+    throw new Error('WALLET_ISSUER_ID debe ser solo números (el Issuer ID de la sección Google Wallet API). "' +
+      w.emisor + '" parece el ID de comerciante del perfil de negocio.');
+  }
   const sa = cuentaServicioFcm_();
   if (!sa) throw new Error('Falta la propiedad del script FCM_CUENTA_SERVICIO.');
   CacheService.getScriptCache().remove('wallet:acceso');
