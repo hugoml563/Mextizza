@@ -64,7 +64,11 @@ function pluginModulo(info) {
 
 function compilar(rel) {
   const abs = path.join(RAIZ, rel);
-  const fuente = fs.readFileSync(abs, 'utf8');
+  /* Saltos de linea normalizados: con core.autocrlf, una copia de Windows
+     tiene CRLF y otra LF para el mismo archivo de git, y la huella y el codigo
+     salian distintos en cada una. El paquete quedaba "modificado" despues de
+     cada build segun en que carpeta se corriera. */
+  const fuente = fs.readFileSync(abs, 'utf8').replace(/\r\n/g, '\n');
   const info = { rel, importa: [], exporta: [] };
   const { code } = babel.transformSync(fuente, {
     filename: abs,
