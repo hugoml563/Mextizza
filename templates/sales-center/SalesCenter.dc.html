@@ -21,12 +21,12 @@
 <script src="../../ui_kits/menu-data.js"></script>
 <script src="../../ui_kits/delivery-zone.js"></script>
 <script>
-/* _ds_bundle.js (el sistema de diseno que carga support.js) trae copias
-   viejas de la carta, de la zona de reparto y del 2x1, y las escribe encima de
-   las de window: otro orden, fotos que ya no existen y otro centro de reparto
-   (Lomas Lindas salia a 4.3 km). Hasta las funciones de delivery-zone.js leen
-   esas copias cuando se les llama. Por eso aqui se apartan solo los DATOS
-   buenos, antes de que llegue el paquete, y las cuentas se hacen en el tablero. */
+/* Aqui se apartan los DATOS de la carta, la zona y el 2x1 antes de que cargue
+   el sistema de diseno (_ds_bundle.js, via ds-base.js), y las cuentas se hacen
+   en el tablero. Antes el paquete traia copias viejas de esos datos y las
+   escribia encima (Lomas Lindas salia a 4.3 km). Desde que lo genera
+   scripts/build-ds-bundle.js solo lleva componentes y el build falla si vuelve
+   a traer datos del negocio; esto queda como segundo seguro. */
 window.MX_CAPTURA = { menu: MEXTIZZA_MENU, extras: MEXTIZZA_ADDONS, zona: MEXTIZZA_ZONE, dosxuno: MEXTIZZA_2X1 };
 </script>
 <script src="./avisos-push.js"></script>

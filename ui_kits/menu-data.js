@@ -66,9 +66,7 @@ const MEXTIZZA_FACTS = {
      se puede comparar contra "grande $352" o "familiar $260". */
   tamanoPizza: 'Grande',
   /* Tiempo prometido puerta a puerta. Es el numero OFICIAL: la pantalla de
-     comandas colorea contra el, y aparece en el menu impreso, el sitio y la app.
-     Cambiarlo aqui no basta para el bundle compilado (_ds_bundle.js) — hay que
-     sincronizarlo a mano. */
+     comandas colorea contra el, y aparece en el menu impreso, el sitio y la app. */
   promesaMin: 40,
   radio: '3 km · hasta 40 min puerta a puerta',
   /* Horario de operacion. getDay(): 0=domingo ... 6=sabado.
