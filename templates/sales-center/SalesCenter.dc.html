@@ -709,7 +709,9 @@ window.__resources = Object.assign(window.__resources || {}, {
 <div style="flex:none;display:flex;align-items:stretch;gap:8px">
 <sc-if value="{{ pd.separador }}" hint-placeholder-val="{{ false }}"><div style="flex:none;width:2px;margin:6px 4px 6px 2px;background:rgba(245,240,232,.18);border-radius:2px"></div></sc-if>
 <button class="mx-prod" onClick="{{ pd.agregar }}" aria-label="{{ pd.etiqueta }}" style="{{ pd.estilo }}">
-<img src="{{ pd.foto }}" alt="" width="44" height="44" decoding="async" style="width:44px;height:44px;border-radius:50%;object-fit:cover;border:2px solid #1A1A1A;display:block;margin:0 auto;background:#EDE6DA">
+<!-- La foto va como fondo y no como <img src>: el navegador descargaba
+     literal "{{ pd.foto }}" (404) antes de que el lienzo armara la plantilla. -->
+<span aria-hidden="true" style="{{ pd.fotoEstilo }}"></span>
 <span style="display:block;margin-top:5px;font-size:12.5px;font-weight:700;line-height:1.1;white-space:nowrap">{{ pd.nombre }}</span>
 <span style="display:block;margin-top:2px;font-family:'Bungee',cursive;font-size:11px;color:#C1502E">{{ pd.precio }}</span>
 <sc-if value="{{ pd.hay }}" hint-placeholder-val="{{ false }}"><span class="mx-badge" style="position:absolute;top:-7px;right:-7px;min-width:24px;height:24px;padding:0 6px;box-sizing:border-box;border-radius:99px;background:#E4007C;color:#FFFFFF;border:2px solid #1A1A1A;font-family:'Bungee',cursive;font-size:11px;display:flex;align-items:center;justify-content:center">{{ pd.cant }}</span></sc-if>
@@ -879,8 +881,17 @@ class Component extends DCLogic {
       /* Este distintivo decia 'Reparto' en TODAS las ordenes porque estaba
          escrito a mano: nunca vino del servidor. Ahora dice lo unico que
          cambia la operacion — si sale un repartidor o si el cliente viene. */
+      /* Si un boton sigue en camino, esa tarjeta se queda como la dejo el
+         boton: la lista pudo salir del servidor antes del cambio, y regresarla
+         un instante a su estado anterior parece que el toque no conto. */
+      const enVuelo = this._enVuelo || {};
+      const actual = {};
+      this.state.ordenes.forEach(x => { actual[x.folio] = x.estado; });
       this.setState({
-        ordenes: ordenes.map(o => ({ ...o, tipo: o.pickup ? 'Recoge' : 'Reparto' })),
+        ordenes: ordenes.map(o => ({
+          ...o, tipo: o.pickup ? 'Recoge' : 'Reparto',
+          estado: enVuelo[o.folio] && actual[o.folio] ? actual[o.folio] : o.estado
+        })),
         error: null,
       });
       this.detectarNuevos('pedido', ordenes.filter(o => o.estado === 'recibida').map(o => o.folio));
@@ -1093,10 +1104,15 @@ class Component extends DCLogic {
       error: null
     });
 
+    /* Sin recargar la lista al terminar: la tarjeta ya se movio y el servidor
+       confirmo el mismo estado. Pedir la lista otra vez costaba otro segundo y
+       medio por boton; la actualizacion de cada 15 s la pone al dia. */
     try {
-      await mextizzaAvanzarEstado(o.folio);
+      const r = await mextizzaAvanzarEstado(o.folio);
       delete this._enVuelo[o.folio];
-      await this.cargar();
+      this.setState({
+        ordenes: this.state.ordenes.map(x => (x.folio === o.folio && r && r.estado ? { ...x, estado: r.estado } : x))
+      });
     } catch (err) {
       delete this._enVuelo[o.folio];
       this.setState({
@@ -1635,7 +1651,7 @@ class Component extends DCLogic {
       nombre: npCorto(p.name),
       etiqueta: 'Agregar ' + p.name,
       precio: money(p.price),
-      foto: npFoto(p.photo),
+      fotoEstilo: 'display:block;width:44px;height:44px;margin:0 auto;border-radius:50%;border:2px solid #1A1A1A;background:#EDE6DA url("' + npFoto(p.photo) + '") center/cover no-repeat',
       cant: cuenta[p.id] || 0,
       hay: !!cuenta[p.id],
       estilo: 'position:relative;flex:none;width:75px;padding:8px 4px 7px;border-radius:12px;cursor:pointer;text-align:center;font-family:\'Oswald\',sans-serif;color:#1A1A1A;'

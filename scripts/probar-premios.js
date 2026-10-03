@@ -77,7 +77,7 @@ const ctx = {
       throw new Error('formato no soportado en la prueba: ' + fmt);
     },
   },
-  LockService: { getScriptLock: () => ({ waitLock() {}, releaseLock() {} }) },
+  LockService: { getScriptLock: () => ({ waitLock() {}, tryLock() { return true; }, releaseLock() {} }) },
   PropertiesService: {
     getScriptProperties: () => ({
       getProperty: (k) => props[k] || null,
@@ -1071,8 +1071,48 @@ console.log('\nLO QUE MANDA EL NAVEGADOR NO ENTRA COMO FORMULA NI COMO PRECIO RA
   pedir([{ producto_id: 'roni', cantidad: 1 }], { tel: '5500000001', cuando: DIA(12) });
   comparar('sin pase guardado no se llama a Wallet', WALLET.llamadas.length, 0);
 
+  /* Con la cola encendida, la entrega ya no espera a Google: solo anota. El
+     activador de cada minuto manda el pase y el aviso despues. */
+  props.WALLET_COLA_ACTIVA = 'si';
+  WALLET.llamadas = [];
+  pedir([{ producto_id: 'roni', cantidad: 1 }], { tel: TW, cuando: DIA(16) });
+  comparar('con la cola, la entrega no llama a Google', WALLET.llamadas.length, 0);
+  comparar('y deja anotado el pase', JSON.parse(props.WALLET_COLA || '[]').length, 1);
+  ctx.procesarColaWallet();
+  comparar('el proceso de cada minuto actualiza el pase', WALLET.objetos[id].loyaltyPoints.balance.string, tarjetaDe(TW).dias + ' de 9');
+  comparar('y manda el aviso', llamadasA(/addMessage/).length, 1);
+  comparar('y vacia la cola', JSON.parse(props.WALLET_COLA || '[]').length, 0);
+  ctx.procesarColaWallet();
+  comparar('una cola vacia no llama a nadie', llamadasA(/addMessage/).length, 1);
+
   ctx.UrlFetchApp.fetch = fetchReal;
-  ['WALLET_ISSUER_ID', 'WALLET_MODO', 'WALLET_PROBADORES', 'FCM_CUENTA_SERVICIO', 'WALLET_CLASE_LISTA'].forEach((k) => { delete props[k]; });
+  ['WALLET_COLA', 'WALLET_COLA_ACTIVA', 'WALLET_ISSUER_ID', 'WALLET_MODO', 'WALLET_PROBADORES', 'FCM_CUENTA_SERVICIO', 'WALLET_CLASE_LISTA'].forEach((k) => { delete props[k]; });
+}
+
+/* La lista del dia ya no lee el historial completo: solo los ultimos renglones
+   de cada hoja, ampliando el bloque si hace falta. Tiene que dar exactamente lo
+   mismo que leer todo, aunque los pedidos de hoy queden mas arriba del primer
+   bloque. */
+{
+  console.log('\nLISTA DEL DIA SIN LEER EL HISTORIAL');
+  // 260 pedidos de otros dias: mas que el primer bloque de 200 renglones.
+  for (let n = 0; n < 260; n++) {
+    pedir([{ producto_id: 'roni', cantidad: 1 }], { tel: '56' + String(10000000 + n), cuando: DIA(9 + (n % 5)), entregar: false });
+  }
+  RELOJ = DIA(30);
+  const hoyFolios = [];
+  for (let n = 0; n < 230; n++) {
+    hoyFolios.push(ctx.crearOrden_({
+      canal: 'WhatsApp', cliente: { telefono: '57' + String(10000000 + n), nombre: 'Hoy' },
+      direccion: 'C', colonia: 'Lomas Lindas', km: 1, pago_metodo: 'Efectivo',
+      items: [{ producto_id: 'chisi', cantidad: 1, addons: [{ id: 'provolone' }] }, { producto_id: 'agua', cantidad: 1 }]
+    }, 'admin').folio);
+  }
+  const lista = ctx.listarHoy_();
+  comparar('trae todos los pedidos de hoy, aunque pasen del primer bloque', lista.map((o) => o.folio).sort().join(), hoyFolios.slice().sort().join());
+  comparar('y ninguno de otros dias', lista.length, hoyFolios.length);
+  comparar('cada uno con sus dos renglones', lista.every((o) => o.lineas.length === 2), true);
+  comparar('y el extra de la pizza', lista.every((o) => o.lineas.some((l) => (l.addons || []).join() === 'Extra provolone')), true);
 }
 
 /* Pedido rapido del Centro de Ventas: la cocina busca al cliente por telefono

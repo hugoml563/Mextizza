@@ -1775,10 +1775,13 @@ function indiceDe_(lineas, productoId) {
 
    premioTipo llega como texto desde la columna `premio` del pedido
    ('tarjeta:brownie', 'tarjeta:pizza', '2x1' o vacio). */
-function liquidarPedido_(telefono, premioTipo, ahora, ganaSello) {
+function liquidarPedido_(telefono, premioTipo, ahora, ganaSello, salida) {
   if (!telefono) return null;
   const sh = sheet_(SHEETS.clientes);
   const t = leerTarjeta_(telefono);
+  // Quien llama puede querer la tarjeta de antes (los avisos de Wallet): asi
+  // no la vuelve a leer de la hoja.
+  if (salida) { salida.antes = premiosDe_(t); salida.wallet = !!t.wallet; }
   const hoy = hoyCDMX_(ahora);
   const c = CLIENTES_HEADERS;
 
@@ -1811,12 +1814,14 @@ function liquidarPedido_(telefono, premioTipo, ahora, ganaSello) {
   }
 
   if (t.fila) {
-    sh.getRange(t.fila, c.indexOf('dias_ciclo') + 1).setValue(dias);
-    if (nuevoDia) sh.getRange(t.fila, c.indexOf('ultimo_dia') + 1).setValue(hoy);
-    sh.getRange(t.fila, c.indexOf('brownie_usado') + 1).setValue(brownieUsado);
-    sh.getRange(t.fila, c.indexOf('pizza_usada') + 1).setValue(pizzaUsada);
-    sh.getRange(t.fila, c.indexOf('ciclos') + 1).setValue(ciclos);
-    sh.getRange(t.fila, c.indexOf('brownie_guardado') + 1).setValue(brownieGuardado);
+    /* Las seis columnas de la tarjeta van seguidas (dias_ciclo a
+       brownie_guardado): una sola escritura en vez de seis. Ninguna lleva
+       texto del cliente. */
+    const de = c.indexOf('dias_ciclo');
+    if (c.indexOf('brownie_guardado') - de !== 5) throw new Error('Las columnas de la tarjeta dejaron de ir seguidas.');
+    sh.getRange(t.fila, de + 1, 1, 6).setValues([[
+      dias, nuevoDia ? hoy : (t.ultimoDia || ''), brownieUsado, pizzaUsada, ciclos, brownieGuardado
+    ]]);
   }
   return premiosDe_({ dias: dias, brownieUsado: brownieUsado, pizzaUsada: pizzaUsada, ciclos: ciclos, brownieGuardado: brownieGuardado });
 }
@@ -1881,9 +1886,14 @@ function avanzarEstado_(body) {
   if (k === -1 || k >= FLUJO.length - 1) throw new Error('La orden ya está en el último estado');
   const nuevo = FLUJO[k + 1];
 
-  sh.getRange(index, ORDENES_HEADERS.indexOf('estado') + 1).setValue(nuevo);
+  /* Cada setValue es una llamada aparte a Sheets, y en Apps Script cada una
+     se nota en el boton. Los cambios se juntan en `fila` y se escriben al
+     final en bloques (ver escribirBloquesOrden_). */
+  const H = ORDENES_HEADERS;
+  const fila = row.slice();
+  fila[H.indexOf('estado')] = nuevo;
   const tsCol = TS_POR_ESTADO[nuevo];
-  if (tsCol) sh.getRange(index, ORDENES_HEADERS.indexOf(tsCol) + 1).setValue(new Date());
+  if (tsCol) fila[H.indexOf(tsCol)] = new Date();
   /* El inventario se descuenta al entrar al horno, no al entregar: es cuando
      el ingrediente de verdad se usa. Un pedido que se cancele despues de
      hornearse ya gasto la comida, y el stock tiene que decirlo.
@@ -1895,12 +1905,11 @@ function avanzarEstado_(body) {
       const insumos = leerInsumos_();
       const recetas = leerRecetas_();
       backflushOrden_(body.folio, insumos, recetas);
-      sh.getRange(index, ORDENES_HEADERS.indexOf('backflush') + 1).setValue('hecho');
+      fila[H.indexOf('backflush')] = 'hecho';
     } catch (e) {
       /* El inventario no puede detener la cocina. Si algo falla se marca y se
          sigue: es peor dejar un pedido atorado que tener un saldo flojo. */
-      sh.getRange(index, ORDENES_HEADERS.indexOf('backflush') + 1)
-        .setValue('error: ' + String(e).slice(0, 90));
+      fila[H.indexOf('backflush')] = 'error: ' + String(e).slice(0, 90);
     }
   }
 
@@ -1908,13 +1917,13 @@ function avanzarEstado_(body) {
      a medias no cuenta, que es justo lo que se pedia. */
   if (nuevo === 'entregada' && row[ORDENES_HEADERS.indexOf('sello')] === 'pendiente') {
     const telSello = row[ORDENES_HEADERS.indexOf('cliente_telefono')];
-    const antes = premiosDe_(leerTarjeta_(telSello));
+    const salida = {};
     const despues = liquidarPedido_(
       telSello,
       String(row[ORDENES_HEADERS.indexOf('premio')] || ''),
-      new Date(), true);
-    sh.getRange(index, ORDENES_HEADERS.indexOf('sello') + 1).setValue('contado');
-    if (despues) walletAlEntregar_(telSello, antes, despues, true);
+      new Date(), true, salida);
+    fila[H.indexOf('sello')] = 'contado';
+    if (despues) walletAlEntregar_(telSello, salida.antes, despues, true, salida.wallet);
   }
 
   if (nuevo === 'entregada' && row[ORDENES_HEADERS.indexOf('uid')]) {
@@ -1929,10 +1938,37 @@ function avanzarEstado_(body) {
   if (nuevo === 'entregada') {
     const pagoMetodo = row[ORDENES_HEADERS.indexOf('pago_metodo')];
     if (pagoMetodo === 'Efectivo' || pagoMetodo === 'Terminal') {
-      sh.getRange(index, ORDENES_HEADERS.indexOf('pago_estado') + 1).setValue('pagado');
+      fila[H.indexOf('pago_estado')] = 'pagado';
     }
   }
+  escribirBloquesOrden_(sh, index, row, fila);
   return { folio: body.folio, estado: nuevo };
+}
+
+/* Escribe lo que cambio de un pedido en, a lo mucho, tres llamadas.
+
+   Los bloques solo cubren columnas que NUNCA traen texto del cliente: estado,
+   pagos y montos, las horas de cada paso, y las marcas internas de sello,
+   premio y backflush. Reescribir una celda con texto del cliente (nombre,
+   telefono, direccion, notas) le quitaria el apostrofe con que textoSeguro_
+   la protege, y un "=..." volveria a ser formula. Por eso el estado va solo:
+   sus vecinas son canal y telefono. */
+const BLOQUES_ORDEN = [
+  ['estado', 'estado'],
+  ['pago_estado', 't_entregada'],   // pago, subtotal, total y las seis horas
+  ['sello', 'backflush']            // sello, premio, consecutivo, backflush
+];
+function escribirBloquesOrden_(sh, index, antes, despues) {
+  const H = ORDENES_HEADERS;
+  BLOQUES_ORDEN.forEach(function (b) {
+    const de = H.indexOf(b[0]), a = H.indexOf(b[1]);
+    let cambio = false;
+    for (let c = de; c <= a; c++) if (antes[c] !== despues[c]) cambio = true;
+    if (!cambio) return;
+    const valores = [];
+    for (let c = de; c <= a; c++) valores.push(despues[c] === undefined ? '' : despues[c]);
+    sh.getRange(index, de + 1, 1, valores.length).setValues([valores]);
+  });
 }
 
 /** body: { token, folio, motivo } */
@@ -2596,13 +2632,68 @@ function walletEnlace_(body) {
   return { url: 'https://pay.google.com/gp/v/save/' + entrada + '.' + firma };
 }
 
-/* Al entregar: pinta el pase con la tarjeta nueva y avisa lo que cambio. antes
-   y despues son premiosDe_ de antes y despues de liquidar. Nunca tumba la
-   entrega: cualquier error se queda en Ejecuciones. */
-function walletAlEntregar_(telefono, antes, despues, conSello) {
+/* Al entregar. Las llamadas a Google tardan cerca de un segundo y hacian
+   esperar al boton de Entregada, asi que con la cola encendida
+   (activarColaWallet) solo se anota el cambio y procesarColaWallet lo manda
+   en el siguiente minuto. Sin la cola, se manda en el momento, como antes.
+   `tieneWallet` viene de la tarjeta que ya leyo liquidarPedido_: quien no
+   guardo el pase no cuesta ni una lectura. */
+function walletAlEntregar_(telefono, antes, despues, conSello, tieneWallet) {
+  if (!tieneWallet) return;
+  if (PropertiesService.getScriptProperties().getProperty('WALLET_COLA_ACTIVA') === 'si') {
+    try {
+      walletEncolar_({ tel: String(telefono), antes: antes, despues: despues, conSello: !!conSello });
+      return;
+    } catch (e) {
+      console.error('No se pudo anotar el pase en la cola; se manda en el momento: ' + e);
+    }
+  }
+  walletSincronizar_(telefono, antes, despues, conSello);
+}
+
+/* Se llama dentro del candado de doPost, asi que dos entregas no se pisan la
+   cola. Se guardan las ultimas 200: si el proceso se detuviera dias, no crece
+   sin fin. */
+function walletEncolar_(item) {
+  const p = PropertiesService.getScriptProperties();
+  const cola = JSON.parse(p.getProperty('WALLET_COLA') || '[]');
+  cola.push(item);
+  p.setProperty('WALLET_COLA', JSON.stringify(cola.slice(-200)));
+}
+
+/** Lo corre el activador de cada minuto. Toma la cola con el candado (para no
+ *  cruzarse con una entrega que esta anotando) y la manda ya sin el. */
+function procesarColaWallet() {
+  const lock = LockService.getScriptLock();
+  if (!lock.tryLock(10000)) return;
+  let cola = [];
   try {
-    const t = leerTarjeta_(telefono);
-    if (!t.wallet) return;
+    const p = PropertiesService.getScriptProperties();
+    cola = JSON.parse(p.getProperty('WALLET_COLA') || '[]');
+    if (cola.length) p.setProperty('WALLET_COLA', '[]');
+  } finally {
+    lock.releaseLock();
+  }
+  cola.forEach(function (it) { walletSincronizar_(it.tel, it.antes, it.despues, it.conSello); });
+}
+
+/** Correr UNA vez a mano desde el editor. Crea el activador de cada minuto y
+ *  enciende la cola. Google pide un permiso nuevo ("ejecutar cuando no estas
+ *  presente"): es el del activador. */
+function activarColaWallet() {
+  ScriptApp.getProjectTriggers().forEach(function (t) {
+    if (t.getHandlerFunction() === 'procesarColaWallet') ScriptApp.deleteTrigger(t);
+  });
+  ScriptApp.newTrigger('procesarColaWallet').timeBased().everyMinutes(1).create();
+  PropertiesService.getScriptProperties().setProperty('WALLET_COLA_ACTIVA', 'si');
+  Logger.log('Listo: los pases de Wallet se actualizan dentro del minuto siguiente a cada entrega.');
+}
+
+/* Pinta el pase con la tarjeta nueva y avisa lo que cambio. antes y despues
+   son premiosDe_ de antes y despues de liquidar. Nunca tumba nada: cualquier
+   error se queda en Ejecuciones. */
+function walletSincronizar_(telefono, antes, despues, conSello) {
+  try {
     const emisor = walletConfig_().emisor;
     if (!emisor || !cuentaServicioFcm_()) return;
     const obj = walletObjeto_(emisor, telefono, despues);
@@ -2735,17 +2826,49 @@ function listarHoy_() {
      terminado: en la ultima hora de servicio se borraban de la tablet los
      pedidos que seguian en el horno. */
   const hoy = hoyCDMX_();
-  const ordenes = rowsAsObjects_(sheet_(SHEETS.ordenes)).filter(o => {
+  const esDeHoy = o => {
     if (!o.folio || !o.t_recibida) return false;
     const t = new Date(o.t_recibida);
     return !isNaN(t) && hoyCDMX_(t) === hoy;
-  });
-  return armarOrdenes_(ordenes);
+  };
+  /* Los pedidos se agregan siempre al final, asi que los de hoy son los
+     ultimos renglones. Antes se leia el historial completo cada 15 segundos y
+     despues de cada boton, y el tablero se hacia mas lento cada semana. */
+  const ordenes = ultimasFilas_(sheet_(SHEETS.ordenes), o => !esDeHoy(o)).filter(esDeHoy);
+  const folios = {};
+  ordenes.forEach(o => { folios[o.folio] = true; });
+  const items = ultimasFilas_(sheet_(SHEETS.ordenItems), it => !folios[it.folio]);
+  const lineas = {};
+  items.forEach(it => { lineas[it.linea_id] = true; });
+  const addons = ultimasFilas_(sheet_(SHEETS.itemComplementos), a => !lineas[a.linea_id]);
+  return armarOrdenes_(ordenes, items, addons);
 }
 
-function armarOrdenes_(ordenes) {
-  const items = rowsAsObjects_(sheet_(SHEETS.ordenItems));
-  const addons = rowsAsObjects_(sheet_(SHEETS.itemComplementos));
+/* Los ultimos renglones de una hoja como objetos. Lee un bloque del final y lo
+   va duplicando hasta que el primer renglon leido ya es "viejo" segun
+   `esViejo` (o se llega al principio). Como todo se agrega al final, lo que
+   sigue hacia arriba tambien es viejo. */
+function ultimasFilas_(sh, esViejo) {
+  const total = sh.getLastRow();
+  if (total < 2) return [];
+  const headers = sh.getRange(1, 1, 1, sh.getLastColumn()).getValues()[0];
+  const comoObjeto = row => {
+    const o = {};
+    headers.forEach((h, i) => { o[h] = row[i]; });
+    return o;
+  };
+  let n = 200;
+  for (;;) {
+    const desde = Math.max(2, total - n + 1);
+    const filas = sh.getRange(desde, 1, total - desde + 1, headers.length).getValues().map(comoObjeto);
+    if (desde === 2 || esViejo(filas[0])) return filas;
+    n *= 2;
+  }
+}
+
+function armarOrdenes_(ordenes, itemsLeidos, addonsLeidos) {
+  const items = itemsLeidos || rowsAsObjects_(sheet_(SHEETS.ordenItems));
+  const addons = addonsLeidos || rowsAsObjects_(sheet_(SHEETS.itemComplementos));
 
   return ordenes.map(o => {
     const lineas = items.filter(it => it.folio === o.folio).map(it => ({
