@@ -1075,5 +1075,43 @@ console.log('\nLO QUE MANDA EL NAVEGADOR NO ENTRA COMO FORMULA NI COMO PRECIO RA
   ['WALLET_ISSUER_ID', 'WALLET_MODO', 'WALLET_PROBADORES', 'FCM_CUENTA_SERVICIO', 'WALLET_CLASE_LISTA'].forEach((k) => { delete props[k]; });
 }
 
+/* Pedido rapido del Centro de Ventas: la cocina busca al cliente por telefono
+   y puede cobrarle un premio sin que el entre a su cuenta. Ese premio queda
+   marcado como de la cocina para revisarlo despues. */
+{
+  console.log('\nPEDIDO RAPIDO DE LA COCINA');
+  const TP = '5544332211';
+  comparar('un telefono que nunca pidio sale como nuevo', ctx.clientePorTelefono_(TP).encontrado, false);
+  let err = '';
+  try { ctx.clientePorTelefono_('123'); } catch (e) { err = String(e.message); }
+  comparar('un telefono incompleto se rechaza', /10 dígitos/.test(err), true);
+
+  // Junta 4 dias para tener el brownie.
+  for (let d = 9; d <= 13 && tarjetaDe(TP).dias < 4; d++) {
+    if (!ctx.estaAbierto_(DIA(d))) continue;
+    pedir([{ producto_id: 'roni', cantidad: 1 }], { tel: TP, cuando: DIA(d) });
+  }
+  for (let d = 16; tarjetaDe(TP).dias < 4; d++) {
+    if (ctx.estaAbierto_(DIA(d))) pedir([{ producto_id: 'roni', cantidad: 1 }], { tel: TP, cuando: DIA(d) });
+  }
+  const c = ctx.clientePorTelefono_(TP);
+  comparar('quien ya pidio trae su nombre', c.nombre, 'Prueba');
+  comparar('y la direccion de su ultimo pedido', c.direccion + ' · ' + c.colonia, 'Calle 1 · Lomas Lindas');
+  comparar('y su tarjeta con el brownie listo', c.tarjeta.brownie, true);
+
+  RELOJ = DIA(24);
+  const r = ctx.crearOrden_({
+    canal: 'Teléfono', cliente: { telefono: TP, nombre: 'Prueba' },
+    direccion: 'Calle 1', colonia: 'Lomas Lindas', km: 1, pago_metodo: 'Terminal',
+    items: [{ producto_id: 'roni', cantidad: 1 }, { producto_id: 'chocolatoso', cantidad: 1 }],
+    usarPremio: 'brownie',
+  }, 'admin');
+  comparar('la cocina puede cobrar el brownie por telefono', r.premio && r.premio.tipo, 'tarjeta:brownie');
+  comparar('el premio queda marcado como de la cocina', campoDe(r.folio, 'premio_por'), 'cocina');
+  comparar('el canal Telefono se guarda tal cual', campoDe(r.folio, 'canal'), 'Teléfono');
+  comparar('un pedido sin premio no lleva marca', campoDe(pedir([{ producto_id: 'roni', cantidad: 1 }],
+    { tel: TP, cuando: DIA(25), entregar: false }).folio, 'premio_por'), '');
+}
+
 console.log('\n  ' + ok + ' pruebas ok, ' + mal + ' mal\n');
 process.exit(mal ? 1 : 0);

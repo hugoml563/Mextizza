@@ -135,6 +135,17 @@ if (!window.__mextizzaSheetsConfigLoaded) {
     }, comoCocina);
   };
 
+  /* Captura rapida del Centro de Ventas. Siempre con el token de la cocina y
+     sin cuenta: el pedido es de quien llamo, no de quien lo escribe. El
+     servidor pone los precios y decide si el premio o el 2x1 aplican. */
+  const mextizzaCapturarOrden = ({ canal, cliente, direccion, colonia, km, pago_metodo, notas, items, usarPremio }) =>
+    mextizzaApiPost('crear_orden', {
+      canal, cliente, direccion, colonia, km, entrega_tipo: 'domicilio',
+      pago_metodo, notas, items, usarPremio
+    }, true);
+  /** Datos y tarjeta de quien ya ha pedido, para no volver a preguntarle todo. */
+  const mextizzaClientePorTelefono = telefono => mextizzaApiGet('cliente_por_telefono', { telefono }, true);
+
   const mextizzaAvanzarEstado = folio => mextizzaApiPost('avanzar_estado', { folio }, true);
   const mextizzaCancelarOrden = (folio, motivo) => mextizzaApiPost('cancelar', { folio, motivo }, true);
   /** Estado de un solo pedido, para la pantalla de seguimiento de la app. */
@@ -202,5 +213,5 @@ if (!window.__mextizzaSheetsConfigLoaded) {
 
   const mextizzaTarjeta = (telefono) => mextizzaApiGet('tarjeta', { telefono: telefono || '' });
 
-  Object.assign(window, { mextizzaPickup, mextizzaTarjeta, mextizzaCrearOrden, mextizzaAvanzarEstado, mextizzaCancelarOrden, mextizzaEstadoOrden, mextizzaEstadoPorTelefono, mextizzaCancelarPorCliente, mextizzaListarAbiertas, mextizzaListarHoy, mextizzaSolicitarCatering, mextizzaListarCatering, mextizzaActualizarCatering, mextizzaPushRegistrar, mextizzaPushBaja, mextizzaPushProbar, mextizzaTokenAdmin, mextizzaGuardarTokenAdmin, mextizzaOlvidarTokenAdmin, mextizzaCapturaCocina, mextizzaInvEstado, mextizzaInvCompra, mextizzaInvLote, mextizzaInvMerma, mextizzaInvConteo, mextizzaLigarTelefono, mextizzaMiCuenta, mextizzaWalletEnlace });
+  Object.assign(window, { mextizzaPickup, mextizzaTarjeta, mextizzaCrearOrden, mextizzaAvanzarEstado, mextizzaCancelarOrden, mextizzaEstadoOrden, mextizzaEstadoPorTelefono, mextizzaCancelarPorCliente, mextizzaListarAbiertas, mextizzaListarHoy, mextizzaSolicitarCatering, mextizzaListarCatering, mextizzaActualizarCatering, mextizzaPushRegistrar, mextizzaPushBaja, mextizzaPushProbar, mextizzaTokenAdmin, mextizzaGuardarTokenAdmin, mextizzaOlvidarTokenAdmin, mextizzaCapturaCocina, mextizzaInvEstado, mextizzaInvCompra, mextizzaInvLote, mextizzaInvMerma, mextizzaInvConteo, mextizzaLigarTelefono, mextizzaMiCuenta, mextizzaWalletEnlace, mextizzaCapturarOrden, mextizzaClientePorTelefono });
 }

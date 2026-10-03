@@ -75,7 +75,7 @@ const TS_POR_ESTADO = {
   entregada: 't_entregada'
 };
 
-const ORDENES_HEADERS = ['folio', 'canal', 'estado', 'cliente_telefono', 'cliente_nombre', 'direccion', 'colonia', 'km', 'pago_metodo', 'pago_estado', 'subtotal', 'total', 't_recibida', 't_confirmada', 't_horno', 't_lista', 't_camino', 't_entregada', 'reparto', 'notas', 'motivo_cancelacion', 'entrega_tipo', 'descuento', 'sello', 'premio', 'consecutivo', 'backflush', 'uid'];
+const ORDENES_HEADERS = ['folio', 'canal', 'estado', 'cliente_telefono', 'cliente_nombre', 'direccion', 'colonia', 'km', 'pago_metodo', 'pago_estado', 'subtotal', 'total', 't_recibida', 't_confirmada', 't_horno', 't_lista', 't_camino', 't_entregada', 'reparto', 'notas', 'motivo_cancelacion', 'entrega_tipo', 'descuento', 'sello', 'premio', 'consecutivo', 'backflush', 'uid', 'premio_por'];
 const ORDEN_ITEMS_HEADERS = ['linea_id', 'folio', 'producto_id', 'producto_nombre', 'cantidad', 'precio_unit', 'complementos_total', 'importe', 'promocion'];
 const ITEM_COMPLEMENTOS_HEADERS = ['linea_id', 'complemento_id', 'complemento_nombre', 'precio'];
 const PRODUCTOS_HEADERS = ['id', 'nombre', 'descripcion', 'categoria', 'precio', 'activo', 'foto'];
@@ -1036,6 +1036,12 @@ function doGet(e) {
       requiereAdmin_(nivel);
       return jsonOut_({ ok: true, ordenes: listarHoy_() });
     }
+    /* La captura rapida del Centro de Ventas: con el telefono se llenan los
+       datos del cliente y se ve su tarjeta. Admin: trae nombre y direccion. */
+    if (e.parameter.action === 'cliente_por_telefono') {
+      requiereAdmin_(nivel);
+      return jsonOut_({ ok: true, cliente: clientePorTelefono_(e.parameter.telefono) });
+    }
     /* La tarjeta la consultan la web y la app para pintar el progreso. Va con
        token publico: es el propio cliente preguntando por su telefono, la misma
        exposicion que estado_por_telefono, que ya existia. */
@@ -1238,7 +1244,7 @@ function precioProducto_(id) {
    cualquier otra cosa queda como Web. Antes se guardaba tal cual, y un valor
    que empezara con '=' entraba al Sheet como formula viva, junto a los datos de
    todos los clientes. */
-const CANALES = ['Web', 'App', 'WhatsApp', 'Mostrador'];
+const CANALES = ['Web', 'App', 'WhatsApp', 'Teléfono', 'Mostrador'];
 function canalValido_(canal) {
   const c = String(canal || '').trim().toLowerCase();
   for (let i = 0; i < CANALES.length; i++) {
@@ -1587,7 +1593,11 @@ function crearOrden_(body, nivel) {
     consecutivo: nf.consecutivo,
     /* La cuenta que hizo el pedido, si entro. Vacio es un invitado. De aqui
        saldra el historial de pedidos y el cobro seguro de premios. */
-    uid: cuenta ? cuenta.uid : ''
+    uid: cuenta ? cuenta.uid : '',
+    /* Quien autorizo el premio de la tarjeta. 'cocina' es un premio que se
+       cobro por telefono o WhatsApp sin que el cliente entrara a su cuenta:
+       queda marcado para poder revisarlo despues. */
+    premio_por: (premio && premio.tipo.indexOf('tarjeta:') === 0) ? (nivel === 'admin' ? 'cocina' : 'cuenta') : ''
   };
   ordenesSh.appendRow(ORDENES_HEADERS.map(function (h) { return row[h]; }));
 
@@ -1809,6 +1819,42 @@ function liquidarPedido_(telefono, premioTipo, ahora, ganaSello) {
     sh.getRange(t.fila, c.indexOf('brownie_guardado') + 1).setValue(brownieGuardado);
   }
   return premiosDe_({ dias: dias, brownieUsado: brownieUsado, pizzaUsada: pizzaUsada, ciclos: ciclos, brownieGuardado: brownieGuardado });
+}
+
+/* Lo que la cocina necesita para capturar el pedido de alguien que ya pidio:
+   nombre, la direccion de su ULTIMO pedido (la de la hoja clientes es la del
+   primero y no se actualiza) y su tarjeta, con los premios ya apartados por un
+   pedido en curso descontados. */
+function clientePorTelefono_(telefono) {
+  const tel = soloDigitos_(telefono);
+  if (tel.length !== 10) throw new Error('El teléfono lleva 10 dígitos.');
+  const c = sheet_(SHEETS.clientes).getDataRange().getValues();
+  let fila = null;
+  for (let r = 1; r < c.length; r++) {
+    if (soloDigitos_(c[r][0]) === tel) { fila = c[r]; break; }
+  }
+  if (!fila) return { encontrado: false };
+  const res = {
+    encontrado: true,
+    nombre: String(fila[CLIENTES_HEADERS.indexOf('nombre')] || ''),
+    direccion: String(fila[CLIENTES_HEADERS.indexOf('direccion')] || ''),
+    colonia: String(fila[CLIENTES_HEADERS.indexOf('colonia')] || ''),
+    pedidos: Number(fila[CLIENTES_HEADERS.indexOf('pedidos')]) || 0
+  };
+  const o = sheet_(SHEETS.ordenes).getDataRange().getValues();
+  const H = ORDENES_HEADERS;
+  for (let r = o.length - 1; r >= 1; r--) {
+    if (soloDigitos_(o[r][H.indexOf('cliente_telefono')]) !== tel) continue;
+    if (o[r][H.indexOf('cliente_nombre')]) res.nombre = String(o[r][H.indexOf('cliente_nombre')]);
+    if (o[r][H.indexOf('direccion')]) {
+      res.direccion = String(o[r][H.indexOf('direccion')]);
+      res.colonia = String(o[r][H.indexOf('colonia')] || '');
+    }
+    break;
+  }
+  const t = leerTarjeta_(String(fila[0]));
+  res.tarjeta = premiosDe_(t, premiosReservados_(String(fila[0])));
+  return res;
 }
 
 function upsertCliente_(cliente, direccion, colonia) {
