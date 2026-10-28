@@ -1,0 +1,235 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Sistema completo para negocios</title>
+<meta name="description" content="Sitio de pedidos, app propia, centro de ventas, inventario y lealtad para pequeños negocios. Caso real: Mextizza.">
+<style>
+:root{
+  --bg:#f3f5f4; --surface:#ffffff; --sunken:#e6ebe9; --ink:#14201e; --muted:#53615e; --line:#d5dcd9;
+  --accent:#0a6b5c; --accent-ink:#ffffff; --warm:#8a4b12; --gold:#c8963f;
+  --radius:14px; --shadow:0 1px 2px rgba(0,0,0,.05),0 8px 24px rgba(0,0,0,.06);
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){--bg:#0f1514;--surface:#18201f;--sunken:#1f2827;--ink:#e9f0ee;--muted:#9bada9;--line:#2c3836;--accent:#4cc9b0;--accent-ink:#0f1514;--warm:#e3a867;--gold:#dbae5d;--shadow:0 1px 2px rgba(0,0,0,.4),0 8px 24px rgba(0,0,0,.35);color-scheme:dark}
+}
+:root[data-theme="dark"]{--bg:#0f1514;--surface:#18201f;--sunken:#1f2827;--ink:#e9f0ee;--muted:#9bada9;--line:#2c3836;--accent:#4cc9b0;--accent-ink:#0f1514;--warm:#e3a867;--gold:#dbae5d;--shadow:0 1px 2px rgba(0,0,0,.4),0 8px 24px rgba(0,0,0,.35);color-scheme:dark}
+*{box-sizing:border-box}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:11;background:var(--bg)}
+html{scroll-behavior:smooth}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.6 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;-webkit-font-smoothing:antialiased}
+img{max-width:100%;display:block}
+a{color:inherit}
+.wrap{max-width:1120px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+section{padding:72px 0}
+.eyebrow{font-size:12px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--accent);margin:0 0 12px}
+h1,h2,h3{line-height:1.12;margin:0;letter-spacing:-.02em}
+h1{font-size:clamp(34px,6vw,60px);max-width:16em}
+h2{font-size:clamp(26px,4vw,38px);max-width:20em}
+h3{font-size:19px;letter-spacing:-.01em}
+p{margin:0}
+.lede{font-size:clamp(17px,2.2vw,20px);color:var(--muted);max-width:40em;margin-top:18px}
+.btn{display:inline-flex;align-items:center;gap:8px;padding:13px 22px;border-radius:999px;background:var(--accent);color:var(--accent-ink);font-weight:700;text-decoration:none;border:2px solid var(--accent);min-height:44px}
+.btn:hover{filter:brightness(.92)}
+.btn.ghost{background:transparent;color:var(--ink);border-color:var(--line)}
+.btn.ghost:hover{border-color:var(--ink);filter:none}
+.row{display:flex;flex-wrap:wrap;gap:12px;margin-top:28px}
+/* nav */
+nav{position:sticky;top:env(safe-area-inset-top,0px);z-index:10;background:color-mix(in srgb,var(--bg) 92%,transparent);border-bottom:1px solid var(--line)}
+nav .wrap{display:flex;align-items:center;justify-content:space-between;height:60px;gap:12px}
+nav b{font-size:15px;letter-spacing:-.01em}
+nav .links{display:flex;gap:20px;font-size:14px}
+nav .links a{text-decoration:none;color:var(--muted)}
+nav .links a:hover{color:var(--ink)}
+@media(max-width:720px){nav .links{display:none}}
+/* hero */
+.hero{padding:64px 0 40px}
+.hero-grid{display:grid;grid-template-columns:1.1fr .9fr;gap:40px;align-items:center}
+@media(max-width:900px){.hero-grid{grid-template-columns:1fr}}
+.shot{border-radius:var(--radius);border:1px solid var(--line);box-shadow:var(--shadow);overflow:hidden;background:var(--surface)}
+.shot img{width:100%;height:auto}
+.phone{max-width:260px;margin:0 auto;border-radius:30px;border:6px solid var(--ink)}
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-top:40px}
+@media(max-width:720px){.stats{grid-template-columns:repeat(2,1fr)}}
+.stat{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:18px}
+.stat b{display:block;font-size:30px;letter-spacing:-.03em;color:var(--accent)}
+.stat span{font-size:14px;color:var(--muted)}
+/* cards */
+.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;margin-top:36px}
+@media(max-width:900px){.grid{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:600px){.grid{grid-template-columns:1fr}}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:24px;box-shadow:var(--shadow);display:flex;flex-direction:column;gap:10px}
+.card p{color:var(--muted);font-size:15px}
+.card ul{margin:4px 0 0;padding-left:18px;color:var(--muted);font-size:14.5px}
+.card li{margin-bottom:3px}
+.tag{align-self:flex-start;font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;padding:3px 9px;border-radius:999px;background:var(--sunken);color:var(--warm)}
+/* showcase */
+.band{background:var(--sunken)}
+.show{display:grid;grid-template-columns:1fr 1fr;gap:40px;align-items:center;margin-top:44px}
+.show.rev .txt{order:2}
+@media(max-width:900px){.show{grid-template-columns:1fr}.show.rev .txt{order:0}}
+.show .txt p{color:var(--muted);margin-top:12px}
+.show .txt ul{color:var(--muted);padding-left:18px;margin:14px 0 0}
+.show .txt li{margin-bottom:6px}
+.pair{display:flex;gap:18px;justify-content:center;align-items:flex-start}
+.pair .phone{max-width:210px;margin:0}
+/* flow */
+.flow{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin-top:36px;counter-reset:s}
+@media(max-width:900px){.flow{grid-template-columns:1fr}}
+.step{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:18px;position:relative}
+.step:before{counter-increment:s;content:counter(s);display:grid;place-items:center;width:28px;height:28px;border-radius:50%;background:var(--accent);color:var(--accent-ink);font-weight:700;font-size:14px;margin-bottom:10px}
+.step b{display:block;margin-bottom:4px}
+.step span{font-size:14px;color:var(--muted)}
+/* packages */
+.pk{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;margin-top:36px}
+@media(max-width:900px){.pk{grid-template-columns:1fr}}
+.pk .card.hl{border:2px solid var(--accent)}
+.pk .price{font-size:15px;color:var(--muted)}
+.check li{list-style:none;position:relative;padding-left:4px}
+.check li:before{content:"✓ ";color:var(--accent);font-weight:700}
+.check{padding-left:0!important}
+/* cta */
+.cta{background:var(--ink);color:var(--bg);border-radius:22px;padding:48px 32px;text-align:center}
+.cta h2{margin:0 auto;color:var(--bg)}
+.cta p{color:color-mix(in srgb,var(--bg) 70%,transparent);margin:14px auto 0;max-width:34em}
+.cta .row{justify-content:center}
+.cta .btn.ghost{color:var(--bg);border-color:color-mix(in srgb,var(--bg) 40%,transparent)}
+footer{padding:36px 0 56px;color:var(--muted);font-size:14px;text-align:center}
+:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+</style>
+</head>
+<body>
+
+<nav><div class="wrap">
+  <b>Sistema completo para negocios</b>
+  <div class="links"><a href="#soluciones">Soluciones</a><a href="#caso">Caso real</a><a href="#flujo">Cómo funciona</a><a href="#paquetes">Paquetes</a></div>
+  <a class="btn" href="#contacto" style="padding:8px 16px;min-height:36px;font-size:14px">Agenda una demo</a>
+</div></nav>
+
+<header class="hero"><div class="wrap">
+  <div class="hero-grid">
+    <div>
+      <p class="eyebrow">Para negocios de comida y servicios locales</p>
+      <h1>Tu sitio, tu app y tu operación, en un solo sistema.</h1>
+      <p class="lede">Pedidos directos sin comisiones, cocina ordenada, clientes que regresan. Lo construimos y lo operamos para un negocio real, y ahora lo adaptamos al tuyo.</p>
+      <div class="row"><a class="btn" href="#soluciones">Ver las soluciones</a><a class="btn ghost" href="https://mextizza.com" target="_blank" rel="noopener">Visitar el caso real ↗</a></div>
+    </div>
+    <div class="shot"><img src="img/web-desktop.webp" alt="Sitio de pedidos de Mextizza en computadora" width="1280" height="800"></div>
+  </div>
+  <div class="stats">
+    <div class="stat"><b>3</b><span>canales de pedido: web, app y WhatsApp</span></div>
+    <div class="stat"><b>$0</b><span>comisión por pedido a apps de reparto</span></div>
+    <div class="stat"><b>190+</b><span>mejoras publicadas en 2 meses</span></div>
+    <div class="stat"><b>1</b><span>sola base de datos para todo</span></div>
+  </div>
+</div></header>
+
+<section id="soluciones"><div class="wrap">
+  <p class="eyebrow">Lo que ya construimos</p>
+  <h2>Doce piezas que se conectan entre sí</h2>
+  <p class="lede">Cada una funciona sola, pero juntas cierran el ciclo completo: del cliente que pide al cliente que vuelve.</p>
+  <div class="grid">
+    <article class="card"><span class="tag">Cliente</span><h3>Sitio de pedidos propio</h3><p>Menú con fotos, carrito, checkout y seguimiento del pedido en vivo. Rápido en celular e instalable como app.</p></article>
+    <article class="card"><span class="tag">Cliente</span><h3>App Android propia</h3><p>Para clientes frecuentes: cuenta con Google o correo, pedido en pocos toques, historial y seguimiento.</p></article>
+    <article class="card"><span class="tag">Cliente</span><h3>Pedidos por WhatsApp</h3><p>Un modo de captura para que los pedidos que llegan por chat entren al mismo tablero que los de la web.</p></article>
+    <article class="card"><span class="tag">Operación</span><h3>Centro de Ventas</h3><p>Tablero para la cocina: cada pedido con su estado, sonido y aviso push al llegar, corte del día y vista de lo más vendido. Funciona desde el teléfono.</p></article>
+    <article class="card"><span class="tag">Operación</span><h3>Inventario y lista de compras</h3><p>Recetas con costo. El inventario se descuenta solo con cada producto preparado y la lista de compras sale de lo que realmente falta.</p></article>
+    <article class="card"><span class="tag">Operación</span><h3>Zona de reparto y horarios</h3><p>El sistema sabe qué colonias cubres y cuándo abres. Valida en el servidor, no solo en pantalla, para que nadie se salte las reglas.</p></article>
+    <article class="card"><span class="tag">Lealtad</span><h3>Tarjeta de recompensas</h3><p>Un sello por cada compra elegible, premios automáticos y una tarjeta dibujada que se va llenando. Incluye pase en Google Wallet.</p></article>
+    <article class="card"><span class="tag">Lealtad</span><h3>Promociones automáticas</h3><p>El 2x1 del día, con reglas claras y calculado por el servidor. Se anuncia solo cuando todavía se puede aprovechar.</p></article>
+    <article class="card"><span class="tag">Ingresos extra</span><h3>Eventos y catering</h3><p>Calculadora de precio, solicitud en línea y pestaña de eventos con aprobación y alta en Google Calendar.</p></article>
+    <article class="card"><span class="tag">Reputación</span><h3>Reseñas en Google</h3><p>Al entregar un pedido, el sistema invita al cliente a dejar su opinión. Más reseñas, más visibilidad local.</p></article>
+    <article class="card"><span class="tag">Visibilidad</span><h3>SEO local y para IA</h3><p>Páginas por intención de búsqueda, datos estructurados, mapa del sitio y archivo para asistentes de IA, para que te encuentren.</p></article>
+    <article class="card"><span class="tag">Marca</span><h3>Sistema de diseño y marca</h3><p>Colores, tipografías, componentes, guía de voz y plantillas listas para menús y publicaciones. Todo se ve como tu negocio.</p></article>
+  </div>
+</div></section>
+
+<section id="caso" class="band"><div class="wrap">
+  <p class="eyebrow">Caso real · Mextizza</p>
+  <h2>Una pizzería sin salón, vendiendo con su propio sistema</h2>
+  <p class="lede">Mextizza es una cocina de entrega a domicilio en Atizapán de Zaragoza. Todo lo que ves abajo está en producción hoy.</p>
+
+  <div class="show">
+    <div class="txt">
+      <h3>El sitio que convierte visitas en pedidos</h3>
+      <ul>
+        <li>Carta con fotos grandes, avisos de promoción y tarjeta de premios en la portada.</li>
+        <li>Valida la colonia y el horario antes de cobrar, y lleva al cliente al campo que le falta.</li>
+        <li>Se instala en el celular como app y se compila antes de publicar para cargar rápido.</li>
+      </ul>
+    </div>
+    <div class="pair">
+      <div class="shot phone"><img src="img/web-movil.webp" alt="Sitio de Mextizza en celular" width="390" height="844" loading="lazy"></div>
+      <div class="shot phone"><img src="img/promociones-movil.webp" alt="Página de promociones y tarjeta de recompensas" width="390" height="844" loading="lazy"></div>
+    </div>
+  </div>
+
+  <div class="show rev">
+    <div class="txt">
+      <h3>Un producto aparte para eventos</h3>
+      <ul>
+        <li>Página propia pensada para quien busca catering con horno en su evento.</li>
+        <li>Calculadora con mínimo y máximo de invitados, anticipo y aviso previo.</li>
+        <li>La solicitud llega al Centro de Ventas, se aprueba y se agenda en Google Calendar.</li>
+      </ul>
+    </div>
+    <div class="shot"><img src="img/catering.webp" alt="Página de catering de Mextizza" width="1280" height="800" loading="lazy"></div>
+  </div>
+</div></section>
+
+<section id="flujo"><div class="wrap">
+  <p class="eyebrow">Cómo funciona</p>
+  <h2>De la compra a la siguiente compra</h2>
+  <div class="flow">
+    <div class="step"><b>El cliente pide</b><span>Por la web, la app o WhatsApp. Se valida zona, horario y promoción.</span></div>
+    <div class="step"><b>Entra a una sola base</b><span>Cada pedido recibe un folio y queda en una hoja de Google que tú controlas.</span></div>
+    <div class="step"><b>La cocina lo ve al instante</b><span>Suena, llega aviso al celular y el pedido avanza por estados hasta la entrega.</span></div>
+    <div class="step"><b>El inventario se ajusta</b><span>Se descuenta lo usado y la lista de compras se arma sola.</span></div>
+    <div class="step"><b>El cliente vuelve</b><span>Gana su sello, ve su tarjeta en Wallet y recibe la invitación a opinar en Google.</span></div>
+  </div>
+  <p class="lede" style="margin-top:28px">Todo corre sobre herramientas que ya conoces, como Google Sheets y Calendar. Sin servidores caros y sin depender de un tercero para ver tus propios datos.</p>
+</div></section>
+
+<section id="paquetes" class="band"><div class="wrap">
+  <p class="eyebrow">Cómo trabajar juntos</p>
+  <h2>Elige por dónde empezar</h2>
+  <p class="lede">Arrancamos con lo que más urge y sumamos módulos conforme tu negocio los necesita. Precio a cotizar según tu caso.</p>
+  <div class="pk">
+    <article class="card"><h3>Presencia</h3><p class="price">Para empezar a vender directo</p>
+      <ul class="check"><li>Sitio de pedidos con tu marca</li><li>Pedido por WhatsApp integrado</li><li>SEO local básico</li><li>Aviso de privacidad y términos</li></ul></article>
+    <article class="card hl"><span class="tag">Más elegido</span><h3>Pedidos</h3><p class="price">Para ordenar la operación</p>
+      <ul class="check"><li>Todo lo de Presencia</li><li>App Android propia</li><li>Centro de Ventas con avisos</li><li>Zona de reparto y horarios</li><li>Seguimiento del pedido</li></ul></article>
+    <article class="card"><h3>Operación completa</h3><p class="price">Para crecer con clientes que regresan</p>
+      <ul class="check"><li>Todo lo de Pedidos</li><li>Inventario y lista de compras</li><li>Tarjeta de recompensas y Wallet</li><li>Promociones y reseñas</li><li>Eventos o servicios extra</li></ul></article>
+  </div>
+</div></section>
+
+<section id="contacto"><div class="wrap">
+  <div class="cta">
+    <h2>¿Lo vemos funcionando con tu negocio?</h2>
+    <p>Te enseñamos el sistema en vivo y platicamos qué piezas te servirían primero. Sin compromiso.</p>
+    <div class="row">
+      <!-- Cambia CONTACTO_WHATSAPP por tu número con lada, sin signos. Ejemplo: 5215512345678 -->
+      <a class="btn" id="cta-wa" href="#contacto">Escríbenos por WhatsApp</a>
+      <a class="btn ghost" href="https://mextizza.com" target="_blank" rel="noopener">Ver el caso real ↗</a>
+    </div>
+  </div>
+</div></section>
+
+<footer><div class="wrap">Caso de estudio: Mextizza. Las capturas son de su sitio público; no se muestran datos de clientes.</div></footer>
+
+<script>
+var CONTACTO_WHATSAPP = ""; // pon aqui tu numero
+(function(){
+  var a = document.getElementById("cta-wa");
+  if(CONTACTO_WHATSAPP){
+    a.href = "https://wa.me/" + CONTACTO_WHATSAPP + "?text=" + encodeURIComponent("Hola, vi el portafolio y quiero una demo.");
+    a.target = "_blank"; a.rel = "noopener";
+  }
+})();
+</script>
+
+
+</body>
+</html>
