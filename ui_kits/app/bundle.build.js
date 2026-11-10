@@ -123,6 +123,201 @@ Object.assign(window, {
 });
 })();
 
+/* ui_kits/Seguimiento.jsx */
+(function () {
+const {
+  Button,
+  Icon
+} = window.MextizzaDesignSystem_8a35ee;
+
+/* Piezas del seguimiento que comparten la web y la app.
+
+   Nacen de un hueco: cuando la cocina cancelaba un pedido, el cliente casi
+   nunca se enteraba. La web solo lo veia con el carrito abierto, la franja del
+   celular simplemente desaparecia, y quien habia cerrado la pagina no recibia
+   nada. Ahora el cancelado se dice claro, con el motivo que escribio la cocina
+   y una salida para resolverlo. */
+
+/* Vuelve a consultar en cuanto el cliente regresa a la pestana o a la app.
+   Esperar el siguiente ciclo de 30 s es justo el rato en que alguien ya
+   desbloqueo el telefono para ver como va su pizza. */
+function useAlVolver(fn) {
+  const ref = React.useRef(fn);
+  ref.current = fn;
+  React.useEffect(() => {
+    const vis = () => {
+      if (document.visibilityState === 'visible') ref.current();
+    };
+    const foco = () => ref.current();
+    document.addEventListener('visibilitychange', vis);
+    window.addEventListener('focus', foco);
+    // En la app, Capacitor avisa cuando vuelve del fondo; el WebView no siempre lo hace.
+    let quitar = null;
+    try {
+      const AppCap = window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.App;
+      if (AppCap && AppCap.addListener) {
+        const h = AppCap.addListener('appStateChange', s => {
+          if (s && s.isActive) ref.current();
+        });
+        quitar = () => Promise.resolve(h).then(x => x && x.remove && x.remove()).catch(() => {});
+      }
+    } catch (e) {/* sin el plugin, basta con visibilitychange */}
+    return () => {
+      document.removeEventListener('visibilitychange', vis);
+      window.removeEventListener('focus', foco);
+      if (quitar) quitar();
+    };
+  }, []);
+}
+
+/* Si el pedido se cancela con la pestana en segundo plano: el titulo lo dice,
+   y si el cliente ya dio permiso de notificaciones, sale una. Con la misma
+   etiqueta que el push del servidor, asi que nunca se ven dos. */
+function avisarCancelacionLocal(folio, motivo) {
+  if (document.visibilityState === 'visible') return;
+  const antes = document.title;
+  document.title = '● Pedido cancelado — Mextizza';
+  const volver = () => {
+    if (document.visibilityState !== 'visible') return;
+    document.title = antes;
+    document.removeEventListener('visibilitychange', volver);
+  };
+  document.addEventListener('visibilitychange', volver);
+  try {
+    if ('Notification' in window && Notification.permission === 'granted') {
+      new Notification('Cancelamos tu pedido ' + folio, {
+        body: motivo || 'Abre Mextizza para ver qué pasó.',
+        tag: 'pedido-' + folio,
+        icon: '/assets/social/mextizza-app-icon-192.png'
+      });
+    }
+  } catch (e) {/* en la app o sin permiso no hay notificacion local */}
+}
+
+/* El pedido cancelado, dicho de frente: que paso y que puede hacer. */
+function PedidoCancelado({
+  folio,
+  motivo,
+  onCarta,
+  style
+}) {
+  const escribir = () => window.open(mextizzaWhatsappLink('Hola, me cancelaron el pedido ' + folio + '.'), '_blank', 'noopener');
+  return /*#__PURE__*/React.createElement("div", {
+    role: "status",
+    style: {
+      padding: '14px 16px',
+      background: 'var(--rosa-tinte)',
+      border: '2px solid var(--rosa-mexicano)',
+      borderRadius: 12,
+      ...style
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontFamily: 'var(--font-display)',
+      fontSize: 20,
+      lineHeight: 1.15
+    }
+  }, "Cancelamos tu pedido"), /*#__PURE__*/React.createElement("p", {
+    style: {
+      fontFamily: 'var(--font-body)',
+      fontSize: 14,
+      lineHeight: 1.5,
+      margin: '6px 0 12px'
+    }
+  }, motivo || 'Tuvimos que cancelar tu pedido. Escríbenos y te contamos qué pasó.'), /*#__PURE__*/React.createElement(Button, {
+    size: "md",
+    block: true,
+    icon: "whatsapp",
+    onClick: escribir
+  }, "Escr\xEDbenos por WhatsApp"), onCarta && /*#__PURE__*/React.createElement(Button, {
+    tone: "outline",
+    size: "md",
+    block: true,
+    style: {
+      marginTop: 8
+    },
+    onClick: onCarta
+  }, "Ver la carta"));
+}
+
+/* "Avisame si algo cambia": el navegador del cliente se suscribe a las
+   notificaciones de SU pedido (ui_kits/avisos-cliente.js). Solo se ofrece donde
+   funciona; en iPhone sin el sitio instalado, o dentro de la app, no aparece. */
+function AvisamePedido({
+  folio,
+  style
+}) {
+  const av = window.mextizzaAvisosCliente;
+  const [estado, setEstado] = React.useState(() => av ? av.estado(folio) : 'no-soportado');
+  const [ocupado, setOcupado] = React.useState(false);
+  const [msg, setMsg] = React.useState('');
+  React.useEffect(() => {
+    if (av) setEstado(av.estado(folio));
+  }, [folio]);
+  if (!av || !folio || estado === 'no-soportado' || estado === 'instalar') return null;
+  const texto = {
+    fontFamily: 'var(--font-body)',
+    fontSize: 12.5,
+    lineHeight: 1.45,
+    color: 'var(--text-muted)',
+    margin: 0
+  };
+  if (estado === 'activo') {
+    return /*#__PURE__*/React.createElement("p", {
+      style: {
+        ...texto,
+        display: 'flex',
+        gap: 6,
+        alignItems: 'center',
+        ...style
+      }
+    }, /*#__PURE__*/React.createElement(Icon, {
+      name: "check",
+      size: 14,
+      color: "var(--verde-ok, #2E7D5B)"
+    }), " Te avisamos aqu\xED si algo cambia con tu pedido.");
+  }
+  if (estado === 'bloqueado') {
+    return /*#__PURE__*/React.createElement("p", {
+      style: {
+        ...texto,
+        ...style
+      }
+    }, "Tu navegador tiene bloqueadas las notificaciones de mextizza.com. Si quieres que te avisemos, act\xEDvalas en los ajustes del sitio.");
+  }
+  return /*#__PURE__*/React.createElement("div", {
+    style: style
+  }, /*#__PURE__*/React.createElement(Button, {
+    tone: "outline",
+    size: "md",
+    block: true,
+    icon: "clock",
+    disabled: ocupado,
+    onClick: () => {
+      setOcupado(true);
+      setMsg('');
+      av.activar(folio).then(() => setEstado('activo')).catch(e => {
+        setMsg(String(e && e.message || e));
+        setEstado(av.estado(folio));
+      }).then(() => setOcupado(false));
+    }
+  }, ocupado ? 'Activando…' : 'Avísame si algo cambia'), msg && /*#__PURE__*/React.createElement("p", {
+    role: "alert",
+    style: {
+      ...texto,
+      marginTop: 6,
+      color: 'var(--rosa-mexicano-texto)'
+    }
+  }, msg));
+}
+Object.assign(window, {
+  useAlVolver,
+  avisarCancelacionLocal,
+  PedidoCancelado,
+  AvisamePedido
+});
+})();
+
 /* ui_kits/Promo2x1.jsx */
 (function () {
 const {
@@ -3654,12 +3849,19 @@ function AppTracking({
       }
     };
     leer();
+    leerRef.current = leer;
     const id = setInterval(leer, 30000);
     return () => {
       vivo = false;
       clearInterval(id);
+      leerRef.current = null;
     };
   }, [folio]);
+  // Al volver a la app se consulta en ese momento, sin esperar los 30 s.
+  const leerRef = React.useRef(null);
+  if (typeof useAlVolver === 'function') useAlVolver(() => {
+    if (leerRef.current) leerRef.current();
+  });
   const cancelada = orden && orden.estado === 'cancelada';
   const esPickup = !!(orden && orden.pickup);
   const mapaPaso = esPickup ? ESTADO_A_PASO_PICKUP : ESTADO_A_PASO;
@@ -3718,6 +3920,13 @@ function AppTracking({
     activo: esPickup,
     style: {
       marginBottom: 16
+    }
+  }), cancelada && typeof PedidoCancelado === 'function' && /*#__PURE__*/React.createElement(PedidoCancelado, {
+    folio: folio,
+    motivo: orden.motivo_cancelacion,
+    onCarta: () => onTab && onTab('menu'),
+    style: {
+      marginBottom: 20
     }
   }), premio && /*#__PURE__*/React.createElement(AvisoPremio, {
     premio: premio,

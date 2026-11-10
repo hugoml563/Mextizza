@@ -1153,5 +1153,78 @@ console.log('\nLO QUE MANDA EL NAVEGADOR NO ENTRA COMO FORMULA NI COMO PRECIO RA
     { tel: TP, cuando: DIA(25), entregar: false }).folio, 'premio_por'), '');
 }
 
+/* Avisos de cancelacion: si la cocina cancela, al cliente le llega la
+   notificacion (si toco "Avisame") y el correo (si pidio con cuenta). Nada de
+   eso puede tumbar la cancelacion, y cancelar dos veces no avisa dos veces. */
+{
+  console.log('\nAVISOS DE CANCELACION');
+  const AV = { push: [], correos: [], fcmCaido: false, correoCaido: false };
+  const fetchReal = ctx.UrlFetchApp.fetch;
+  ctx.UrlFetchApp.fetch = (url, opts) => {
+    const r = (code, cuerpo) => ({ getResponseCode: () => code, getContentText: () => JSON.stringify(cuerpo || {}) });
+    if (url.indexOf('oauth2.googleapis.com') !== -1) return r(200, { access_token: 'acceso-falso' });
+    if (url.indexOf('fcm.googleapis.com') !== -1) {
+      if (AV.fcmCaido) return r(500, { error: 'caido' });
+      AV.push.push(JSON.parse(opts.payload).message); return r(200);
+    }
+    return fetchReal(url, opts);
+  };
+  ctx.MailApp = { sendEmail: (m) => { if (AV.correoCaido) throw new Error('cuota'); AV.correos.push(m); } };
+  // enviarPush_ manda en paralelo con fetchAll.
+  const fetchAllReal = ctx.UrlFetchApp.fetchAll;
+  ctx.UrlFetchApp.fetchAll = (pedidos) => pedidos.map((q) => ctx.UrlFetchApp.fetch(q.url, q));
+  props.FCM_CUENTA_SERVICIO = JSON.stringify({ client_email: 'sa@p.iam.gserviceaccount.com', private_key: 'llave', project_id: 'p' });
+  Object.assign(ctx.Utilities, {
+    newBlob: (s) => ({ getBytes: () => Array.from(Buffer.from(s, 'utf8')) }),
+    computeRsaSha256Signature: () => [1, 2, 3],
+  });
+  const TOKEN = 'token-de-un-navegador-de-cliente-0123456789';
+
+  RELOJ = DIA(17);
+  const TC = '5591112233';
+  const tok = asegurarCuenta(TC);
+  const conCuenta = ctx.crearOrden_({ canal: 'Web', cliente: { telefono: TC, nombre: 'Ana López' }, direccion: 'C', colonia: 'Lomas Lindas', km: 1,
+    pago_metodo: 'Efectivo', items: [{ producto_id: 'roni', cantidad: 1 }], idToken: tok }).folio;
+  comparar('un pedido con cuenta guarda el correo verificado', campoDe(conCuenta, 'correo'), TC + '@prueba.mx');
+  const deCocina = ctx.crearOrden_({ canal: 'WhatsApp', cliente: { telefono: TC, nombre: 'Ana' }, direccion: 'C', colonia: 'Lomas Lindas', km: 1,
+    pago_metodo: 'Efectivo', items: [{ producto_id: 'roni', cantidad: 1 }], idToken: tok }, 'admin').folio;
+  comparar('uno capturado por la cocina no guarda correo', campoDe(deCocina, 'correo'), '');
+
+  const error = (fn) => { try { fn(); return ''; } catch (e) { return String(e.message); } };
+  comparar('un token de aviso invalido se rechaza', /inválido/.test(error(() => ctx.registrarPushPedido_({ folio: conCuenta, token_push: 'x' }))), true);
+  comparar('un folio que no existe se rechaza', /no encontrado/.test(error(() => ctx.registrarPushPedido_({ folio: 'MX-NADA', token_push: TOKEN }))), true);
+  ctx.registrarPushPedido_({ folio: conCuenta, token_push: TOKEN });
+  comparar('el navegador queda anotado en su pedido', campoDe(conCuenta, 'push_token'), TOKEN);
+
+  const r = ctx.cancelarOrden_({ folio: conCuenta, motivo: 'Tu dirección queda fuera de nuestra zona de reparto.' });
+  comparar('al cancelar le llega la notificacion', AV.push.length, 1);
+  comparar('con el motivo que escribio la cocina', AV.push[0] && AV.push[0].data.cuerpo, 'Tu dirección queda fuera de nuestra zona de reparto.');
+  comparar('y al tocarla abre su pedido', AV.push[0] && AV.push[0].data.url, '/?pedido=' + conCuenta);
+  comparar('y le llega el correo', AV.correos.length === 1 && AV.correos[0].to === TC + '@prueba.mx', true);
+  comparar('el correo lo saluda por su nombre', /Hola, Ana\./.test(AV.correos[0] && AV.correos[0].body), true);
+  comparar('el tablero sabe por donde se aviso', JSON.stringify(r.avisos), JSON.stringify({ push: true, correo: true }));
+  comparar('el cliente ve el motivo en su seguimiento', ctx.estadoOrden_(conCuenta).motivo_cancelacion, 'Tu dirección queda fuera de nuestra zona de reparto.');
+
+  ctx.cancelarOrden_({ folio: conCuenta, motivo: 'otra vez' });
+  comparar('cancelar dos veces no avisa dos veces', AV.push.length + AV.correos.length, 2);
+  comparar('un pedido cerrado ya no acepta avisos', /cerró/.test(error(() => ctx.registrarPushPedido_({ folio: conCuenta, token_push: TOKEN }))), true);
+
+  // Con Firebase y el correo caidos, el pedido queda cancelado igual.
+  const otro = ctx.crearOrden_({ canal: 'Web', cliente: { telefono: TC, nombre: 'Ana' }, direccion: 'C', colonia: 'Lomas Lindas', km: 1,
+    pago_metodo: 'Efectivo', items: [{ producto_id: 'roni', cantidad: 1 }], idToken: tok }).folio;
+  ctx.registrarPushPedido_({ folio: otro, token_push: TOKEN });
+  AV.fcmCaido = true; AV.correoCaido = true;
+  const r2 = ctx.cancelarOrden_({ folio: otro, motivo: 'Se nos acabó la masa.' });
+  comparar('con los avisos caidos el pedido se cancela igual', campoDe(otro, 'estado'), 'cancelada');
+  comparar('y el tablero sabe que no salio ningun aviso', JSON.stringify(r2.avisos), JSON.stringify({ push: false, correo: false }));
+
+  comparar('la lista de la cocina trae el telefono para el WhatsApp', ctx.listarHoy_().some((o) => o.folio === deCocina && o.telefono === TC), true);
+
+  ctx.UrlFetchApp.fetch = fetchReal;
+  ctx.UrlFetchApp.fetchAll = fetchAllReal;
+  delete ctx.MailApp;
+  delete props.FCM_CUENTA_SERVICIO;
+}
+
 console.log('\n  ' + ok + ' pruebas ok, ' + mal + ' mal\n');
 process.exit(mal ? 1 : 0);

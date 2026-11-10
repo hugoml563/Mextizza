@@ -8,7 +8,7 @@ const { Wordmark, TapeStripe, FramedPanel, Button, Badge, Field, QtyStepper, Men
 const WEB_ESTADO_A_PASO = { recibida: 0, confirmada: 0, horno: 1, lista: 1, camino: 2, entregada: 3 };
 const WEB_ESTADO_A_PASO_PICKUP = { recibida: 0, confirmada: 0, horno: 1, lista: 2, entregada: 3 };
 
-function SeguimientoPedido({ folio }) {
+function SeguimientoPedido({ folio, onCarta }) {
   const [orden, setOrden] = React.useState(null);
   const [sinRed, setSinRed] = React.useState(false);
 
@@ -24,9 +24,13 @@ function SeguimientoPedido({ folio }) {
       }
     };
     leer();
+    leerRef.current = leer;
     const id = setInterval(leer, 30000);
-    return () => { vivo = false; clearInterval(id); };
+    return () => { vivo = false; clearInterval(id); leerRef.current = null; };
   }, [folio]);
+  // Al volver a la pestana se consulta en ese momento, sin esperar los 30 s.
+  const leerRef = React.useRef(null);
+  if (typeof useAlVolver === "function") useAlVolver(() => { if (leerRef.current) leerRef.current(); });
 
   const cancelada = orden && orden.estado === "cancelada";
   const mapaPaso = (orden && orden.pickup) ? WEB_ESTADO_A_PASO_PICKUP : WEB_ESTADO_A_PASO;
@@ -59,13 +63,20 @@ function SeguimientoPedido({ folio }) {
         <div style={{ fontFamily: "var(--font-display)", fontSize: 22 }}>{titulo}</div>
         <Badge tone={cancelada ? "rosa" : "dark"}>Pedido {folio}</Badge>
       </div>
-      <p style={{ fontFamily: "var(--font-body)", fontSize: 12.5, color: "var(--text-muted)", marginTop: 6 }}>
-        {cancelada
-          ? (orden.motivo_cancelacion || "El pedido fue cancelado.")
-          : sinRed ? "Sin conexion para actualizar el estado."
-          : "Se actualiza solo. Te confirmamos por WhatsApp."}
-      </p>
-      <div style={{ marginTop: 18 }}>
+      {cancelada && typeof PedidoCancelado === "function" ? (
+        <PedidoCancelado folio={folio} motivo={orden.motivo_cancelacion} onCarta={onCarta} style={{ marginTop: 12 }} />
+      ) : (
+        <p style={{ fontFamily: "var(--font-body)", fontSize: 12.5, color: "var(--text-muted)", marginTop: 6 }}>
+          {cancelada
+            ? (orden.motivo_cancelacion || "El pedido fue cancelado.")
+            : sinRed ? "Sin conexion para actualizar el estado."
+            : "Se actualiza solo. Te confirmamos por WhatsApp."}
+        </p>
+      )}
+      {orden && !cancelada && orden.estado !== "entregada" && typeof AvisamePedido === "function" && (
+        <AvisamePedido folio={folio} style={{ marginTop: 12 }} />
+      )}
+      {!cancelada && <div style={{ marginTop: 18 }}>
         {pasos.map(([t, d], i) => {
           const hecho = !cancelada && paso >= i;
           return (
@@ -85,7 +96,7 @@ function SeguimientoPedido({ folio }) {
             </div>
           );
         })}
-      </div>
+      </div>}
       {orden && orden.estado === "entregada" && typeof PideResena === "function" && (
         <PideResena style={{ marginTop: 18 }} />
       )}
@@ -299,7 +310,7 @@ function CartDrawer({ open, lines, onClose, onQty, step, setStep, canal = 'Web',
           <TapeStripe position="bottom" height={4} />
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
             <span style={{ fontFamily: 'var(--font-display)', fontSize: 23, color: 'var(--negro-carbon)' }}>
-              {step === 'cart' ? 'Tu pedido' : step === 'checkout' ? 'Entrega' : step === 'buscar' ? 'Seguir mi pedido' : 'Confirmado'}
+              {step === 'cart' ? 'Tu pedido' : step === 'checkout' ? 'Entrega' : step === 'buscar' ? 'Seguir mi pedido' : 'Seguimiento'}
             </span>
             {/* padding con margen negativo: medía 32x22 y el minimo tactil de
                 WCAG 2.2 es 24x24. Crece el area que responde al dedo, no la
@@ -363,7 +374,7 @@ function CartDrawer({ open, lines, onClose, onQty, step, setStep, canal = 'Web',
           {step === 'done' && (
             <>
               <FramedPanel variant="object" style={{ marginTop: 8 }}>
-                <SeguimientoPedido folio={folio} />
+                <SeguimientoPedido folio={folio} onCarta={onClose} />
               </FramedPanel>
               {premio && <AvisoPremio premio={premio} style={{ marginTop: 12 }} />}
               {tarjeta && <TarjetaPremios tarjeta={tarjeta} pendiente={selloPendiente} style={{ marginTop: 12 }} />}

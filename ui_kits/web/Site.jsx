@@ -10,28 +10,44 @@ function Site(){
   const FOLIO_KEY='mextizza.web.folio';
   const [folio,setFolio]=React.useState(()=>{ try{return localStorage.getItem(FOLIO_KEY)||null;}catch(e){return null;} });
   React.useEffect(()=>{ try{ folio?localStorage.setItem(FOLIO_KEY,folio):localStorage.removeItem(FOLIO_KEY); }catch(e){} },[folio]);
-  /* Si el ultimo pedido sigue en curso. En celular es lo que decide si se ve
-     la franja de seguimiento. Se vuelve a preguntar cada minuto mientras siga
-     en curso; entregado o cancelado ya no se consulta. */
+  /* Como va el ultimo pedido: decide la franja de seguimiento. Se pregunta
+     cada 30 s mientras sigue en curso, y en cuanto el cliente vuelve a la
+     pestana. Si la cocina lo cancela, la franja NO desaparece: se queda en rosa
+     con el motivo hasta que el cliente la cierra. Antes simplemente se iba, y
+     el cliente no sabia que habia pasado. */
+  const VISTO_KEY='mextizza.web.cancelado.visto';
   const [pedidoActivo,setPedidoActivo]=React.useState(null);
+  const leerPedido=React.useRef(null);
   React.useEffect(()=>{
     setPedidoActivo(null);
+    leerPedido.current=null;
     if(!folio||typeof mextizzaEstadoOrden!=='function') return;
-    let vivo=true, id=null;
+    let vivo=true, id=null, antes=null, cerrado=false;
     const leer=async()=>{
+      if(cerrado) return;
       try{
         const r=await mextizzaEstadoOrden(folio);
         const o=r&&r.orden;
-        const enCurso=!!o&&o.estado!=='entregada'&&o.estado!=='cancelada';
-        if(!vivo) return;
-        setPedidoActivo(enCurso?{estado:o.estado,pickup:!!o.pickup}:null);
-        if(!enCurso&&id){clearInterval(id);id=null;}
+        if(!vivo||!o) return;
+        if(o.estado==='cancelada'){
+          let visto=''; try{visto=localStorage.getItem(VISTO_KEY)||'';}catch(e){}
+          // Solo avisa si lo vio cambiar: abrir la pagina un dia despues no es noticia.
+          if(antes&&antes!=='cancelada'&&typeof avisarCancelacionLocal==='function') avisarCancelacionLocal(folio,o.motivo_cancelacion);
+          setPedidoActivo(visto===folio?null:{estado:'cancelada',motivo:o.motivo_cancelacion||''});
+        }else{
+          setPedidoActivo(o.estado!=='entregada'?{estado:o.estado,pickup:!!o.pickup}:null);
+        }
+        antes=o.estado;
+        if(o.estado==='entregada'||o.estado==='cancelada'){cerrado=true;if(id){clearInterval(id);id=null;}}
       }catch(e){ /* sin red se queda como estaba */ }
     };
+    leerPedido.current=leer;
     leer();
-    id=setInterval(leer,60000);
+    id=setInterval(leer,30000);
     return ()=>{vivo=false;if(id)clearInterval(id);};
   },[folio]);
+  if(typeof useAlVolver==='function') useAlVolver(()=>{ if(leerPedido.current) leerPedido.current(); });
+  const cerrarAvisoCancelado=()=>{ try{localStorage.setItem(VISTO_KEY,folio||'');}catch(e){} setPedidoActivo(null); };
   const [open,setOpen]=React.useState(false);
   const [cuenta,setCuenta]=React.useState(false);
   const cerrarCuenta=React.useCallback(()=>setCuenta(false),[]);
@@ -39,6 +55,14 @@ function Site(){
   const [added,setAdded]=React.useState(null);
   const [view,setView]=React.useState('home');
   const [custom,setCustom]=React.useState(null);
+  /* Tocar la notificacion abre mextizza.com/?pedido=FOLIO: se muestra ese
+     pedido y se limpia la direccion para que recargar no lo vuelva a abrir. */
+  React.useEffect(()=>{
+    let p=''; try{p=new URLSearchParams(location.search).get('pedido')||'';}catch(e){}
+    if(!/^MX-[A-Z0-9]{4,8}$/.test(p)) return;
+    setFolio(p); setOpen(true); setStep('done');
+    try{ const u=new URL(location.href); u.searchParams.delete('pedido'); history.replaceState(null,'',u.pathname+u.search+u.hash); }catch(e){}
+  },[]);
   const add=(it,q=1,extra={},mantenerPaso=false)=>{
     const key=it.id+(extra.addonNames&&extra.addonNames.length?':'+extra.addonNames.join('|'):'');
     setLines(ls=>{const e=ls.find(l=>l.key===key);return e?ls.map(l=>l.key===key?{...l,qty:l.qty+q}:l):[...ls,{...it,...extra,key,qty:q}];});
@@ -86,6 +110,7 @@ function Site(){
     {modoCaptura && <div style={{background:'#1A1A1A',color:'#F5F0E8',textAlign:'center',padding:'8px 12px',fontFamily:'var(--font-label)',fontSize:11,letterSpacing:1,textTransform:'uppercase'}}>Modo captura · WhatsApp — este pedido se registra como canal WhatsApp</div>}
     <WebHeader count={count} view={view} onNav={nav} onCart={()=>{setOpen(true);setStep('cart');}}
       folio={folio} pedidoActivo={pedidoActivo} onSeguir={()=>{setOpen(true);setStep(folio?'done':'buscar');}}
+      onCerrarAviso={cerrarAvisoCancelado}
       onCuenta={()=>setCuenta(true)}
       /* Dentro del encabezado, para que quede a la vista mientras se navega: es
          lo primero que ve quien llega y ahi todavia puede decidir pedir dos

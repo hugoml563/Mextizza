@@ -246,6 +246,27 @@ window.__resources = Object.assign(window.__resources || {}, {
 </div>
 </sc-for>
 </div>
+<!-- Cancelar ya no es un toque: se elige el motivo, se ve el mensaje que le
+     llega al cliente y se le avisa por WhatsApp en el mismo toque. -->
+<sc-if value="{{ o.enCancelar }}" hint-placeholder-val="{{ false }}">
+<div style="margin-top:12px;padding:12px 14px;background:#FFF4F9;border:2px solid #E4007C;border-radius:8px">
+<div style="font-size:11px;font-weight:700;letter-spacing:1.2px;text-transform:uppercase;color:#CD0070">¿Por qué se cancela?</div>
+<div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:8px">
+<sc-for list="{{ o.motivos }}" as="m" hint-placeholder-count="4"><button onClick="{{ m.elegir }}" style="{{ m.estilo }}">{{ m.label }}</button></sc-for>
+</div>
+<sc-if value="{{ o.esOtro }}" hint-placeholder-val="{{ false }}">
+<input type="text" autocomplete="off" placeholder="Escribe el motivo, se lo vamos a mandar tal cual" value="{{ o.otro }}" onInput="{{ o.setOtro }}" style="width:100%;margin-top:8px;padding:10px 11px;border:2px solid #1A1A1A;border-radius:6px;font-family:'Oswald',sans-serif;font-size:14px;font-weight:700;background:#FFFFFF;color:#1A1A1A;min-height:44px;box-sizing:border-box">
+</sc-if>
+<div style="margin-top:10px;font-size:11px;font-weight:700;letter-spacing:1.2px;text-transform:uppercase;color:#6b6b6b">Le llega así</div>
+<div style="margin-top:4px;padding:9px 11px;background:#FFFFFF;border:1px solid rgba(0,0,0,.12);border-radius:6px;font-size:13px;line-height:1.45">{{ o.mensaje }}</div>
+<div style="margin-top:6px;font-size:11.5px;font-weight:700;color:#6b6b6b">Si tocó "Avísame" o pidió con su cuenta, también le llega por notificación o correo.</div>
+<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px">
+<sc-if value="{{ o.conTelefono }}" hint-placeholder-val="{{ true }}"><button onClick="{{ o.cancelarWhats }}" style="flex:1 1 220px;padding:12px 14px;border:none;border-radius:6px;background:#2E7D5B;color:#FFFFFF;font-family:'Oswald',sans-serif;font-size:13px;font-weight:700;letter-spacing:.8px;text-transform:uppercase;cursor:pointer;min-height:48px" style-hover="background:#1A1A1A">Cancelar y avisar por WhatsApp</button></sc-if>
+<button onClick="{{ o.cancelarSolo }}" style="flex:1 1 160px;padding:12px 14px;border:2px solid #1A1A1A;border-radius:6px;background:#FFFFFF;color:#1A1A1A;font-family:'Oswald',sans-serif;font-size:12px;font-weight:700;letter-spacing:.8px;text-transform:uppercase;cursor:pointer;min-height:48px" style-hover="background:#E4007C;color:#FFFFFF;border-color:#E4007C">Cancelar sin WhatsApp</button>
+<button onClick="{{ o.noCancelar }}" style="flex:none;padding:12px 10px;border:none;background:transparent;color:#1A1A1A;font-family:'Oswald',sans-serif;font-size:12px;font-weight:700;text-decoration:underline;cursor:pointer;min-height:48px">No cancelar</button>
+</div>
+</div>
+</sc-if>
 </div>
 <div class="mx-ordenlado" style="flex:none;width:236px;display:flex;flex-direction:column;justify-content:space-between;gap:10px;padding-left:18px;border-left:2px dashed rgba(0,0,0,.14)">
 <div>
@@ -257,7 +278,7 @@ window.__resources = Object.assign(window.__resources || {}, {
 </div>
 <div style="display:flex;gap:8px">
 <button onClick="{{ o.avanzar }}" style="flex:1;padding:14px 8px;border:none;border-radius:6px;background:#1A1A1A;color:#FFFFFF;font-family:'Bungee',cursive;font-size:12px;letter-spacing:1px;text-transform:uppercase;cursor:pointer;min-height:48px" style-hover="background:#C1502E"><sc-if value="{{ o.quieto }}" hint-placeholder-val="{{ true }}">{{ o.siguiente }}</sc-if><sc-if value="{{ o.enVuelo }}" hint-placeholder-val="{{ false }}"><span class="mx-puntos" aria-label="Actualizando el estado"><i></i><i></i><i></i></span></sc-if></button>
-<button onClick="{{ o.cancelar }}" style="flex:none;width:48px;min-height:48px;border:2px solid #1A1A1A;border-radius:6px;background:transparent;color:#1A1A1A;font-family:'Oswald',sans-serif;font-size:18px;font-weight:700;cursor:pointer" style-hover="background:#E4007C;color:#FFFFFF;border-color:#E4007C">×</button>
+<button onClick="{{ o.abrirCancelar }}" aria-label="Cancelar el pedido" style="flex:none;width:48px;min-height:48px;border:2px solid #1A1A1A;border-radius:6px;background:transparent;color:#1A1A1A;font-family:'Oswald',sans-serif;font-size:18px;font-weight:700;cursor:pointer" style-hover="background:#E4007C;color:#FFFFFF;border-color:#E4007C">×</button>
 </div>
 </div>
 </div>
@@ -802,6 +823,27 @@ function tocar(ctx, tipo) {
 }
 const TITULO = 'Mextizza — Cocina';
 
+/* Motivos de cancelacion. El texto es para el CLIENTE: lo ve en su
+   seguimiento, en la notificacion, en el correo y en el WhatsApp. */
+const MOTIVOS_CANCELAR = [
+  ['zona', 'Fuera de zona', 'tu dirección queda fuera de nuestra zona de reparto y no alcanzamos a llevarlo hasta allá'],
+  ['tarde', 'Ya no alcanzamos hoy', 'ya no alcanzamos a hornearlo hoy a tiempo'],
+  ['ingrediente', 'Se acabó un ingrediente', 'se nos acabó un ingrediente de tu pedido'],
+  ['otro', 'Otro', '']
+];
+// Lo que se guarda y le llega por notificacion y correo (esos ponen su propio saludo).
+const motivoCliente = (o, clave, otro) => {
+  const m = MOTIVOS_CANCELAR.find(x => x[0] === clave) || MOTIVOS_CANCELAR[0];
+  const razon = clave === 'otro' ? (String(otro || '').trim().replace(/[.\s]+$/, '') || 'tuvimos que cancelarlo') : m[2];
+  return 'Tu pedido ' + o.folio + ' no lo vamos a poder llevar: ' + razon + '. Perdón por la espera.' +
+    (o.pago === 'Transferencia' ? ' Si ya nos transferiste, te lo regresamos hoy.' : '');
+};
+// El WhatsApp lleva saludo y una salida: ahi mismo puede contestar.
+const whatsCancelacion = (o, motivo) => {
+  const nombre = String(o.cliente || '').trim().split(/\s+/)[0];
+  return 'Hola' + (nombre ? ', ' + nombre : '') + '. ' + motivo + ' Si quieres, respóndenos aquí y vemos cómo resolverlo.';
+};
+
 /* Pedido rapido. La carta sale de menu-data.js, la misma de la web: el precio
    que se ve aqui es el que cobra el servidor, que de todos modos lo vuelve a
    poner desde su catalogo. */
@@ -848,7 +890,7 @@ class Component extends DCLogic {
     catGuardando: false, catConfirmar: null,
     sonidoPref: leerPref(), audioListo: false,
     avisosAbierto: false, pushOcupado: false, pushMsg: '', pushVer: 0,
-    np: NP_VACIO(), npMsg: '' };
+    np: NP_VACIO(), npMsg: '', cancelando: null };
 
   total(o) { return o.lineas.reduce((s,l) => s + l.importe, 0); }
 
@@ -1131,14 +1173,39 @@ class Component extends DCLogic {
     if (v === 'eventos') this.cargarCatering();
   }
 
-  async cancelar(i) {
+  /* Cancela con el motivo elegido. Con WhatsApp, el chat se abre PRIMERO,
+     dentro del mismo toque: si se abriera al volver el servidor, el navegador
+     lo tomaria por una ventana emergente y la bloquearia. */
+  async cancelar(i, conWhats) {
     const o = this.state.ordenes[i];
-    if (!o) return;
+    const c = this.state.cancelando;
+    if (!o || !c || c.folio !== o.folio) return;
+    if (c.motivo === 'otro' && !String(c.otro || '').trim()) {
+      return this.setState({ error: 'Escribe el motivo antes de cancelar: es lo que va a leer el cliente.' });
+    }
+    const motivo = motivoCliente(o, c.motivo, c.otro);
+    if (conWhats && o.telefono && o.telefono.length === 10) {
+      window.open('https://wa.me/52' + o.telefono + '?text=' + encodeURIComponent(whatsCancelacion(o, motivo)), '_blank', 'noopener');
+    }
+    const previo = o.estado;
+    this.setState({
+      cancelando: null, error: null,
+      ordenes: this.state.ordenes.map(x => (x.folio === o.folio ? { ...x, estado: 'cancelada' } : x))
+    });
     try {
-      await mextizzaCancelarOrden(o.folio, 'Cancelada desde el Centro de Ventas');
-      await this.cargar();
+      const r = await mextizzaCancelarOrden(o.folio, motivo);
+      const por = [];
+      if (conWhats && o.telefono) por.push('WhatsApp');
+      if (r.avisos && r.avisos.push) por.push('notificación');
+      if (r.avisos && r.avisos.correo) por.push('correo');
+      this.setState({ npMsg: o.folio + ' cancelado · ' + (por.length ? 'le avisamos por ' + por.join(', ').replace(/, ([^,]*)$/, ' y $1') : 'no hubo forma de avisarle: escríbele si tienes su número') });
+      clearTimeout(this._npMsgTmr);
+      this._npMsgTmr = setTimeout(() => this.setState({ npMsg: '' }), 9000);
     } catch (err) {
-      this.setState({ error: 'No se pudo cancelar la orden: ' + err.message });
+      this.setState({
+        ordenes: this.state.ordenes.map(x => (x.folio === o.folio ? { ...x, estado: previo } : x)),
+        error: 'No se pudo cancelar ' + o.folio + ': ' + err.message
+      });
     }
   }
 
@@ -1735,6 +1802,30 @@ class Component extends DCLogic {
     };
   }
 
+  vistaCancelar(o, i) {
+    const c = this.state.cancelando;
+    const abierto = !!(c && c.folio === o.folio);
+    const set = cambios => this.setState({ cancelando: { ...this.state.cancelando, ...cambios }, error: null });
+    return {
+      enCancelar: abierto,
+      abrirCancelar: () => this.setState({ cancelando: abierto ? null : { folio: o.folio, motivo: 'zona', otro: '' }, error: null }),
+      motivos: abierto ? MOTIVOS_CANCELAR.map(([clave, label]) => ({
+        label,
+        estilo: 'padding:8px 12px;border-radius:99px;font-family:\'Oswald\',sans-serif;font-size:12.5px;font-weight:700;cursor:pointer;min-height:38px;'
+          + (c.motivo === clave ? 'background:#E4007C;color:#FFFFFF;border:2px solid #E4007C' : 'background:#FFFFFF;color:#1A1A1A;border:2px solid rgba(0,0,0,.18)'),
+        elegir: () => set({ motivo: clave })
+      })) : [],
+      esOtro: abierto && c.motivo === 'otro',
+      otro: abierto ? c.otro : '',
+      setOtro: ev => set({ otro: ev.target.value.slice(0, 300) }),
+      mensaje: abierto ? whatsCancelacion(o, motivoCliente(o, c.motivo, c.otro)) : '',
+      conTelefono: !!(o.telefono && o.telefono.length === 10),
+      cancelarWhats: () => this.cancelar(i, true),
+      cancelarSolo: () => this.cancelar(i, false),
+      noCancelar: () => this.setState({ cancelando: null })
+    };
+  }
+
   renderVals() {
     const { ordenes, filtro } = this.state;
     const umbral = this.props.umbralAlerta ?? 20;
@@ -1776,7 +1867,7 @@ class Component extends DCLogic {
           enVuelo: !!(this._enVuelo && this._enVuelo[o.folio]),
           quieto: !(this._enVuelo && this._enVuelo[o.folio]),
           avanzar: () => this.avanzar(i),
-          cancelar: () => this.cancelar(i)
+          ...this.vistaCancelar(o, i)
         };
       });
 

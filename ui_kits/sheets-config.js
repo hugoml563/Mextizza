@@ -152,6 +152,8 @@ if (!window.__mextizzaSheetsConfigLoaded) {
   const mextizzaEstadoOrden = folio => mextizzaApiGet('estado', { folio });
   /** Ultimo pedido de un telefono: recupera el seguimiento en otro dispositivo. */
   const mextizzaEstadoPorTelefono = telefono => mextizzaApiGet('estado_por_telefono', { telefono });
+  /** El navegador del cliente pide que le avisen si algo cambia con su pedido. */
+  const mextizzaPushPedido = (folio, token_push) => mextizzaApiPost('push_pedido', { folio, token_push });
   /** El cliente cancela su propio pedido, solo dentro de la ventana permitida. */
   const mextizzaCancelarPorCliente = folio => mextizzaApiPost('cancelar_cliente', { folio });
   const mextizzaListarAbiertas = () => mextizzaApiGet('listar_abiertas', {}, true);
@@ -213,5 +215,5 @@ if (!window.__mextizzaSheetsConfigLoaded) {
 
   const mextizzaTarjeta = (telefono) => mextizzaApiGet('tarjeta', { telefono: telefono || '' });
 
-  Object.assign(window, { mextizzaPickup, mextizzaTarjeta, mextizzaCrearOrden, mextizzaAvanzarEstado, mextizzaCancelarOrden, mextizzaEstadoOrden, mextizzaEstadoPorTelefono, mextizzaCancelarPorCliente, mextizzaListarAbiertas, mextizzaListarHoy, mextizzaSolicitarCatering, mextizzaListarCatering, mextizzaActualizarCatering, mextizzaPushRegistrar, mextizzaPushBaja, mextizzaPushProbar, mextizzaTokenAdmin, mextizzaGuardarTokenAdmin, mextizzaOlvidarTokenAdmin, mextizzaCapturaCocina, mextizzaInvEstado, mextizzaInvCompra, mextizzaInvLote, mextizzaInvMerma, mextizzaInvConteo, mextizzaLigarTelefono, mextizzaMiCuenta, mextizzaWalletEnlace, mextizzaCapturarOrden, mextizzaClientePorTelefono });
+  Object.assign(window, { mextizzaPickup, mextizzaTarjeta, mextizzaCrearOrden, mextizzaAvanzarEstado, mextizzaCancelarOrden, mextizzaEstadoOrden, mextizzaEstadoPorTelefono, mextizzaCancelarPorCliente, mextizzaListarAbiertas, mextizzaListarHoy, mextizzaSolicitarCatering, mextizzaListarCatering, mextizzaActualizarCatering, mextizzaPushRegistrar, mextizzaPushBaja, mextizzaPushProbar, mextizzaTokenAdmin, mextizzaGuardarTokenAdmin, mextizzaOlvidarTokenAdmin, mextizzaCapturaCocina, mextizzaInvEstado, mextizzaInvCompra, mextizzaInvLote, mextizzaInvMerma, mextizzaInvConteo, mextizzaLigarTelefono, mextizzaMiCuenta, mextizzaWalletEnlace, mextizzaCapturarOrden, mextizzaClientePorTelefono, mextizzaPushPedido });
 }

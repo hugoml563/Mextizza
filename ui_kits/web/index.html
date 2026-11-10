@@ -3,13 +3,15 @@
     <!-- La de Apple sigue porque iOS todavia la usa; el navegador la reporta
          como obsoleta solo si va sola. -->
     <meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="Mextizza"><link rel="stylesheet" href="../../styles.css"><link rel="stylesheet" href="../catering.css"><script src="../../vendor/react.production.min.js"></script><script src="../../vendor/react-dom.production.min.js"></script><script src="../../_ds_bundle.js"></script><script src="../menu-data.js"></script><script src="../delivery-zone.js"></script><script src="../sheets-config.js"></script>
-<script src="../cuenta.js"></script><script src="../scroll-a-faltante.js"></script><script src="bundle.build.js" defer></script><style>
+<script src="../cuenta.js"></script><script src="../avisos-cliente.js"></script><script src="../scroll-a-faltante.js"></script><script src="bundle.build.js" defer></script><style>
 body{background:var(--surface-page)}
 @media (max-width: 860px) {
   .web-hero-grid{grid-template-columns:1fr !important}
   .web-footer-grid{grid-template-columns:1fr !important;gap:32px !important}
 }
 .franja-pedido{display:none}
+/* Un pedido cancelado se avisa en cualquier pantalla, no solo en celular. */
+.franja-cancelada{display:flex !important}
 @media (max-width: 640px) {
   /* El header se partia en tres filas y ocupaba 173px, el 21% de la pantalla,
      antes de que empezara el contenido. Los tres enlaces de ancla se ocultan en

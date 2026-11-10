@@ -75,7 +75,7 @@ const TS_POR_ESTADO = {
   entregada: 't_entregada'
 };
 
-const ORDENES_HEADERS = ['folio', 'canal', 'estado', 'cliente_telefono', 'cliente_nombre', 'direccion', 'colonia', 'km', 'pago_metodo', 'pago_estado', 'subtotal', 'total', 't_recibida', 't_confirmada', 't_horno', 't_lista', 't_camino', 't_entregada', 'reparto', 'notas', 'motivo_cancelacion', 'entrega_tipo', 'descuento', 'sello', 'premio', 'consecutivo', 'backflush', 'uid', 'premio_por'];
+const ORDENES_HEADERS = ['folio', 'canal', 'estado', 'cliente_telefono', 'cliente_nombre', 'direccion', 'colonia', 'km', 'pago_metodo', 'pago_estado', 'subtotal', 'total', 't_recibida', 't_confirmada', 't_horno', 't_lista', 't_camino', 't_entregada', 'reparto', 'notas', 'motivo_cancelacion', 'entrega_tipo', 'descuento', 'sello', 'premio', 'consecutivo', 'backflush', 'uid', 'premio_por', 'correo', 'push_token'];
 const ORDEN_ITEMS_HEADERS = ['linea_id', 'folio', 'producto_id', 'producto_nombre', 'cantidad', 'precio_unit', 'complementos_total', 'importe', 'promocion'];
 const ITEM_COMPLEMENTOS_HEADERS = ['linea_id', 'complemento_id', 'complemento_nombre', 'precio'];
 const PRODUCTOS_HEADERS = ['id', 'nombre', 'descripcion', 'categoria', 'precio', 'activo', 'foto'];
@@ -985,6 +985,9 @@ function doPost(e) {
       case 'mi_cuenta':
         result = miCuenta_(body);
         break;
+      case 'push_pedido':
+        result = registrarPushPedido_(body);
+        break;
       case 'wallet_enlace':
         result = walletEnlace_(body);
         break;
@@ -1597,7 +1600,11 @@ function crearOrden_(body, nivel) {
     /* Quien autorizo el premio de la tarjeta. 'cocina' es un premio que se
        cobro por telefono o WhatsApp sin que el cliente entrara a su cuenta:
        queda marcado para poder revisarlo despues. */
-    premio_por: (premio && premio.tipo.indexOf('tarjeta:') === 0) ? (nivel === 'admin' ? 'cocina' : 'cuenta') : ''
+    premio_por: (premio && premio.tipo.indexOf('tarjeta:') === 0) ? (nivel === 'admin' ? 'cocina' : 'cuenta') : '',
+    /* Para avisarle si se cancela. Solo con cuenta: es el correo que Google
+       verifico, no uno que alguien escribio en un formulario. */
+    correo: cuenta && cuenta.correo ? textoSeguro_(cuenta.correo) : '',
+    push_token: ''
   };
   ordenesSh.appendRow(ORDENES_HEADERS.map(function (h) { return row[h]; }));
 
@@ -1974,14 +1981,108 @@ function escribirBloquesOrden_(sh, index, antes, despues) {
 /** body: { token, folio, motivo } */
 function cancelarOrden_(body) {
   const sh = sheet_(SHEETS.ordenes);
-  const { index } = findOrdenRow_(sh, body.folio);
-  sh.getRange(index, ORDENES_HEADERS.indexOf('estado') + 1).setValue('cancelada');
-  sh.getRange(index, ORDENES_HEADERS.indexOf('motivo_cancelacion') + 1).setValue(textoSeguro_(body.motivo));
+  const { row, index } = findOrdenRow_(sh, body.folio);
+  const H = ORDENES_HEADERS;
+  // Cancelar dos veces no vuelve a avisarle al cliente.
+  const yaEstaba = row[H.indexOf('estado')] === 'cancelada';
+  /* El motivo lo lee el cliente: en su seguimiento, en la notificacion y en el
+     correo. La cocina lo escribe para el, no para el registro. */
+  const motivo = String(body.motivo || '').trim().slice(0, 600) || 'Tuvimos que cancelar tu pedido.';
+  sh.getRange(index, H.indexOf('estado') + 1).setValue('cancelada');
+  sh.getRange(index, H.indexOf('motivo_cancelacion') + 1).setValue(textoSeguro_(motivo));
   /* El sello queda anulado y el premio se libera solo: como la tarjeta nunca se
      toco al pedir, no hay nada que devolver — basta con que este pedido deje de
      estar 'pendiente' para que premiosReservados_ lo suelte. */
-  sh.getRange(index, ORDENES_HEADERS.indexOf('sello') + 1).setValue('no');
-  return { folio: body.folio, estado: 'cancelada' };
+  sh.getRange(index, H.indexOf('sello') + 1).setValue('no');
+  const avisos = yaEstaba ? { push: false, correo: false } : avisarCancelacion_(row, motivo);
+  return { folio: body.folio, estado: 'cancelada', avisos: avisos };
+}
+
+/* ---- Avisos al cliente --------------------------------------------------
+   Cuando la cocina cancela, el cliente se entera aunque haya cerrado la
+   pagina: por notificacion del navegador si toco "Avisame" en su seguimiento,
+   y por correo si pidio con su cuenta. WhatsApp lo manda la cocina desde el
+   tablero, con un toque. Nada de esto puede tumbar la cancelacion. */
+const WHATSAPP_MEXTIZZA = '525526577352';
+
+/** body: { folio, token_push } — el navegador del cliente pide que le avisen.
+ *  Expone lo mismo que `estado`: solo el avance de ese folio. */
+function registrarPushPedido_(body) {
+  const token = tokenPushValido_(body.token_push);
+  const sh = sheet_(SHEETS.ordenes);
+  const { row, index } = findOrdenRow_(sh, String(body.folio || ''));
+  const estado = row[ORDENES_HEADERS.indexOf('estado')];
+  if (estado === 'entregada' || estado === 'cancelada') throw new Error('Ese pedido ya cerró.');
+  sh.getRange(index, ORDENES_HEADERS.indexOf('push_token') + 1).setValue(token);
+  return { folio: body.folio };
+}
+
+function avisarCancelacion_(row, motivo) {
+  const H = ORDENES_HEADERS;
+  const folio = String(row[H.indexOf('folio')]);
+  const nombre = String(row[H.indexOf('cliente_nombre')] || '').split(' ')[0];
+  const res = { push: false, correo: false };
+
+  const token = String(row[H.indexOf('push_token')] || '');
+  if (token && PropertiesService.getScriptProperties().getProperty('FCM_CUENTA_SERVICIO')) {
+    try {
+      const r = enviarPush_([token], {
+        titulo: 'Cancelamos tu pedido ' + folio,
+        cuerpo: motivo,
+        url: '/?pedido=' + encodeURIComponent(folio),
+        tag: 'pedido-' + folio
+      });
+      res.push = r.enviados > 0;
+      if (r.errores.length) console.error('Push de cancelacion con error: ' + r.errores.join(' | '));
+    } catch (e) {
+      console.error('No se pudo mandar el push de cancelacion de ' + folio + ': ' + e);
+    }
+  }
+
+  const correo = String(row[H.indexOf('correo')] || '').replace(/^'/, '');
+  if (/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(correo)) {
+    try {
+      const wa = 'https://wa.me/' + WHATSAPP_MEXTIZZA + '?text=' +
+        encodeURIComponent('Hola, me cancelaron el pedido ' + folio + '.');
+      const saludo = nombre ? 'Hola, ' + nombre + '.' : 'Hola.';
+      const esc = function (t) {
+        return String(t).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+      };
+      MailApp.sendEmail({
+        to: correo,
+        name: 'Mextizza',
+        replyTo: 'mextizza@gmail.com',
+        subject: 'Cancelamos tu pedido ' + folio,
+        body: saludo + '\n\n' + motivo + '\n\nSi quieres, escríbenos por WhatsApp y lo resolvemos: ' + wa +
+          '\n\nMextizza · Lomas Lindas, Atizapán',
+        htmlBody:
+          '<div style="font-family:Arial,sans-serif;font-size:15px;line-height:1.55;color:#1A1A1A;max-width:520px">' +
+          '<p style="margin:0 0 4px;font-size:12px;letter-spacing:1px;text-transform:uppercase;color:#CD0070;font-weight:bold">Pedido ' + esc(folio) + '</p>' +
+          '<p style="margin:0 0 14px;font-size:20px;font-weight:bold">Cancelamos tu pedido</p>' +
+          '<p style="margin:0 0 10px">' + esc(saludo) + '</p>' +
+          '<p style="margin:0 0 18px">' + esc(motivo) + '</p>' +
+          '<p style="margin:0 0 22px"><a href="' + esc(wa) + '" style="display:inline-block;background:#2E7D5B;color:#FFFFFF;text-decoration:none;font-weight:bold;padding:12px 18px;border-radius:8px">Escríbenos por WhatsApp</a></p>' +
+          '<p style="margin:0;font-size:12px;color:#6b6b6b">Mextizza · Lomas Lindas, Atizapán · mextizza.com</p></div>'
+      });
+      res.correo = true;
+    } catch (e) {
+      console.error('No se pudo mandar el correo de cancelacion de ' + folio + ': ' + e);
+    }
+  }
+  return res;
+}
+
+/** Correr UNA vez a mano: Google pide el permiso para mandar correos, y llega
+ *  uno de muestra a la cuenta duena del script. No toca ningun pedido. */
+function probarCorreoCancelacion() {
+  const yo = Session.getEffectiveUser().getEmail();
+  const fila = [];
+  ORDENES_HEADERS.forEach(function () { fila.push(''); });
+  fila[ORDENES_HEADERS.indexOf('folio')] = 'MX-PRUEBA';
+  fila[ORDENES_HEADERS.indexOf('cliente_nombre')] = 'Prueba';
+  fila[ORDENES_HEADERS.indexOf('correo')] = yo;
+  const r = avisarCancelacion_(fila, 'Así le llega a un cliente el aviso de que cancelamos su pedido.');
+  Logger.log(r.correo ? 'Listo: revisa ' + yo + '.' : 'No salió el correo; mira el error en Ejecuciones.');
 }
 
 /* ================================================================ CATERING ===
@@ -2884,6 +2985,8 @@ function armarOrdenes_(ordenes, itemsLeidos, addonsLeidos) {
       // folio delataba cuantos pedidos lleva el negocio.
       consecutivo: o.consecutivo || '',
       cliente: o.cliente_nombre,
+      // Para avisarle por WhatsApp si hay que cancelar. Vista interna (admin).
+      telefono: soloDigitos_(o.cliente_telefono),
       /* En un pedido para recoger no hay direccion. Si el destino se quedara en
          blanco, en la cocina se veria como un pedido a domicilio incompleto y
          se saldria un repartidor a ningun lado. */

@@ -604,9 +604,13 @@ function AppTracking({ tab, onTab, count, folio, premio, tarjeta, selloPendiente
       }
     };
     leer();
+    leerRef.current = leer;
     const id = setInterval(leer, 30000);
-    return () => { vivo = false; clearInterval(id); };
+    return () => { vivo = false; clearInterval(id); leerRef.current = null; };
   }, [folio]);
+  // Al volver a la app se consulta en ese momento, sin esperar los 30 s.
+  const leerRef = React.useRef(null);
+  if (typeof useAlVolver === 'function') useAlVolver(() => { if (leerRef.current) leerRef.current(); });
 
   const cancelada = orden && orden.estado === 'cancelada';
   const esPickup = !!(orden && orden.pickup);
@@ -650,6 +654,9 @@ function AppTracking({ tab, onTab, count, folio, premio, tarjeta, selloPendiente
       </div>
       <div style={{ flex: 1, overflowY: 'auto', padding: '22px 20px', background: 'var(--surface-card)' }}>
         <DireccionRecoger activo={esPickup} style={{ marginBottom: 16 }} />
+        {cancelada && typeof PedidoCancelado === 'function' && (
+          <PedidoCancelado folio={folio} motivo={orden.motivo_cancelacion} onCarta={() => onTab && onTab('menu')} style={{ marginBottom: 20 }} />
+        )}
         {premio && <AvisoPremio premio={premio} style={{ marginBottom: 16 }} />}
         {tarjeta && <TarjetaPremios tarjeta={tarjeta} pendiente={selloPendiente} style={{ marginBottom: 20 }} />}
         {steps.map(([t, d, done], i) => (

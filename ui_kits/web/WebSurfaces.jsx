@@ -36,7 +36,7 @@ function textoPedidoActivo(p) {
   return 'Recibimos tu pedido';
 }
 
-function WebHeader({ count, onCart, onNav, view, folio, onSeguir, cinta, onCuenta, pedidoActivo }) {
+function WebHeader({ count, onCart, onNav, view, folio, onSeguir, cinta, onCuenta, pedidoActivo, onCerrarAviso }) {
   return (
     <header style={{
       background: 'rgba(245,240,232,0.82)', backdropFilter: 'blur(10px) saturate(140%)', WebkitBackdropFilter: 'blur(10px) saturate(140%)',
@@ -83,7 +83,28 @@ function WebHeader({ count, onCart, onNav, view, folio, onSeguir, cinta, onCuent
       {/* Solo en celular (la regla vive en index.html): ahi Seguir sale del
           encabezado y aparece aqui, y solo mientras hay un pedido en curso.
           Es cuando de verdad importa; el resto del tiempo no ocupa lugar. */}
-      {pedidoActivo && (
+      {/* Cancelado: rosa y en cualquier pantalla, con su X para cerrarlo. */}
+      {pedidoActivo && pedidoActivo.estado === 'cancelada' && (
+        <div className="franja-pedido franja-cancelada" role="status" style={{
+          alignItems: 'stretch', width: '100%', background: 'var(--rosa-tinte)',
+          borderBottom: '2px solid var(--rosa-mexicano)', color: 'var(--rosa-mexicano-texto)'
+        }}>
+          <button onClick={onSeguir} style={{
+            flex: 1, display: 'flex', alignItems: 'center', gap: 8, minHeight: 44, padding: '8px 8px 8px 24px',
+            background: 'transparent', border: 'none', color: 'inherit', cursor: 'pointer', textAlign: 'left',
+            fontFamily: 'var(--font-body)', fontWeight: 600, fontSize: 13, letterSpacing: 0.5
+          }}>
+            <Icon name="close" size={16} />
+            <span style={{ flex: 1 }}>Cancelamos tu pedido</span>
+            <span style={{ fontSize: 12, letterSpacing: 1, textTransform: 'uppercase' }}>Ver por qué</span>
+          </button>
+          <button onClick={onCerrarAviso} aria-label="Cerrar el aviso" style={{
+            flex: 'none', width: 48, minHeight: 44, background: 'transparent', border: 'none',
+            borderLeft: '1px solid var(--rosa-mexicano)', color: 'inherit', cursor: 'pointer', fontSize: 18, fontWeight: 700
+          }}>×</button>
+        </div>
+      )}
+      {pedidoActivo && pedidoActivo.estado !== 'cancelada' && (
         <button className="franja-pedido" onClick={onSeguir} style={{
           alignItems: 'center', gap: 8, width: '100%', minHeight: 44, padding: '8px 24px',
           background: 'var(--blanco-hueso)', border: 'none', borderBottom: '2px solid var(--terracota-horno)',
