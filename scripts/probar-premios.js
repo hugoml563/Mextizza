@@ -1218,6 +1218,23 @@ console.log('\nLO QUE MANDA EL NAVEGADOR NO ENTRA COMO FORMULA NI COMO PRECIO RA
   comparar('con los avisos caidos el pedido se cancela igual', campoDe(otro, 'estado'), 'cancelada');
   comparar('y el tablero sabe que no salio ningun aviso', JSON.stringify(r2.avisos), JSON.stringify({ push: false, correo: false }));
 
+  // Con el alias en Gmail, el correo sale desde mextizza@gmail.com.
+  const deGmail = [];
+  ctx.GmailApp = { getAliases: () => ['mextizza@gmail.com'], sendEmail: (to, asunto, cuerpo, op) => deGmail.push({ to, op }) };
+  AV.correoCaido = false;
+  const tercero = ctx.crearOrden_({ canal: 'Web', cliente: { telefono: TC, nombre: 'Ana' }, direccion: 'C', colonia: 'Lomas Lindas', km: 1,
+    pago_metodo: 'Efectivo', items: [{ producto_id: 'roni', cantidad: 1 }], idToken: tok }).folio;
+  ctx.cancelarOrden_({ folio: tercero, motivo: 'Ya no alcanzamos hoy.' });
+  comparar('con el alias, el correo sale desde mextizza@gmail.com', deGmail.length === 1 && deGmail[0].op.from === 'mextizza@gmail.com', true);
+  comparar('y con el nombre Mextizza', deGmail[0] && deGmail[0].op.name, 'Mextizza');
+  ctx.GmailApp = { getAliases: () => [], sendEmail: () => { throw new Error('no deberia'); } };
+  const correosAntes = AV.correos.length;
+  const cuarto = ctx.crearOrden_({ canal: 'Web', cliente: { telefono: TC, nombre: 'Ana' }, direccion: 'C', colonia: 'Lomas Lindas', km: 1,
+    pago_metodo: 'Efectivo', items: [{ producto_id: 'roni', cantidad: 1 }], idToken: tok }).folio;
+  ctx.cancelarOrden_({ folio: cuarto, motivo: 'Ya no alcanzamos hoy.' });
+  comparar('sin el alias, sale como antes desde la cuenta del script', AV.correos.length, correosAntes + 1);
+  delete ctx.GmailApp;
+
   comparar('la lista de la cocina trae el telefono para el WhatsApp', ctx.listarHoy_().some((o) => o.folio === deCocina && o.telefono === TC), true);
 
   ctx.UrlFetchApp.fetch = fetchReal;

@@ -2048,7 +2048,7 @@ function avisarCancelacion_(row, motivo) {
       const esc = function (t) {
         return String(t).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
       };
-      MailApp.sendEmail({
+      enviarCorreoCliente_({
         to: correo,
         name: 'Mextizza',
         replyTo: 'mextizza@gmail.com',
@@ -2072,6 +2072,28 @@ function avisarCancelacion_(row, motivo) {
   return res;
 }
 
+/* Los correos al cliente salen desde mextizza@gmail.com, no desde la cuenta
+   duena del script (que es personal y el cliente la veia como remitente).
+   Para eso, en el Gmail de esa cuenta, mextizza@gmail.com esta agregado como
+   alias en "Enviar correo como", y GmailApp puede mandar desde el.
+
+   Si el alias no esta (se borro, o falta el permiso de Gmail), se manda como
+   antes con MailApp: un correo desde la cuenta personal es mejor que un
+   cliente sin aviso. */
+const CORREO_REMITENTE = 'mextizza@gmail.com';
+function enviarCorreoCliente_(m) {
+  let conAlias = false;
+  try { conAlias = GmailApp.getAliases().indexOf(CORREO_REMITENTE) !== -1; } catch (e) { conAlias = false; }
+  if (conAlias) {
+    GmailApp.sendEmail(m.to, m.subject, m.body, {
+      from: CORREO_REMITENTE, name: m.name, replyTo: m.replyTo, htmlBody: m.htmlBody
+    });
+    return 'alias';
+  }
+  MailApp.sendEmail(m);
+  return 'cuenta';
+}
+
 /** Correr UNA vez a mano: Google pide el permiso para mandar correos, y llega
  *  uno de muestra a la cuenta duena del script. No toca ningun pedido. */
 function probarCorreoCancelacion() {
@@ -2081,8 +2103,12 @@ function probarCorreoCancelacion() {
   fila[ORDENES_HEADERS.indexOf('folio')] = 'MX-PRUEBA';
   fila[ORDENES_HEADERS.indexOf('cliente_nombre')] = 'Prueba';
   fila[ORDENES_HEADERS.indexOf('correo')] = yo;
+  let alias = false;
+  try { alias = GmailApp.getAliases().indexOf(CORREO_REMITENTE) !== -1; } catch (e) { alias = false; }
   const r = avisarCancelacion_(fila, 'Así le llega a un cliente el aviso de que cancelamos su pedido.');
-  Logger.log(r.correo ? 'Listo: revisa ' + yo + '.' : 'No salió el correo; mira el error en Ejecuciones.');
+  Logger.log(!r.correo ? 'No salió el correo; mira el error en Ejecuciones.'
+    : alias ? 'Listo: salió desde ' + CORREO_REMITENTE + '. Revisa ' + yo + '.'
+    : 'Salió desde tu cuenta, no desde ' + CORREO_REMITENTE + ': revisa que siga como alias en Gmail, en Enviar correo como.');
 }
 
 /* ================================================================ CATERING ===
