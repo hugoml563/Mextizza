@@ -209,6 +209,11 @@ function WebHero({ onNav }) {
 const fotoTam = (foto, tam) => String(foto || '').replace(/\.(webp|jpe?g)$/, '-' + tam + '.webp');
 
 function BotonAgregar({ it, onAdd, onCustomize, added, chico }) {
+  // Agotado hoy: la cocina lo marco en el tablero. El servidor tambien lo rechaza.
+  if (typeof useOperacion === 'function') useOperacion();
+  if (typeof mextizzaAgotado === 'function' && mextizzaAgotado(it.id)) {
+    return <Button size={chico ? 'sm' : 'md'} tone="outline" disabled aria-label={it.name + ' agotado hoy'}>Agotado hoy</Button>;
+  }
   return (
     <Button size={chico ? 'sm' : 'md'} tone={added === it.id ? 'dark' : 'outline'}
       onClick={() => mextizzaAceptaComplementos(it) ? onCustomize(it) : onAdd(it)}>

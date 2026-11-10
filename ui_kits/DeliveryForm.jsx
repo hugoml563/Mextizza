@@ -72,11 +72,15 @@ function DeliveryForm({ compact = false, attempted = false, onValidChange, onDat
 
   return (
     <div>
-      {!seAceptan && (
+      {!seAceptan && (apertura.pausa ? (
+        <StatusNote tone="block" title="Estamos a tope" style={{ marginBottom: 14 }}>
+          {apertura.aviso} Si te urge, escríbenos por WhatsApp.
+        </StatusNote>
+      ) : (
         <StatusNote tone="block" title="El horno está apagado" style={{ marginBottom: 14 }}>
           Abrimos {apertura.texto.toLowerCase()}. Si quieres dejarlo apuntado desde ahorita, escríbenos por WhatsApp.
         </StatusNote>
-      )}
+      ))}
       {/* Primero como lo recibe: decide que se le pregunta despues. Con el
           servicio de recoger apagado no hay nada que elegir. */}
       {servicioPickup && (

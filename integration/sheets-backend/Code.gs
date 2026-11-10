@@ -54,8 +54,11 @@ const SHEETS = {
   conteos: 'inv_conteos',
   /* Los supuestos de la lista de compras: pizzas al dia y dias de
      cobertura. Viven en la hoja para poder moverlos sin desplegar. */
-  parametros: 'inv_parametros'
+  parametros: 'inv_parametros',
+  // Fallas del sistema (no las validaciones normales). Se crea sola.
+  errores: 'errores'
 };
+const ERRORES_HEADERS = ['fecha', 'origen', 'accion', 'mensaje'];
 
 const ESTADOS_ACTIVOS = ['recibida', 'confirmada', 'horno', 'lista', 'camino'];
 
@@ -688,7 +691,8 @@ function configurarHojas() {
     [SHEETS.recetas, RECETAS_HEADERS],
     [SHEETS.movimientos, MOVIMIENTOS_HEADERS],
     [SHEETS.conteos, CONTEOS_HEADERS],
-    [SHEETS.parametros, PARAMETROS_HEADERS]
+    [SHEETS.parametros, PARAMETROS_HEADERS],
+    [SHEETS.errores, ERRORES_HEADERS]
   ];
   specs.forEach(([nombre, headers]) => {
     let sh = ss.getSheetByName(nombre);
@@ -833,7 +837,7 @@ function usuarioDeToken_(idToken) {
        si falta el permiso para llamar servicios externos, el error cae aqui
        mismo, y sin este registro cada pedido con cuenta entraria como invitado
        sin que nadie se enterara. Se ve en Apps Script, en Ejecuciones. */
-    console.error('No se pudo validar la cuenta con Google: ' + e);
+    reportar_('No se pudo validar la cuenta con Google: ' + e);
     return null;
   }
   if (res.getResponseCode() !== 200) return null;
@@ -942,8 +946,10 @@ function nextFolio_() {
 function doPost(e) {
   const lock = LockService.getScriptLock();
   lock.waitLock(20000);
+  let accion = '';
   try {
     const body = JSON.parse(e.postData.contents);
+    accion = String(body.action || '');
     const nivel = checkToken_(body.token);
 
     let result;
@@ -988,6 +994,13 @@ function doPost(e) {
       case 'push_pedido':
         result = registrarPushPedido_(body);
         break;
+      case 'operacion':
+        requiereAdmin_(nivel);
+        result = cambiarOperacion_(body);
+        break;
+      case 'error_cliente':
+        result = errorCliente_(body);
+        break;
       case 'wallet_enlace':
         result = walletEnlace_(body);
         break;
@@ -1015,6 +1028,7 @@ function doPost(e) {
     }
     return jsonOut_({ ok: true, ...result });
   } catch (err) {
+    anotarFallo_(accion, err);
     return jsonOut_({ ok: false, error: String(err) });
   } finally {
     lock.releaseLock();
@@ -1026,6 +1040,11 @@ function doGet(e) {
   try {
     const token = e.parameter.token;
     const nivel = checkToken_(token);
+    /* Pausa y agotados: lo consultan la web y la app cada par de minutos.
+       Solo lee propiedades, sin tocar la hoja, y no expone nada privado. */
+    if (e.parameter.action === 'operacion') {
+      return jsonOut_({ ok: true, ...estadoOperacion_() });
+    }
     if (e.parameter.action === 'listar_abiertas') {
       requiereAdmin_(nivel);
       return jsonOut_({ ok: true, ordenes: listarAbiertas_() });
@@ -1082,6 +1101,7 @@ function doGet(e) {
     }
     throw new Error('Acción desconocida: ' + e.parameter.action);
   } catch (err) {
+    anotarFallo_(String((e && e.parameter && e.parameter.action) || ''), err);
     return jsonOut_({ ok: false, error: String(err) });
   }
 }
@@ -1531,6 +1551,18 @@ function crearOrden_(body, nivel) {
   });
   if (!lineas.length) throw new Error('El pedido va vacio');
 
+  /* La cocina puede pausar los pedidos o marcar algo como agotado desde el
+     tablero. Aplica a los clientes, no a la cocina, que captura igual. */
+  if (nivel !== 'admin') {
+    const op = estadoOperacion_();
+    if (op.pausadoHasta) {
+      throw new Error('Estamos a tope. Volvemos a tomar pedidos a las ' + horaCortaCDMX_(new Date(op.pausadoHasta)) + '.');
+    }
+    const agotada = lineas.find(function (l) { return op.agotados.indexOf(l.producto_id) !== -1; });
+    if (agotada) throw new Error('Hoy ya no hay ' + agotada.nombre + '. Quítalo de tu pedido para continuar.');
+    limitarPedidos_(telefono);
+  }
+
   /* Cobrar un premio de la tarjeta: la cocina (token de administrador, que
      solo vive en su navegador) o la cuenta duena de ese telefono. El canal
      WhatsApp con token publico NO basta: cualquiera puede escribir ese canal
@@ -1607,6 +1639,7 @@ function crearOrden_(body, nivel) {
     push_token: ''
   };
   ordenesSh.appendRow(ORDENES_HEADERS.map(function (h) { return row[h]; }));
+  if (nivel !== 'admin') contarPedido_(telefono);
 
   upsertCliente_(body.cliente, pickup ? '' : body.direccion, pickup ? '' : body.colonia);
 
@@ -1938,7 +1971,7 @@ function avanzarEstado_(body) {
     try {
       ligarAlEntregar_(row[ORDENES_HEADERS.indexOf('cliente_telefono')], String(row[ORDENES_HEADERS.indexOf('uid')]));
     } catch (e) {
-      console.error('No se pudo ligar el telefono al entregar ' + body.folio + ': ' + e);
+      reportar_('No se pudo ligar el telefono al entregar ' + body.folio + ': ' + e);
     }
   }
 
@@ -2033,9 +2066,9 @@ function avisarCancelacion_(row, motivo) {
         tag: 'pedido-' + folio
       });
       res.push = r.enviados > 0;
-      if (r.errores.length) console.error('Push de cancelacion con error: ' + r.errores.join(' | '));
+      if (r.errores.length) reportar_('Push de cancelacion con error: ' + r.errores.join(' | '));
     } catch (e) {
-      console.error('No se pudo mandar el push de cancelacion de ' + folio + ': ' + e);
+      reportar_('No se pudo mandar el push de cancelacion de ' + folio + ': ' + e);
     }
   }
 
@@ -2066,7 +2099,7 @@ function avisarCancelacion_(row, motivo) {
       });
       res.correo = true;
     } catch (e) {
-      console.error('No se pudo mandar el correo de cancelacion de ' + folio + ': ' + e);
+      reportar_('No se pudo mandar el correo de cancelacion de ' + folio + ': ' + e);
     }
   }
   return res;
@@ -2316,7 +2349,7 @@ function borrarEventoCatering_(id) {
     if (ev) ev.deleteEvent();
   } catch (err) {
     // Si alguien ya lo borro a mano del calendario, cancelar no debe fallar por eso.
-    console.error('No se pudo borrar el evento ' + id + ': ' + err);
+    reportar_('No se pudo borrar el evento ' + id + ': ' + err);
   }
 }
 
@@ -2535,9 +2568,9 @@ function avisarEquipos_(msg) {
       .map(function (r) { return String(r[0]); }).filter(Boolean);
     if (!tokens.length) return;
     const r = enviarPush_(tokens, msg);
-    if (r.errores.length) console.error('Avisos push con error: ' + r.errores.join(' | '));
+    if (r.errores.length) reportar_('Avisos push con error: ' + r.errores.join(' | '));
   } catch (err) {
-    console.error('No se pudo mandar el aviso push: ' + err);
+    reportar_('No se pudo mandar el aviso push: ' + err);
   }
 }
 
@@ -2720,7 +2753,7 @@ function avisoWalletObjeto_(idObjeto, titulo, cuerpo) {
   const r = walletPedir_('post', '/loyaltyObject/' + encodeURIComponent(idObjeto) + '/addMessage', {
     message: { id: 'm' + Date.now(), header: titulo, body: cuerpo, messageType: 'TEXT_AND_NOTIFY' }
   });
-  if (r.code !== 200) console.error('Aviso de Wallet no enviado: ' + r.code + ' ' + r.texto.slice(0, 200));
+  if (r.code !== 200) reportar_('Aviso de Wallet no enviado: ' + r.code + ' ' + r.texto.slice(0, 200));
 }
 
 /* body: { idToken } — el enlace "Guardar en Google Wallet" de la cuenta. Solo
@@ -2772,7 +2805,7 @@ function walletAlEntregar_(telefono, antes, despues, conSello, tieneWallet) {
       walletEncolar_({ tel: String(telefono), antes: antes, despues: despues, conSello: !!conSello });
       return;
     } catch (e) {
-      console.error('No se pudo anotar el pase en la cola; se manda en el momento: ' + e);
+      reportar_('No se pudo anotar el pase en la cola; se manda en el momento: ' + e);
     }
   }
   walletSincronizar_(telefono, antes, despues, conSello);
@@ -2837,7 +2870,7 @@ function walletSincronizar_(telefono, antes, despues, conSello) {
     }
     if (aviso) avisoWalletObjeto_(obj.id, aviso[0], aviso[1]);
   } catch (e) {
-    console.error('No se pudo actualizar el pase de Wallet: ' + e);
+    reportar_('No se pudo actualizar el pase de Wallet: ' + e);
   }
 }
 
@@ -2968,7 +3001,11 @@ function listarHoy_() {
   const lineas = {};
   items.forEach(it => { lineas[it.linea_id] = true; });
   const addons = ultimasFilas_(sheet_(SHEETS.itemComplementos), a => !lineas[a.linea_id]);
-  return armarOrdenes_(ordenes, items, addons);
+  /* Primer pedido de ese telefono: el tablero lo marca, para que la cocina
+     confirme por WhatsApp si algo se ve raro antes de hornear. */
+  const pedidos = {};
+  rowsAsObjects_(sheet_(SHEETS.clientes)).forEach(c => { pedidos[soloDigitos_(c.telefono)] = Number(c.pedidos) || 0; });
+  return armarOrdenes_(ordenes, items, addons).map(o => ({ ...o, nuevo: !!o.telefono && (pedidos[o.telefono] || 0) <= 1 }));
 }
 
 /* Los ultimos renglones de una hoja como objetos. Lee un bloque del final y lo
@@ -3026,4 +3063,273 @@ function armarOrdenes_(ordenes, itemsLeidos, addonsLeidos) {
       total: o.total, min: minTranscurridos, notas: o.notas || '', lineas
     };
   });
+}
+
+
+/* ======================================================= OPERACION ========
+   Pausar pedidos y marcar agotados desde el tablero. Viven en propiedades del
+   script (no en la hoja): se leen en cada pedido y en cada consulta de la web,
+   y asi no cuestan una lectura de Sheets.
+
+   AGOTADOS lleva la fecha de CDMX en que se marco: al dia siguiente vale
+   vacia sola, para que nadie tenga que acordarse de quitar los agotados. */
+const PAUSA_MAX_MIN = 180;
+
+function estadoOperacion_() {
+  const p = PropertiesService.getScriptProperties();
+  const hasta = Number(new Date(p.getProperty('PAUSA_HASTA') || 0));
+  let agotados = [];
+  try {
+    const a = JSON.parse(p.getProperty('AGOTADOS') || '{}');
+    if (a && a.fecha === hoyCDMX_() && Array.isArray(a.ids)) agotados = a.ids;
+  } catch (e) { agotados = []; }
+  return {
+    pausadoHasta: hasta > Date.now() ? new Date(hasta).toISOString() : null,
+    agotados: agotados
+  };
+}
+
+/** body: { pausaMin } | { reanudar: true } | { agotado: { id, valor } } — solo la cocina. */
+function cambiarOperacion_(body) {
+  const p = PropertiesService.getScriptProperties();
+  if (body.reanudar) p.deleteProperty('PAUSA_HASTA');
+  if (body.pausaMin !== undefined) {
+    const min = Number(body.pausaMin);
+    if (!Number.isFinite(min) || min < 1 || min > PAUSA_MAX_MIN) throw new Error('La pausa va de 1 a ' + PAUSA_MAX_MIN + ' minutos.');
+    p.setProperty('PAUSA_HASTA', new Date(Date.now() + min * 60000).toISOString());
+  }
+  if (body.agotado) {
+    const id = String(body.agotado.id || '');
+    if (!delCatalogo_(CATALOGO.productos, id)) throw new Error('Producto desconocido: ' + id);
+    const ids = estadoOperacion_().agotados.filter(function (x) { return x !== id; });
+    if (body.agotado.valor) ids.push(id);
+    p.setProperty('AGOTADOS', JSON.stringify({ fecha: hoyCDMX_(), ids: ids }));
+  }
+  return estadoOperacion_();
+}
+
+function horaCortaCDMX_(d) {
+  return Utilities.formatDate(d, 'America/Mexico_City', 'h:mm a').toLowerCase().replace('am', 'am').replace('pm', 'pm');
+}
+
+/* ===================================================== LIMITES ===========
+   El token publico viaja en la web y en el APK: cualquiera puede mandar
+   pedidos con el. Un limite por telefono y uno general evitan que una
+   rafaga de pedidos falsos llegue a la cocina y se hornee.
+
+   Ventanas fijas en CacheService (30 min por telefono, 10 min en general).
+   La propiedad LIMITES=no los apaga, por si un dia hay que hacerlo rapido. */
+const LIMITE_POR_TELEFONO = 3;
+const LIMITE_GENERAL = 25;
+
+function llavesLimite_(telefono) {
+  const ahora = Date.now();
+  return {
+    tel: 'lim:tel:' + soloDigitos_(telefono) + ':' + Math.floor(ahora / 1800000),
+    todos: 'lim:todos:' + Math.floor(ahora / 600000)
+  };
+}
+
+function limitarPedidos_(telefono) {
+  if (PropertiesService.getScriptProperties().getProperty('LIMITES') === 'no') return;
+  const cache = CacheService.getScriptCache();
+  const k = llavesLimite_(telefono);
+  if (telefono && Number(cache.get(k.tel) || 0) >= LIMITE_POR_TELEFONO) {
+    throw new Error('Recibimos varios pedidos seguidos de este número. Escríbenos por WhatsApp y lo confirmamos.');
+  }
+  if (Number(cache.get(k.todos) || 0) >= LIMITE_GENERAL) {
+    reportar_('Se llegó al límite general de pedidos (' + LIMITE_GENERAL + ' en 10 min).');
+    throw new Error('Estamos recibiendo muchos pedidos al mismo tiempo. Inténtalo en unos minutos o escríbenos por WhatsApp.');
+  }
+}
+
+function contarPedido_(telefono) {
+  if (PropertiesService.getScriptProperties().getProperty('LIMITES') === 'no') return;
+  const cache = CacheService.getScriptCache();
+  const k = llavesLimite_(telefono);
+  if (telefono) cache.put(k.tel, String(Number(cache.get(k.tel) || 0) + 1), 1800);
+  cache.put(k.todos, String(Number(cache.get(k.todos) || 0) + 1), 600);
+}
+
+/* ===================================================== ERRORES ===========
+   Los errores de Apps Script solo quedaban en Ejecuciones, donde nadie los
+   ve. Ahora las fallas DEL SISTEMA (no las validaciones normales, como
+   "la cocina esta cerrada") quedan en la hoja `errores`, llegan en el resumen
+   de cada noche, y si los pedidos empiezan a fallar, avisan a la cocina. */
+const ERRORES_MAX = 1000;
+
+function hojaErrores_() {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  let sh = ss.getSheetByName(SHEETS.errores);
+  if (!sh) sh = ss.insertSheet(SHEETS.errores);
+  if (sh.getLastRow() === 0) {
+    sh.getRange(1, 1, 1, ERRORES_HEADERS.length).setValues([ERRORES_HEADERS]);
+    sh.setFrozenRows(1);
+  }
+  return sh;
+}
+
+/* Nunca truena: si no se puede anotar, se queda solo en Ejecuciones. */
+function registrarError_(origen, accion, mensaje) {
+  try {
+    const sh = hojaErrores_();
+    sh.appendRow([new Date(), textoSeguro_(origen), textoSeguro_(accion), textoSeguro_(String(mensaje).slice(0, 500))]);
+    const total = sh.getLastRow();
+    if (total > ERRORES_MAX + 100) sh.deleteRows(2, total - ERRORES_MAX - 1);
+  } catch (e) {
+    console.log('No se pudo anotar el error: ' + e);
+  }
+}
+
+/* Lo que antes era console.error: se ve en Ejecuciones y queda en la hoja. */
+function reportar_(mensaje) {
+  console.error(mensaje);
+  registrarError_('servidor', '', String(mensaje));
+}
+
+/* Error del sistema, no una validacion. Las validaciones las escribimos
+   nosotros con new Error('...'); estas vienen de un bug o de Google. */
+function esErrorSistema_(err) {
+  if (/^(TypeError|ReferenceError|RangeError|SyntaxError)$/.test(String(err && err.name))) return true;
+  return /Service|quota|cuota|timed out|tiempo de espera|Exception|Internal error|too many/i.test(String((err && err.message) || err));
+}
+
+function anotarFallo_(accion, err) {
+  try {
+    if (!esErrorSistema_(err)) return;
+    registrarError_('servidor', accion, (err && err.stack) || String(err));
+    if (accion !== 'crear_orden') return;
+    /* 3 fallas de pedidos en 10 minutos: se avisa a la cocina, una vez por hora. */
+    const cache = CacheService.getScriptCache();
+    const k = 'fallos:crear:' + Math.floor(Date.now() / 600000);
+    const n = Number(cache.get(k) || 0) + 1;
+    cache.put(k, String(n), 600);
+    if (n >= 3 && !cache.get('alerta:crear')) {
+      cache.put('alerta:crear', '1', 3600);
+      avisarEquipos_({
+        titulo: 'Los pedidos de la web están fallando',
+        cuerpo: 'Van ' + n + ' fallas en 10 minutos. Revisa la hoja errores en Apps Script.',
+        tag: 'alerta-pedidos'
+      });
+    }
+  } catch (e) {
+    console.log('No se pudo anotar la falla: ' + e);
+  }
+}
+
+/** body: { mensaje, pagina, agente } — un error del navegador de un cliente.
+ *  Publico, asi que con tope: 60 por hora en total y 5 por mensaje igual. */
+function errorCliente_(body) {
+  const msg = String(body.mensaje || '').slice(0, 300);
+  if (!msg) return { anotado: false };
+  const cache = CacheService.getScriptCache();
+  const hora = Math.floor(Date.now() / 3600000);
+  const kTodos = 'errcli:' + hora;
+  const huella = Utilities.base64EncodeWebSafe(Utilities.computeDigest(
+    Utilities.DigestAlgorithm.SHA_256, msg, Utilities.Charset.UTF_8)).slice(0, 22);
+  const kMsg = 'errcli:m:' + huella + ':' + hora;
+  const nTodos = Number(cache.get(kTodos) || 0);
+  const nMsg = Number(cache.get(kMsg) || 0);
+  if (nTodos >= 60 || nMsg >= 5) return { anotado: false };
+  cache.put(kTodos, String(nTodos + 1), 3600);
+  cache.put(kMsg, String(nMsg + 1), 3600);
+  registrarError_('navegador', String(body.pagina || '').slice(0, 120),
+    msg + (body.agente ? ' · ' + String(body.agente).slice(0, 90) : ''));
+  return { anotado: true };
+}
+
+/* ===================================================== RESUMEN ===========
+   Cada noche, un correo a mextizza@gmail.com con el dia: pedidos, ventas,
+   cancelaciones con su motivo y los errores del sistema. Si no hubo pedidos
+   ni errores (lunes y martes, cerrado), no se manda nada. */
+function resumenDiario() {
+  const hoy = hoyCDMX_();
+  const deHoy = function (v) { const t = new Date(v); return !isNaN(t) && hoyCDMX_(t) === hoy; };
+  const ordenes = ultimasFilas_(sheet_(SHEETS.ordenes), function (o) { return !deHoy(o.t_recibida); })
+    .filter(function (o) { return o.folio && deHoy(o.t_recibida); });
+  const errores = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SHEETS.errores)
+    ? ultimasFilas_(hojaErrores_(), function (e) { return !deHoy(e.fecha); }).filter(function (e) { return deHoy(e.fecha); })
+    : [];
+  if (!ordenes.length && !errores.length) return { enviado: false };
+
+  const validas = ordenes.filter(function (o) { return o.estado !== 'cancelada'; });
+  const canceladas = ordenes.filter(function (o) { return o.estado === 'cancelada'; });
+  const ventas = validas.reduce(function (t, o) { return t + (Number(o.total) || 0); }, 0);
+  const pesos = function (n) { return '$' + Math.round(n).toLocaleString('es-MX'); };
+  const grupos = {};
+  errores.forEach(function (e) {
+    const k = String(e.origen) + ' · ' + String(e.mensaje).split('\n')[0].slice(0, 140);
+    grupos[k] = (grupos[k] || 0) + 1;
+  });
+  const lineasErr = Object.keys(grupos).sort(function (a, b) { return grupos[b] - grupos[a]; })
+    .map(function (k) { return grupos[k] + '× ' + k; });
+
+  const texto = [
+    'Resumen de Mextizza · ' + hoy, '',
+    'Pedidos: ' + validas.length + (canceladas.length ? ' (más ' + canceladas.length + ' cancelados)' : ''),
+    'Ventas: ' + pesos(ventas) + (validas.length ? ' · ticket promedio ' + pesos(ventas / validas.length) : ''),
+    '',
+    canceladas.length ? 'Cancelados:\n' + canceladas.map(function (o) { return '- ' + o.folio + ': ' + (o.motivo_cancelacion || 'sin motivo'); }).join('\n') : 'Sin cancelaciones.',
+    '',
+    lineasErr.length ? 'Errores del sistema:\n' + lineasErr.join('\n') : 'Sin errores del sistema.'
+  ].join('\n');
+  const esc = function (t) { return String(t).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); };
+  enviarCorreoCliente_({
+    to: CORREO_REMITENTE, name: 'Mextizza', replyTo: CORREO_REMITENTE,
+    subject: 'Resumen del día · ' + hoy + ' · ' + validas.length + ' pedidos · ' + pesos(ventas),
+    body: texto,
+    htmlBody: '<pre style="font-family:Arial,sans-serif;font-size:14px;line-height:1.55;white-space:pre-wrap">' + esc(texto) + '</pre>'
+  });
+  return { enviado: true, pedidos: validas.length, errores: errores.length };
+}
+
+/** Correr UNA vez a mano: el resumen llega cada noche a las 11:30 pm de CDMX. */
+function activarResumen() {
+  ScriptApp.getProjectTriggers().forEach(function (t) {
+    if (t.getHandlerFunction() === 'resumenDiario') ScriptApp.deleteTrigger(t);
+  });
+  ScriptApp.newTrigger('resumenDiario').timeBased().atHour(23).nearMinute(30).everyDays(1)
+    .inTimezone('America/Mexico_City').create();
+  Logger.log('Listo: el resumen llega cada noche a ' + CORREO_REMITENTE + '.');
+}
+
+/* ==================================================== RESPALDOS ==========
+   Todo vive en esta hoja: un borrado o una formula mal pegada se llevaria
+   pedidos, clientes y tarjetas. Cada noche se copia completa a una carpeta de
+   Drive y se conservan las ultimas 30 copias; las mas viejas van a la papelera
+   de Drive, de donde se pueden recuperar unos dias mas. */
+const RESPALDOS_CONSERVAR = 30;
+
+function respaldarHoja() {
+  const p = PropertiesService.getScriptProperties();
+  let carpeta = null;
+  const id = p.getProperty('RESPALDOS_CARPETA');
+  if (id) {
+    try { carpeta = DriveApp.getFolderById(id); if (carpeta.isTrashed()) carpeta = null; } catch (e) { carpeta = null; }
+  }
+  if (!carpeta) {
+    carpeta = DriveApp.createFolder('Mextizza · respaldos');
+    p.setProperty('RESPALDOS_CARPETA', carpeta.getId());
+  }
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const nombre = 'Mextizza respaldo ' + Utilities.formatDate(new Date(), 'America/Mexico_City', 'yyyy-MM-dd HH:mm');
+  DriveApp.getFileById(ss.getId()).makeCopy(nombre, carpeta);
+  const archivos = [];
+  const it = carpeta.getFiles();
+  while (it.hasNext()) archivos.push(it.next());
+  archivos.sort(function (a, b) { return b.getDateCreated() - a.getDateCreated(); });
+  archivos.slice(RESPALDOS_CONSERVAR).forEach(function (f) { f.setTrashed(true); });
+  return { nombre: nombre, conservados: Math.min(archivos.length, RESPALDOS_CONSERVAR) };
+}
+
+/** Correr UNA vez a mano: crea el respaldo de cada noche (3 am de CDMX) y hace
+ *  el primero en este momento. Google pide el permiso de Drive. */
+function activarRespaldos() {
+  ScriptApp.getProjectTriggers().forEach(function (t) {
+    if (t.getHandlerFunction() === 'respaldarHoja') ScriptApp.deleteTrigger(t);
+  });
+  ScriptApp.newTrigger('respaldarHoja').timeBased().atHour(3).everyDays(1)
+    .inTimezone('America/Mexico_City').create();
+  const r = respaldarHoja();
+  Logger.log('Listo: primer respaldo "' + r.nombre + '" en la carpeta "Mextizza · respaldos" de Drive. Cada noche se hace otro.');
 }

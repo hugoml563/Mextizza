@@ -50,7 +50,9 @@ function Hoja(headers) {
 }
 
 const hojas = {};
-const props = {};
+/* Los limites contra pedidos falsos se apagan aqui: las pruebas crean cientos
+   de pedidos seguidos. Tienen su propio bloque, que los enciende. */
+const props = { LIMITES: 'no' };
 const DIA_ISO = { Mon: 1, Tue: 2, Wed: 3, Thu: 4, Fri: 5, Sat: 6, Sun: 7 };
 
 const ctx = {
@@ -74,6 +76,9 @@ const ctx = {
       if (fmt === 'yyyy-MM-dd') return p.year + '-' + p.month + '-' + p.day;
       if (fmt === 'H') return String(Number(p.hour));
       if (fmt === 'u') return String(DIA_ISO[p.weekday]);
+      // La hora corta de los avisos ('8:40 pm') y el nombre de los respaldos.
+      if (fmt === 'h:mm a') return new Intl.DateTimeFormat('en-US', { timeZone: tz, hour: 'numeric', minute: '2-digit', hour12: true }).format(d).replace(/\s/g, ' ');
+      if (fmt === 'yyyy-MM-dd HH:mm') return p.year + '-' + p.month + '-' + p.day + ' ' + p.hour + ':00';
       throw new Error('formato no soportado en la prueba: ' + fmt);
     },
   },
@@ -82,6 +87,7 @@ const ctx = {
     getScriptProperties: () => ({
       getProperty: (k) => props[k] || null,
       setProperty: (k, v) => { props[k] = String(v); },
+      deleteProperty: (k) => { delete props[k]; },
     }),
   },
   Logger: { log: () => {} },
@@ -604,7 +610,7 @@ console.log('\nCON EL SERVICIO DE RECOGER APAGADO (COMO CORRE HOY)');
    no se pudra. Aqui se monta un servidor aparte con el interruptor como esta de
    verdad en produccion, y se comprueba que apagarlo no dejo ninguna rendija. */
 const hojasOff = {};
-const propsOff = {};
+const propsOff = { LIMITES: 'no' };
 const ctxOff = {
   console,
   SpreadsheetApp: {
@@ -621,10 +627,12 @@ const ctxOff = {
     getScriptProperties: () => ({
       getProperty: (k) => propsOff[k] || null,
       setProperty: (k, v) => { propsOff[k] = String(v); },
+      deleteProperty: (k) => { delete propsOff[k]; },
     }),
   },
   Logger: { log: () => {} },
   ContentService: ctx.ContentService,
+  CacheService: ctx.CacheService,
   Date: ctx.Date,
 };
 vm.createContext(ctxOff);
@@ -1241,6 +1249,108 @@ console.log('\nLO QUE MANDA EL NAVEGADOR NO ENTRA COMO FORMULA NI COMO PRECIO RA
   ctx.UrlFetchApp.fetchAll = fetchAllReal;
   delete ctx.MailApp;
   delete props.FCM_CUENTA_SERVICIO;
+}
+
+/* Entrega 1: proteger la operacion. Pausa y agotados desde el tablero,
+   limites contra pedidos falsos, cliente nuevo, errores con alerta, resumen
+   de cada noche y respaldos de la hoja. */
+{
+  console.log('\nOPERACION: PAUSA Y AGOTADOS');
+  const pedidoPublico = (tel, items) => ctx.crearOrden_({ canal: 'Web', cliente: { telefono: tel, nombre: 'Luis' },
+    direccion: 'C', colonia: 'Lomas Lindas', km: 1, pago_metodo: 'Efectivo', items: items || [{ producto_id: 'roni', cantidad: 1 }] });
+  const error = (fn) => { try { fn(); return ''; } catch (e) { return String(e.message); } };
+  RELOJ = DIA(26);
+  comparar('sin pausa ni agotados', JSON.stringify(ctx.estadoOperacion_()), JSON.stringify({ pausadoHasta: null, agotados: [] }));
+  ctx.cambiarOperacion_({ pausaMin: 30 });
+  comparar('en pausa, la web no puede pedir', /Estamos a tope. Volvemos a tomar pedidos a las 6:30 pm\./.test(error(() => pedidoPublico('5530000001'))), true);
+  comparar('pero la cocina captura igual', typeof ctx.crearOrden_({ canal: 'WhatsApp', cliente: { telefono: '5530000001', nombre: 'L' },
+    direccion: 'C', colonia: 'Lomas Lindas', km: 1, pago_metodo: 'Efectivo', items: [{ producto_id: 'roni', cantidad: 1 }] }, 'admin').folio, 'string');
+  props.TOKEN = 'token-de-prueba';
+  comparar('la pausa se ve en la consulta publica', !!JSON.parse(ctx.doGet({ parameter: { action: 'operacion', token: 'token-de-prueba' } })).pausadoHasta, true);
+  delete props.TOKEN;
+  ctx.cambiarOperacion_({ reanudar: true });
+  comparar('al reanudar se puede pedir otra vez', typeof pedidoPublico('5530000002').folio, 'string');
+  comparar('una pausa fuera de rango se rechaza', /de 1 a 180/.test(error(() => ctx.cambiarOperacion_({ pausaMin: 999 }))), true);
+
+  ctx.cambiarOperacion_({ agotado: { id: 'chisi', valor: true } });
+  comparar('un agotado no se puede pedir', error(() => pedidoPublico('5530000003', [{ producto_id: 'chisi', cantidad: 1 }])), 'Hoy ya no hay Pizza Chisi. Quítalo de tu pedido para continuar.');
+  comparar('lo demas si', typeof pedidoPublico('5530000004').folio, 'string');
+  comparar('un producto que no existe no se puede marcar', /desconocido/.test(error(() => ctx.cambiarOperacion_({ agotado: { id: 'sushi', valor: true } }))), true);
+  RELOJ = DIA(27);
+  comparar('al dia siguiente los agotados se limpian solos', ctx.estadoOperacion_().agotados.length, 0);
+
+  console.log('\nLIMITES CONTRA PEDIDOS FALSOS');
+  delete props.LIMITES;
+  RELOJ = new RealDate(DIA(27).getTime() + 5 * 60000);
+  ['a', 'b', 'c'].forEach(() => pedidoPublico('5530000010'));
+  comparar('el cuarto pedido seguido del mismo numero se frena', /varios pedidos seguidos/.test(error(() => pedidoPublico('5530000010'))), true);
+  comparar('otro numero si puede', typeof pedidoPublico('5530000011').folio, 'string');
+  RELOJ = new RealDate(DIA(27).getTime() + 47 * 60000);
+  for (let n = 0; n < 25; n++) pedidoPublico('5531' + String(100000 + n));
+  comparar('mas de 25 pedidos en 10 minutos se frenan', /muchos pedidos al mismo tiempo/.test(error(() => pedidoPublico('5532000000'))), true);
+  props.LIMITES = 'no';
+
+  console.log('\nCLIENTE NUEVO');
+  RELOJ = DIA(30);
+  const nuevo = pedidoPublico('5533000001').folio;
+  pedidoPublico('5533000002'); pedidoPublico('5533000002');
+  const lista = ctx.listarHoy_();
+  comparar('el primer pedido de un numero sale como nuevo', lista.find((o) => o.folio === nuevo).nuevo, true);
+  comparar('quien ya pidio no', lista.filter((o) => o.telefono === '5533000002').every((o) => !o.nuevo), true);
+
+  console.log('\nERRORES Y ALERTAS');
+  comparar('un TypeError es del sistema', ctx.esErrorSistema_(new TypeError('x')), true);
+  comparar('una validacion no', ctx.esErrorSistema_(new Error('La cocina esta cerrada')), false);
+  comparar('una cuota de Google si', ctx.esErrorSistema_(new Error('Service invoked too many times')), true);
+  const avisos = [];
+  const avisarReal = ctx.avisarEquipos_;
+  ctx.avisarEquipos_ = (m) => avisos.push(m);
+  const filasAntes = hojas[SHEETS.errores].filas.length;
+  for (let n = 0; n < 4; n++) ctx.anotarFallo_('crear_orden', new TypeError('no se puede leer folio'));
+  ctx.anotarFallo_('crear_orden', new Error('Falta el telefono'));
+  comparar('las fallas del sistema quedan en la hoja errores', hojas[SHEETS.errores].filas.length - filasAntes, 4);
+  comparar('a la tercera falla se avisa a la cocina, una sola vez', avisos.length, 1);
+  ctx.avisarEquipos_ = avisarReal;
+
+  const antesCli = hojas[SHEETS.errores].filas.length;
+  for (let n = 0; n < 7; n++) ctx.errorCliente_({ mensaje: 'x is undefined', pagina: '/', agente: 'Chrome' });
+  ctx.errorCliente_({ mensaje: '' });
+  comparar('del navegador se guardan 5 iguales por hora, no mas', hojas[SHEETS.errores].filas.length - antesCli, 5);
+
+  console.log('\nRESUMEN DE CADA NOCHE');
+  const correos = [];
+  ctx.MailApp = { sendEmail: (m) => correos.push(m) };
+  RELOJ = DIA(33);   // 3 de octubre: un dia sin pedidos de otras pruebas
+  pedidoPublico('5533000004'); pedidoPublico('5533000005');
+  const canc = pedidoPublico('5533000003').folio;
+  ctx.cancelarOrden_({ folio: canc, motivo: 'Fuera de zona.' });
+  const r = ctx.resumenDiario();
+  comparar('el resumen sale con los pedidos del dia', r.enviado && r.pedidos, 2);
+  comparar('y le llega a mextizza@gmail.com', correos[0] && correos[0].to, 'mextizza@gmail.com');
+  comparar('con la cancelacion y su motivo', /Fuera de zona/.test(correos[0] && correos[0].body), true);
+  RELOJ = DIA(34);
+  comparar('un dia sin pedidos ni errores no manda nada', ctx.resumenDiario().enviado, false);
+  delete ctx.MailApp;
+
+  console.log('\nRESPALDOS');
+  const archivos = [];
+  const carpeta = {
+    getId: () => 'carpeta-1', isTrashed: () => false,
+    getFiles: () => { const vivos = archivos.filter((f) => !f.borrado); let i = 0; return { hasNext: () => i < vivos.length, next: () => vivos[i++] }; },
+  };
+  let n = 0;
+  ctx.DriveApp = {
+    getFolderById: () => carpeta, createFolder: () => carpeta,
+    getFileById: () => ({ makeCopy: (nombre) => { const f = { nombre, fecha: n++, borrado: false, getDateCreated: () => new RealDate(2026, 0, 1, 0, f.fecha), setTrashed: (v) => { f.borrado = v; } }; archivos.push(f); return f; } }),
+  };
+  ctx.SpreadsheetApp.getActiveSpreadsheet().getId = () => 'hoja';
+  const ssReal = ctx.SpreadsheetApp.getActiveSpreadsheet;
+  ctx.SpreadsheetApp.getActiveSpreadsheet = () => Object.assign(ssReal(), { getId: () => 'hoja' });
+  for (let k = 0; k < 33; k++) ctx.respaldarHoja();
+  comparar('se conservan los ultimos 30 respaldos', archivos.filter((f) => !f.borrado).length, 30);
+  comparar('y los viejos van a la papelera', archivos.slice(0, 3).every((f) => f.borrado), true);
+  ctx.SpreadsheetApp.getActiveSpreadsheet = ssReal;
+  delete ctx.DriveApp;
 }
 
 console.log('\n  ' + ok + ' pruebas ok, ' + mal + ' mal\n');

@@ -166,6 +166,7 @@ function CartDrawer({ open, lines, onClose, onQty, step, setStep, canal = 'Web',
   /* Por que no se puede enviar. Antes el aviso siempre decia "faltan datos",
      aunque el formulario estuviera completo y lo unico que pasara fuera que la
      cocina estaba cerrada. */
+  if (typeof useOperacion === 'function') useOperacion();
   const apertura = typeof mextizzaEstaAbierto === 'function'
     ? mextizzaEstaAbierto()
     : { abierto: true, texto: '' };
@@ -416,7 +417,7 @@ function CartDrawer({ open, lines, onClose, onQty, step, setStep, canal = 'Web',
                 color: motivo === 'cerrado' ? 'var(--rosa-mexicano-texto)' : 'var(--text-muted)',
               }}>
                 {motivo === 'cerrado'
-                  ? 'La cocina está cerrada ahorita.' + (apertura.texto ? ' Abrimos ' + apertura.texto.toLowerCase() + '.' : '')
+                  ? (apertura.pausa ? apertura.aviso : 'La cocina está cerrada ahorita.' + (apertura.texto ? ' Abrimos ' + apertura.texto.toLowerCase() + '.' : ''))
                   : (esPickupEntrega
                     ? 'Falta elegir la forma de pago.'
                     : 'Faltan datos: dirección dentro del radio y forma de pago.')}

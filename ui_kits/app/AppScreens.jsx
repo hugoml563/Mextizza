@@ -140,7 +140,10 @@ function CartaApp({ onAdd, onOpen, added }) {
     const cont = scroll.current, el = cont && cont.querySelector('#' + id);
     if (el) cont.scrollTo({ top: el.offsetTop - 12, behavior: 'smooth' });
   };
-  const agregar = (it) => (e) => { e.stopPropagation(); onAdd(it); };
+  const agregar = (it) => (e) => { e.stopPropagation(); if (!agotado(it)) onAdd(it); };
+  // Agotado hoy: la cocina lo marco en el tablero. El servidor tambien lo rechaza.
+  if (typeof useOperacion === 'function') useOperacion();
+  const agotado = (it) => typeof mextizzaAgotado === 'function' && mextizzaAgotado(it.id);
   const chip = (activo) => ({
     flex: 'none', padding: '8px 15px', minHeight: 40, boxSizing: 'border-box', borderRadius: 999,
     border: '2px solid var(--negro-carbon)', background: activo ? 'var(--negro-carbon)' : 'transparent',
@@ -182,8 +185,8 @@ function CartaApp({ onAdd, onOpen, added }) {
                   <span style={{ display: 'block', fontFamily: 'var(--font-body)', fontWeight: 600, fontSize: 11, letterSpacing: 0.9,
                     textTransform: 'uppercase', color: 'var(--text-muted)', marginTop: 2 }}>{MEXTIZZA_FACTS.tamanoPizza}</span>
                 </span>
-                <Button size="md" tone={added === it.id ? 'dark' : 'outline'} onClick={agregar(it)}>
-                  {added === it.id ? 'Agregado' : 'Agregar'}
+                <Button size="md" tone={added === it.id ? 'dark' : 'outline'} onClick={agregar(it)} disabled={agotado(it)}>
+                  {agotado(it) ? 'Agotado hoy' : added === it.id ? 'Agregado' : 'Agregar'}
                 </Button>
               </div>
             </div>
@@ -206,8 +209,8 @@ function CartaApp({ onAdd, onOpen, added }) {
                 {it.desc ? <div style={{ fontWeight: 400, color: '#5a5650', fontSize: 13 }}>{it.desc}</div> : null}
               </div>
               <span style={precio}>${it.price}</span>
-              <Button size="sm" tone={added === it.id ? 'dark' : 'outline'} onClick={agregar(it)}>
-                {added === it.id ? 'Listo' : 'Agregar'}
+              <Button size="sm" tone={added === it.id ? 'dark' : 'outline'} onClick={agregar(it)} disabled={agotado(it)}>
+                {agotado(it) ? 'Agotado' : added === it.id ? 'Listo' : 'Agregar'}
               </Button>
             </div>
           ))}
@@ -287,7 +290,9 @@ function AppDetail({ item, onBack, onAdd, onCustomize }) {
       </div>
       <div style={{ flex: 'none', borderTop: 'var(--border-paper)', background: 'var(--surface-page)', padding: '16px 20px 22px', display: 'flex', alignItems: 'center', gap: 12 }}>
         <QtyStepper value={q} onChange={setQ} size={44} />
-        <Button tone="primary" size="lg" block onClick={() => onAdd(item, q)}>{`Agregar $${item.price * q}`}</Button>
+        {typeof mextizzaAgotado === 'function' && mextizzaAgotado(item.id)
+          ? <Button tone="outline" size="lg" block disabled>Agotado hoy</Button>
+          : <Button tone="primary" size="lg" block onClick={() => onAdd(item, q)}>{`Agregar $${item.price * q}`}</Button>}
       </div>
     </Phone>
   );
@@ -481,6 +486,7 @@ function AppCart({ lines, onQty, onConfirm, tab, onTab, count, inicialCliente, o
   /* Por que no se puede enviar. Antes el aviso siempre decia "faltan datos",
      aunque el formulario estuviera completo y lo unico que pasara fuera que la
      cocina estaba cerrada. */
+  if (typeof useOperacion === 'function') useOperacion();
   const apertura = typeof mextizzaEstaAbierto === 'function'
     ? mextizzaEstaAbierto()
     : { abierto: true, texto: '' };
@@ -564,7 +570,7 @@ function AppCart({ lines, onQty, onConfirm, tab, onTab, count, inicialCliente, o
               color: motivo === 'cerrado' ? 'var(--rosa-mexicano-texto)' : 'var(--text-muted)',
             }}>
               {motivo === 'cerrado'
-                ? 'La cocina está cerrada ahorita.' + (apertura.texto ? ' Abrimos ' + apertura.texto.toLowerCase() + '.' : '')
+                ? (apertura.pausa ? apertura.aviso : 'La cocina está cerrada ahorita.' + (apertura.texto ? ' Abrimos ' + apertura.texto.toLowerCase() + '.' : ''))
                 : (esPickupEntrega
                     ? 'Falta elegir la forma de pago.'
                     : 'Faltan datos: dirección dentro del radio y forma de pago.')}

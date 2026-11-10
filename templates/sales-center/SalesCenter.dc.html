@@ -57,6 +57,9 @@ window.__resources = Object.assign(window.__resources || {}, {
 @keyframes mxsube{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
 .mx-dock-panel{animation:mxsube .2s ease-out}
 @media (prefers-reduced-motion:reduce){.mx-badge,.mx-dock-panel{animation:none}.mx-prod{transition:none}}
+/* En tablet ya no caben los tres cuadros junto a Pausar y Agotados. "En cocina"
+   repite lo que dicen los filtros Confirmadas y En horno, justo debajo. */
+@media (max-width:1300px){.mx-stat-cocina{display:none!important}}
 @media (max-width:820px){
 /* En el telefono la barra se queda pegada abajo mientras se hace scroll, y el
    panel del pedido no tapa mas de media pantalla. */
@@ -102,19 +105,19 @@ window.__resources = Object.assign(window.__resources || {}, {
 
 <div style="height:8px;background:repeating-linear-gradient(45deg,#E4007C 0 10px,#4A4A4A 10px 20px,#C1502E 20px 30px,#D9A65C 30px 40px);flex:none"></div>
 
-<div class="mx-top" style="flex:none;display:flex;align-items:center;gap:16px;padding:14px 22px;border-bottom:3px solid #1A1A1A;background:#F5F0E8">
+<div class="mx-top" style="flex:none;display:flex;align-items:center;gap:12px;padding:14px 16px;border-bottom:3px solid #1A1A1A;background:#F5F0E8">
 <img src="../../assets/lockup-pala.png" alt="Mextizza" style="height:52px;display:block">
-<div style="flex:none;padding-left:20px;border-left:2px solid rgba(0,0,0,.12)">
+<div style="flex:none;padding-left:14px;border-left:2px solid rgba(0,0,0,.12)">
 <div style="font-family:'Bungee',cursive;font-size:11px;letter-spacing:2px;text-transform:uppercase;color:#C1502E">Centro de ventas</div>
 <div style="font-size:12.5px;font-weight:700;color:#6b6b6b;margin-top:3px">{{ fecha }} · {{ reloj }}</div>
 </div>
 <div class="mx-vistas" style="flex:none;display:flex;gap:8px;margin-left:6px">
 <sc-for list="{{ vistas }}" as="v" hint-placeholder-count="2">
 <sc-if value="{{ v.activa }}" hint-placeholder-val="{{ true }}">
-<button onClick="{{ v.set }}" style="padding:9px 16px;border:2px solid #1A1A1A;border-radius:6px;background:#1A1A1A;color:#F5F0E8;font-family:'Oswald',sans-serif;font-size:12px;font-weight:700;letter-spacing:1px;text-transform:uppercase;cursor:pointer;min-height:44px">{{ v.label }}</button>
+<button onClick="{{ v.set }}" style="padding:9px 12px;border:2px solid #1A1A1A;border-radius:6px;background:#1A1A1A;color:#F5F0E8;font-family:'Oswald',sans-serif;font-size:12px;font-weight:700;letter-spacing:1px;text-transform:uppercase;cursor:pointer;min-height:44px">{{ v.label }}</button>
 </sc-if>
 <sc-if value="{{ v.inactiva }}" hint-placeholder-val="{{ false }}">
-<button onClick="{{ v.set }}" style="padding:9px 16px;border:2px solid #1A1A1A;border-radius:6px;background:transparent;color:#1A1A1A;font-family:'Oswald',sans-serif;font-size:12px;font-weight:700;letter-spacing:1px;text-transform:uppercase;cursor:pointer;min-height:44px" style-hover="background:rgba(0,0,0,.06)">{{ v.label }}</button>
+<button onClick="{{ v.set }}" style="padding:9px 12px;border:2px solid #1A1A1A;border-radius:6px;background:transparent;color:#1A1A1A;font-family:'Oswald',sans-serif;font-size:12px;font-weight:700;letter-spacing:1px;text-transform:uppercase;cursor:pointer;min-height:44px" style-hover="background:rgba(0,0,0,.06)">{{ v.label }}</button>
 </sc-if>
 </sc-for>
 </div>
@@ -156,19 +159,46 @@ window.__resources = Object.assign(window.__resources || {}, {
 </div>
 </sc-if>
 </div>
+<!-- Pausar pedidos y marcar agotados. La web y la app los respetan, y el
+     servidor tambien: un cliente con la pagina vieja no se los brinca. -->
+<div class="mx-op" style="position:relative;flex:none;display:flex;gap:8px">
+<button onClick="{{ op.abrirPausa }}" style="{{ op.estiloPausa }}">{{ op.textoPausa }}</button>
+<button onClick="{{ op.abrirAgotados }}" style="{{ op.estiloAgotados }}">{{ op.textoAgotados }}</button>
+<sc-if value="{{ op.enPausa }}" hint-placeholder-val="{{ false }}">
+<div class="mx-op-panel" style="position:absolute;top:52px;left:0;width:300px;z-index:50;background:#FFFFFF;border:3px solid #1A1A1A;border-radius:8px;padding:14px 16px;box-shadow:0 12px 30px rgba(0,0,0,.25);font-family:'Oswald',sans-serif;color:#1A1A1A">
+<div style="font-family:'Bungee',cursive;font-size:12px;letter-spacing:1px;text-transform:uppercase">Pausar pedidos</div>
+<div style="font-size:12.5px;font-weight:700;line-height:1.4;margin-top:4px;color:#4A4A4A">{{ op.ayudaPausa }}</div>
+<div style="display:flex;gap:6px;margin-top:10px">
+<sc-for list="{{ op.opciones }}" as="x" hint-placeholder-count="3"><button onClick="{{ x.set }}" style="flex:1;padding:10px 6px;border:2px solid #1A1A1A;border-radius:6px;background:#FFFFFF;color:#1A1A1A;font-family:'Oswald',sans-serif;font-size:13px;font-weight:700;cursor:pointer;min-height:44px" style-hover="background:#1A1A1A;color:#FFFFFF">{{ x.label }}</button></sc-for>
+</div>
+<sc-if value="{{ op.pausaActiva }}" hint-placeholder-val="{{ false }}"><button onClick="{{ op.reanudar }}" style="width:100%;margin-top:8px;padding:11px;border:none;border-radius:6px;background:#2E7D5B;color:#FFFFFF;font-family:'Oswald',sans-serif;font-size:12px;font-weight:700;letter-spacing:1px;text-transform:uppercase;cursor:pointer;min-height:44px">Reanudar ahora</button></sc-if>
+<sc-if value="{{ op.hayMsg }}" hint-placeholder-val="{{ false }}"><div style="margin-top:8px;font-size:12px;font-weight:700;color:#CD0070">{{ op.msg }}</div></sc-if>
+</div>
+</sc-if>
+<sc-if value="{{ op.enAgotados }}" hint-placeholder-val="{{ false }}">
+<div class="mx-op-panel" style="position:absolute;top:52px;left:0;width:300px;z-index:50;background:#FFFFFF;border:3px solid #1A1A1A;border-radius:8px;padding:14px 16px;box-shadow:0 12px 30px rgba(0,0,0,.25);font-family:'Oswald',sans-serif;color:#1A1A1A;width:340px">
+<div style="font-family:'Bungee',cursive;font-size:12px;letter-spacing:1px;text-transform:uppercase">Agotados de hoy</div>
+<div style="font-size:12.5px;font-weight:700;line-height:1.4;margin-top:4px;color:#4A4A4A">La web y la app los muestran como agotados. Mañana se limpian solos.</div>
+<div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:10px">
+<sc-for list="{{ op.productos }}" as="x" hint-placeholder-count="9"><button onClick="{{ x.alternar }}" style="{{ x.estilo }}">{{ x.label }}</button></sc-for>
+</div>
+<sc-if value="{{ op.hayMsg }}" hint-placeholder-val="{{ false }}"><div style="margin-top:8px;font-size:12px;font-weight:700;color:#CD0070">{{ op.msg }}</div></sc-if>
+</div>
+</sc-if>
+</div>
 <div style="flex:1"></div>
 <div style="display:flex;gap:10px">
-<div style="min-width:104px;padding:8px 14px;background:#FFFFFF;border:2px solid #1A1A1A;border-radius:6px">
+<div style="min-width:84px;padding:7px 12px;white-space:nowrap;background:#FFFFFF;border:2px solid #1A1A1A;border-radius:6px">
 <div style="font-size:10.5px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:#6b6b6b">Órdenes hoy</div>
-<div style="font-family:'Bungee',cursive;font-size:22px;line-height:1.1;margin-top:2px">{{ corte.ordenes }}</div>
+<div style="font-family:'Bungee',cursive;font-size:19px;line-height:1.1;margin-top:2px">{{ corte.ordenes }}</div>
 </div>
-<div style="min-width:104px;padding:8px 14px;background:#FFFFFF;border:2px solid #1A1A1A;border-radius:6px">
+<div style="min-width:84px;padding:7px 12px;white-space:nowrap;background:#FFFFFF;border:2px solid #1A1A1A;border-radius:6px">
 <div style="font-size:10.5px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:#6b6b6b">Vendido</div>
-<div style="font-family:'Bungee',cursive;font-size:22px;line-height:1.1;margin-top:2px;color:#C1502E">{{ corte.total }}</div>
+<div style="font-family:'Bungee',cursive;font-size:19px;line-height:1.1;margin-top:2px;color:#C1502E">{{ corte.total }}</div>
 </div>
-<div style="min-width:104px;padding:8px 14px;background:#1A1A1A;border:2px solid #1A1A1A;border-radius:6px">
+<div class="mx-stat-cocina" style="min-width:84px;padding:7px 10px;background:#1A1A1A;border:2px solid #1A1A1A;border-radius:6px">
 <div style="font-size:10.5px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:#D9A65C">En cocina</div>
-<div style="font-family:'Bungee',cursive;font-size:22px;line-height:1.1;margin-top:2px;color:#FFFFFF">{{ corte.activas }}</div>
+<div style="font-family:'Bungee',cursive;font-size:19px;line-height:1.1;margin-top:2px;color:#FFFFFF">{{ corte.activas }}</div>
 </div>
 </div>
 </div>
@@ -227,6 +257,7 @@ window.__resources = Object.assign(window.__resources || {}, {
 <sc-if value="{{ o.esApp }}" hint-placeholder-val="{{ false }}"><span style="padding:3px 9px;border-radius:99px;background:#E4007C;color:#FFFFFF;font-size:10.5px;font-weight:700;letter-spacing:1.2px;text-transform:uppercase">App</span></sc-if>
 <sc-if value="{{ o.esWhats }}" hint-placeholder-val="{{ false }}"><span style="padding:3px 9px;border-radius:99px;background:#2E7D5B;color:#FFFFFF;font-size:10.5px;font-weight:700;letter-spacing:1.2px;text-transform:uppercase">WhatsApp</span></sc-if>
 <sc-if value="{{ o.esTelefono }}" hint-placeholder-val="{{ false }}"><span style="padding:3px 9px;border-radius:99px;background:#1A1A1A;color:#FFFFFF;font-size:10.5px;font-weight:700;letter-spacing:1.2px;text-transform:uppercase">Teléfono</span></sc-if>
+<sc-if value="{{ o.nuevo }}" hint-placeholder-val="{{ false }}"><span title="Primer pedido de este número" style="padding:3px 9px;border-radius:99px;background:#F7EBD8;border:2px dashed #C1502E;color:#C1502E;font-size:10.5px;font-weight:700;letter-spacing:1.2px;text-transform:uppercase">Cliente nuevo</span></sc-if>
 <sc-if value="{{ o.esMostradorCanal }}" hint-placeholder-val="{{ false }}"><span style="padding:3px 9px;border-radius:99px;background:#4A4A4A;color:#FFFFFF;font-size:10.5px;font-weight:700;letter-spacing:1.2px;text-transform:uppercase">Mostrador</span></sc-if>
 <sc-if value="{{ o.pickup }}" hint-placeholder-val="{{ false }}"><span style="padding:3px 9px;border-radius:99px;background:#D9A65C;border:2px solid #1A1A1A;font-size:10.5px;font-weight:700;letter-spacing:1.2px;text-transform:uppercase">{{ o.tipo }}</span></sc-if>
 <sc-if value="{{ !o.pickup }}" hint-placeholder-val="{{ true }}"><span style="padding:3px 9px;border-radius:99px;border:2px solid #1A1A1A;font-size:10.5px;font-weight:700;letter-spacing:1.2px;text-transform:uppercase">{{ o.tipo }}</span></sc-if>
@@ -565,8 +596,8 @@ window.__resources = Object.assign(window.__resources || {}, {
 <sc-if value="{{ cat.sinSel }}" hint-placeholder-val="{{ true }}">
 <div style="display:flex;align-items:center;gap:10px;font-family:'Bungee',cursive;font-size:11px;letter-spacing:1px;text-transform:uppercase;margin-bottom:12px">Lo que viene<span style="flex:1;height:2px;background:#1A1A1A;opacity:.15"></span></div>
 <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
-<div style="padding:10px 12px;border:2px solid #1A1A1A;border-radius:6px"><div style="font-size:10.5px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:#6b6b6b">Por atender</div><div style="font-family:'Bungee',cursive;font-size:22px;line-height:1.1;margin-top:2px;color:#E4007C">{{ cat.resumen.atender }}</div></div>
-<div style="padding:10px 12px;border:2px solid #1A1A1A;border-radius:6px"><div style="font-size:10.5px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:#6b6b6b">Aprobados</div><div style="font-family:'Bungee',cursive;font-size:22px;line-height:1.1;margin-top:2px;color:#2E7D5B">{{ cat.resumen.aprobados }}</div></div>
+<div style="padding:10px 12px;border:2px solid #1A1A1A;border-radius:6px"><div style="font-size:10.5px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:#6b6b6b">Por atender</div><div style="font-family:'Bungee',cursive;font-size:19px;line-height:1.1;margin-top:2px;color:#E4007C">{{ cat.resumen.atender }}</div></div>
+<div style="padding:10px 12px;border:2px solid #1A1A1A;border-radius:6px"><div style="font-size:10.5px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:#6b6b6b">Aprobados</div><div style="font-family:'Bungee',cursive;font-size:19px;line-height:1.1;margin-top:2px;color:#2E7D5B">{{ cat.resumen.aprobados }}</div></div>
 </div>
 <div style="display:flex;justify-content:space-between;align-items:baseline;margin-top:10px;padding:12px 14px;background:#1A1A1A;border-radius:6px">
 <span style="font-size:11px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:#D9A65C">Anticipos por cobrar</span>
@@ -789,8 +820,11 @@ const fechaEvento = iso => {
 const faltanTexto = dias => dias === null ? 'sin fecha'
   : dias < 0 ? 'ya pasó' : dias === 0 ? 'es hoy' : dias === 1 ? 'es mañana' : 'en ' + dias + ' días';
 
+/* Abreviada ("Lun 9 nov"): la barra de arriba ya no cabia en la tablet con los
+   botones de pausa y agotados. */
 const fechaLarga = d => {
-  const s = d.toLocaleDateString('es-MX', { weekday: 'long', day: 'numeric', month: 'long' }).replace(',', '');
+  const s = d.toLocaleDateString('es-MX', { weekday: 'short', day: 'numeric', month: 'short', timeZone: 'America/Mexico_City' })
+    .replace(/[,.]/g, '').replace(/ de /g, ' ');
   return s.charAt(0).toUpperCase() + s.slice(1);
 };
 
@@ -890,7 +924,8 @@ class Component extends DCLogic {
     catGuardando: false, catConfirmar: null,
     sonidoPref: leerPref(), audioListo: false,
     avisosAbierto: false, pushOcupado: false, pushMsg: '', pushVer: 0,
-    np: NP_VACIO(), npMsg: '', cancelando: null };
+    np: NP_VACIO(), npMsg: '', cancelando: null,
+    op: window.MEXTIZZA_OPERACION || { pausadoHasta: null, agotados: [] }, opPanel: null, opGuardando: false, opMsg: '' };
 
   total(o) { return o.lineas.reduce((s,l) => s + l.importe, 0); }
 
@@ -954,12 +989,19 @@ class Component extends DCLogic {
        cualquier parte lo despierta, sin tener que buscar la campana. */
     this._alTocar = (ev) => {
       if (this.state.sonidoPref === '1') this.despertarAudio();
+      if (this.state.opPanel && ev && ev.target && ev.target.closest && !ev.target.closest('.mx-op')) {
+        this.setState({ opPanel: null, opMsg: '' });
+      }
       if (this.state.avisosAbierto && ev && ev.target && ev.target.closest && !ev.target.closest('.mx-avisos')) {
         this.setState({ avisosAbierto: false });
       }
       if (document.title !== TITULO) document.title = TITULO;
     };
     document.addEventListener('pointerdown', this._alTocar, true);
+    /* La pausa y los agotados los trae sheets-config.js cada 2 minutos; aqui
+       solo se escucha para repintar los botones. */
+    this._alOperacion = () => this.setState({ op: { ...(window.MEXTIZZA_OPERACION || {}) } });
+    window.addEventListener('mextizza:operacion', this._alOperacion);
     /* La pantalla se apaga sola y con ella se pausa el tablero. Mientras el
        sonido este activo se le pide al telefono que no se duerma; al volver
        a la pestana hay que pedirlo otra vez, porque el sistema lo suelta. */
@@ -1006,6 +1048,7 @@ class Component extends DCLogic {
     clearTimeout(this._avisoTmr);
     clearTimeout(this._catAvisoTmr);
     document.removeEventListener('pointerdown', this._alTocar, true);
+    window.removeEventListener('mextizza:operacion', this._alOperacion);
     document.removeEventListener('visibilitychange', this._alVolver);
     clearTimeout(this._renovar);
     clearTimeout(this._pushMsgTmr);
@@ -1717,12 +1760,13 @@ class Component extends DCLogic {
       separador: i > 0 && lista[i - 1].esPizza && !p.esPizza,
       nombre: npCorto(p.name),
       etiqueta: 'Agregar ' + p.name,
-      precio: money(p.price),
+      precio: (window.mextizzaAgotado && mextizzaAgotado(p.id)) ? 'Agotado' : money(p.price),
       fotoEstilo: 'display:block;width:44px;height:44px;margin:0 auto;border-radius:50%;border:2px solid #1A1A1A;background:#EDE6DA url("' + npFoto(p.photo) + '") center/cover no-repeat',
       cant: cuenta[p.id] || 0,
       hay: !!cuenta[p.id],
       estilo: 'position:relative;flex:none;width:75px;padding:8px 4px 7px;border-radius:12px;cursor:pointer;text-align:center;font-family:\'Oswald\',sans-serif;color:#1A1A1A;'
-        + (cuenta[p.id] ? 'background:#F7EBD8;border:2px solid #E4007C;box-shadow:0 3px 0 #E4007C' : 'background:#F5F0E8;border:2px solid #F5F0E8;box-shadow:0 3px 0 #4A4A4A'),
+        + (cuenta[p.id] ? 'background:#F7EBD8;border:2px solid #E4007C;box-shadow:0 3px 0 #E4007C' : 'background:#F5F0E8;border:2px solid #F5F0E8;box-shadow:0 3px 0 #4A4A4A')
+        + ((window.mextizzaAgotado && mextizzaAgotado(p.id)) ? ';opacity:.45' : ''),
       agregar: () => this.npAgregar(p.id)
     }));
     const addons = npAddons();
@@ -1802,6 +1846,54 @@ class Component extends DCLogic {
     };
   }
 
+  async cambiarOperacion(cambios, cerrar) {
+    if (this.state.opGuardando) return;
+    this.setState({ opGuardando: true, opMsg: '' });
+    try {
+      const op = await mextizzaCambiarOperacion(cambios);
+      this.setState({ op: { ...op }, opGuardando: false, opPanel: cerrar ? null : this.state.opPanel });
+    } catch (err) {
+      this.setState({ opGuardando: false, opMsg: 'No se guardó: ' + err.message });
+    }
+  }
+
+  vistaOperacion() {
+    const op = this.state.op || {};
+    const hasta = Number(new Date(op.pausadoHasta || 0));
+    const activa = hasta > Date.now();
+    const hora = activa ? new Date(hasta).toLocaleTimeString('es-MX', { timeZone: 'America/Mexico_City', hour: 'numeric', minute: '2-digit' })
+      .replace(/\s*a\.\s*m\./i, ' am').replace(/\s*p\.\s*m\./i, ' pm') : '';
+    const agotados = op.agotados || [];
+    const base = 'padding:9px 11px;border-radius:6px;font-family:\'Oswald\',sans-serif;font-size:12px;font-weight:700;letter-spacing:1px;text-transform:uppercase;cursor:pointer;min-height:44px;white-space:nowrap;';
+    const panel = this.state.opPanel;
+    return {
+      textoPausa: this.state.opGuardando && panel === 'pausa' ? 'Guardando…' : activa ? 'Pausa · ' + hora.replace(/ [ap]m$/, '') : 'Pausar',
+      estiloPausa: base + (activa ? 'border:2px solid #E4007C;background:#E4007C;color:#FFFFFF;animation:mxpulse 1.6s ease-in-out infinite' : 'border:2px solid #1A1A1A;background:transparent;color:#1A1A1A'),
+      textoAgotados: 'Agotados' + (agotados.length ? ' · ' + agotados.length : ''),
+      estiloAgotados: base + (agotados.length ? 'border:2px solid #C1502E;background:#C1502E;color:#FFFFFF' : 'border:2px solid #1A1A1A;background:transparent;color:#1A1A1A'),
+      abrirPausa: () => this.setState({ opPanel: panel === 'pausa' ? null : 'pausa', opMsg: '' }),
+      abrirAgotados: () => this.setState({ opPanel: panel === 'agotados' ? null : 'agotados', opMsg: '' }),
+      enPausa: panel === 'pausa',
+      enAgotados: panel === 'agotados',
+      pausaActiva: activa,
+      ayudaPausa: activa
+        ? 'La web y la app no reciben pedidos hasta las ' + hora + '. Tú sí puedes capturar.'
+        : 'La web y la app dejan de recibir pedidos por un rato. Tú sí puedes capturar.',
+      opciones: [15, 30, 60].map(min => ({ label: (activa ? '+' : '') + min + ' min', set: () => this.cambiarOperacion({ pausaMin: min }, true) })),
+      reanudar: () => this.cambiarOperacion({ reanudar: true }, true),
+      productos: npProductos().map(p => {
+        const esta = agotados.indexOf(p.id) !== -1;
+        return {
+          label: npCorto(p.name),
+          estilo: 'padding:8px 11px;border-radius:99px;font-family:\'Oswald\',sans-serif;font-size:12.5px;font-weight:700;cursor:pointer;min-height:38px;'
+            + (esta ? 'background:#C1502E;color:#FFFFFF;border:2px solid #C1502E;text-decoration:line-through' : 'background:#FFFFFF;color:#1A1A1A;border:2px solid rgba(0,0,0,.18)'),
+          alternar: () => this.cambiarOperacion({ agotado: { id: p.id, valor: !esta } }, false)
+        };
+      }),
+      hayMsg: !!this.state.opMsg, msg: this.state.opMsg
+    };
+  }
+
   vistaCancelar(o, i) {
     const c = this.state.cancelando;
     const abierto = !!(c && c.folio === o.folio);
@@ -1853,7 +1945,7 @@ class Component extends DCLogic {
           notas: o.notas || '', tieneNotas: !!(o.notas && String(o.notas).trim()),
           esRecibida: o.estado === 'recibida', esConfirmada: o.estado === 'confirmada', esHorno: o.estado === 'horno',
           esLista: o.estado === 'lista', esCamino: o.estado === 'camino', esEntregada: o.estado === 'entregada', esCancelada: o.estado === 'cancelada',
-          esWeb: o.canal === 'Web', esApp: o.canal === 'App', esWhats: o.canal === 'WhatsApp', esTelefono: o.canal === 'Teléfono', esMostradorCanal: o.canal === 'Mostrador',
+          esWeb: o.canal === 'Web', esApp: o.canal === 'App', esWhats: o.canal === 'WhatsApp', esTelefono: o.canal === 'Teléfono', esMostradorCanal: o.canal === 'Mostrador', nuevo: !!o.nuevo,
           espera: o.min + ' min',
           tarde, aTiempo: !tarde,
           lineas: o.lineas.map(l => ({ cant: l.cant, nombre: l.nombre, importe: money(l.importe) })),
@@ -1948,6 +2040,7 @@ class Component extends DCLogic {
       sinCapacidad: capacidad.length === 0,
       inv: this.vistaInventario(),
       np: this.vistaNuevo(),
+      op: this.vistaOperacion(),
       corte: {
         ordenes: cerradas.length,
         total: money(suma),

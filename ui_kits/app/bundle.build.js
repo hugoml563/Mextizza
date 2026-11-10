@@ -310,11 +310,34 @@ function AvisamePedido({
     }
   }, msg));
 }
+
+/* Repinta el componente cuando la cocina pausa o marca un agotado. */
+function useOperacion() {
+  const [op, setOp] = React.useState(() => window.MEXTIZZA_OPERACION || {
+    pausadoHasta: null,
+    agotados: []
+  });
+  React.useEffect(() => {
+    const al = () => setOp(window.MEXTIZZA_OPERACION || {
+      pausadoHasta: null,
+      agotados: []
+    });
+    window.addEventListener('mextizza:operacion', al);
+    // La pausa vence sola: se repinta cada 30 s para soltar el freno a tiempo.
+    const id = setInterval(al, 30000);
+    return () => {
+      window.removeEventListener('mextizza:operacion', al);
+      clearInterval(id);
+    };
+  }, []);
+  return op;
+}
 Object.assign(window, {
   useAlVolver,
   avisarCancelacionLocal,
   PedidoCancelado,
-  AvisamePedido
+  AvisamePedido,
+  useOperacion
 });
 })();
 
@@ -696,13 +719,19 @@ function DeliveryForm({
   }, [nombre, digits, calle, colonia, horario, pago, notas, modo]);
   const gap = compact ? 12 : 14;
   const tone = zona ? zona.estado === 'dentro' ? 'ok' : zona.estado === 'limite' ? 'warn' : 'block' : 'ok';
-  return /*#__PURE__*/React.createElement("div", null, !seAceptan && /*#__PURE__*/React.createElement(StatusNote, {
+  return /*#__PURE__*/React.createElement("div", null, !seAceptan && (apertura.pausa ? /*#__PURE__*/React.createElement(StatusNote, {
+    tone: "block",
+    title: "Estamos a tope",
+    style: {
+      marginBottom: 14
+    }
+  }, apertura.aviso, " Si te urge, escr\xEDbenos por WhatsApp.") : /*#__PURE__*/React.createElement(StatusNote, {
     tone: "block",
     title: "El horno est\xE1 apagado",
     style: {
       marginBottom: 14
     }
-  }, "Abrimos ", apertura.texto.toLowerCase(), ". Si quieres dejarlo apuntado desde ahorita, escr\xEDbenos por WhatsApp."), servicioPickup && /*#__PURE__*/React.createElement(RadioGroup, {
+  }, "Abrimos ", apertura.texto.toLowerCase(), ". Si quieres dejarlo apuntado desde ahorita, escr\xEDbenos por WhatsApp.")), servicioPickup && /*#__PURE__*/React.createElement(RadioGroup, {
     label: "\xBFC\xF3mo lo recibes?",
     required: true,
     options: ['A domicilio', 'Paso a recogerlo'],
@@ -2801,8 +2830,11 @@ function CartaApp({
   };
   const agregar = it => e => {
     e.stopPropagation();
-    onAdd(it);
+    if (!agotado(it)) onAdd(it);
   };
+  // Agotado hoy: la cocina lo marco en el tablero. El servidor tambien lo rechaza.
+  if (typeof useOperacion === 'function') useOperacion();
+  const agotado = it => typeof mextizzaAgotado === 'function' && mextizzaAgotado(it.id);
   const chip = activo => ({
     flex: 'none',
     padding: '8px 15px',
@@ -2957,8 +2989,9 @@ function CartaApp({
   }, MEXTIZZA_FACTS.tamanoPizza)), /*#__PURE__*/React.createElement(Button, {
     size: "md",
     tone: added === it.id ? 'dark' : 'outline',
-    onClick: agregar(it)
-  }, added === it.id ? 'Agregado' : 'Agregar')))))), /*#__PURE__*/React.createElement("div", {
+    onClick: agregar(it),
+    disabled: agotado(it)
+  }, agotado(it) ? 'Agotado hoy' : added === it.id ? 'Agregado' : 'Agregar')))))), /*#__PURE__*/React.createElement("div", {
     id: "app-carta-cierre",
     style: {
       marginTop: 26
@@ -3027,8 +3060,9 @@ function CartaApp({
   }, "$", it.price), /*#__PURE__*/React.createElement(Button, {
     size: "sm",
     tone: added === it.id ? 'dark' : 'outline',
-    onClick: agregar(it)
-  }, added === it.id ? 'Listo' : 'Agregar'))))));
+    onClick: agregar(it),
+    disabled: agotado(it)
+  }, agotado(it) ? 'Agotado' : added === it.id ? 'Listo' : 'Agregar'))))));
 }
 function AppMenu({
   onAdd,
@@ -3283,7 +3317,12 @@ function AppDetail({
     value: q,
     onChange: setQ,
     size: 44
-  }), /*#__PURE__*/React.createElement(Button, {
+  }), typeof mextizzaAgotado === 'function' && mextizzaAgotado(item.id) ? /*#__PURE__*/React.createElement(Button, {
+    tone: "outline",
+    size: "lg",
+    block: true,
+    disabled: true
+  }, "Agotado hoy") : /*#__PURE__*/React.createElement(Button, {
     tone: "primary",
     size: "lg",
     block: true,
@@ -3613,6 +3652,7 @@ function AppCart({
   /* Por que no se puede enviar. Antes el aviso siempre decia "faltan datos",
      aunque el formulario estuviera completo y lo unico que pasara fuera que la
      cocina estaba cerrada. */
+  if (typeof useOperacion === 'function') useOperacion();
   const apertura = typeof mextizzaEstaAbierto === 'function' ? mextizzaEstaAbierto() : {
     abierto: true,
     texto: ''
@@ -3790,7 +3830,7 @@ function AppCart({
       marginTop: 8,
       color: motivo === 'cerrado' ? 'var(--rosa-mexicano-texto)' : 'var(--text-muted)'
     }
-  }, motivo === 'cerrado' ? 'La cocina está cerrada ahorita.' + (apertura.texto ? ' Abrimos ' + apertura.texto.toLowerCase() + '.' : '') : esPickupEntrega ? 'Falta elegir la forma de pago.' : 'Faltan datos: dirección dentro del radio y forma de pago.')), /*#__PURE__*/React.createElement(TabBar, {
+  }, motivo === 'cerrado' ? apertura.pausa ? apertura.aviso : 'La cocina está cerrada ahorita.' + (apertura.texto ? ' Abrimos ' + apertura.texto.toLowerCase() + '.' : '') : esPickupEntrega ? 'Falta elegir la forma de pago.' : 'Faltan datos: dirección dentro del radio y forma de pago.')), /*#__PURE__*/React.createElement(TabBar, {
     tab: tab,
     onTab: onTab,
     count: count

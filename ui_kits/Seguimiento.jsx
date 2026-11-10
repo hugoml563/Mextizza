@@ -117,4 +117,17 @@ function AvisamePedido({ folio, style }) {
   );
 }
 
-Object.assign(window, { useAlVolver, avisarCancelacionLocal, PedidoCancelado, AvisamePedido });
+/* Repinta el componente cuando la cocina pausa o marca un agotado. */
+function useOperacion() {
+  const [op, setOp] = React.useState(() => window.MEXTIZZA_OPERACION || { pausadoHasta: null, agotados: [] });
+  React.useEffect(() => {
+    const al = () => setOp(window.MEXTIZZA_OPERACION || { pausadoHasta: null, agotados: [] });
+    window.addEventListener('mextizza:operacion', al);
+    // La pausa vence sola: se repinta cada 30 s para soltar el freno a tiempo.
+    const id = setInterval(al, 30000);
+    return () => { window.removeEventListener('mextizza:operacion', al); clearInterval(id); };
+  }, []);
+  return op;
+}
+
+Object.assign(window, { useAlVolver, avisarCancelacionLocal, PedidoCancelado, AvisamePedido, useOperacion });

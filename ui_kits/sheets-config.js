@@ -152,6 +152,21 @@ if (!window.__mextizzaSheetsConfigLoaded) {
   const mextizzaEstadoOrden = folio => mextizzaApiGet('estado', { folio });
   /** Ultimo pedido de un telefono: recupera el seguimiento en otro dispositivo. */
   const mextizzaEstadoPorTelefono = telefono => mextizzaApiGet('estado_por_telefono', { telefono });
+  /* Pausa y agotados. La web y la app los consultan solas (abajo); la cocina
+     los cambia desde el tablero con su token. */
+  const mextizzaOperacion = async () => {
+    const r = await mextizzaApiGet('operacion', {});
+    window.MEXTIZZA_OPERACION = { pausadoHasta: r.pausadoHasta || null, agotados: r.agotados || [] };
+    try { window.dispatchEvent(new Event('mextizza:operacion')); } catch (e) {}
+    return window.MEXTIZZA_OPERACION;
+  };
+  /** cambios: { pausaMin } | { reanudar: true } | { agotado: { id, valor } } */
+  const mextizzaCambiarOperacion = async (cambios) => {
+    const r = await mextizzaApiPost('operacion', cambios, true);
+    window.MEXTIZZA_OPERACION = { pausadoHasta: r.pausadoHasta || null, agotados: r.agotados || [] };
+    try { window.dispatchEvent(new Event('mextizza:operacion')); } catch (e) {}
+    return window.MEXTIZZA_OPERACION;
+  };
   /** El navegador del cliente pide que le avisen si algo cambia con su pedido. */
   const mextizzaPushPedido = (folio, token_push) => mextizzaApiPost('push_pedido', { folio, token_push });
   /** El cliente cancela su propio pedido, solo dentro de la ventana permitida. */
@@ -215,5 +230,40 @@ if (!window.__mextizzaSheetsConfigLoaded) {
 
   const mextizzaTarjeta = (telefono) => mextizzaApiGet('tarjeta', { telefono: telefono || '' });
 
-  Object.assign(window, { mextizzaPickup, mextizzaTarjeta, mextizzaCrearOrden, mextizzaAvanzarEstado, mextizzaCancelarOrden, mextizzaEstadoOrden, mextizzaEstadoPorTelefono, mextizzaCancelarPorCliente, mextizzaListarAbiertas, mextizzaListarHoy, mextizzaSolicitarCatering, mextizzaListarCatering, mextizzaActualizarCatering, mextizzaPushRegistrar, mextizzaPushBaja, mextizzaPushProbar, mextizzaTokenAdmin, mextizzaGuardarTokenAdmin, mextizzaOlvidarTokenAdmin, mextizzaCapturaCocina, mextizzaInvEstado, mextizzaInvCompra, mextizzaInvLote, mextizzaInvMerma, mextizzaInvConteo, mextizzaLigarTelefono, mextizzaMiCuenta, mextizzaWalletEnlace, mextizzaCapturarOrden, mextizzaClientePorTelefono, mextizzaPushPedido });
+  Object.assign(window, { mextizzaPickup, mextizzaTarjeta, mextizzaCrearOrden, mextizzaAvanzarEstado, mextizzaCancelarOrden, mextizzaEstadoOrden, mextizzaEstadoPorTelefono, mextizzaCancelarPorCliente, mextizzaListarAbiertas, mextizzaListarHoy, mextizzaSolicitarCatering, mextizzaListarCatering, mextizzaActualizarCatering, mextizzaPushRegistrar, mextizzaPushBaja, mextizzaPushProbar, mextizzaTokenAdmin, mextizzaGuardarTokenAdmin, mextizzaOlvidarTokenAdmin, mextizzaCapturaCocina, mextizzaInvEstado, mextizzaInvCompra, mextizzaInvLote, mextizzaInvMerma, mextizzaInvConteo, mextizzaLigarTelefono, mextizzaMiCuenta, mextizzaWalletEnlace, mextizzaCapturarOrden, mextizzaClientePorTelefono, mextizzaPushPedido, mextizzaOperacion, mextizzaCambiarOperacion });
+
+  /* Se pide al cargar, cada 2 minutos y al volver a la pestana. Si el
+     servidor aun no conoce la accion, no pasa nada: queda sin pausa. */
+  const refrescarOperacion = () => { mextizzaOperacion().catch(() => {}); };
+  refrescarOperacion();
+  setInterval(refrescarOperacion, 120000);
+  document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') refrescarOperacion(); });
+
+  /* Errores del navegador del cliente: antes se perdian en su telefono. Van a
+     la hoja `errores` (accion error_cliente). Tope de 5 por pagina, y se
+     ignoran los de extensiones y los "Script error." sin detalle. */
+  let erroresMandados = 0;
+  const mandarError = (mensaje) => {
+    const m = String(mensaje || '').slice(0, 300);
+    if (!m || /^Script error\.?$/i.test(m) || /chrome-extension:|moz-extension:|safari-extension:/i.test(m)) return;
+    if (++erroresMandados > 5) return;
+    try {
+      fetch(MEXTIZZA_SHEETS_URL, {
+        method: 'POST', keepalive: true,
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: JSON.stringify({ token: MEXTIZZA_SHEETS_TOKEN, action: 'error_cliente', mensaje: m,
+          pagina: location.pathname, agente: navigator.userAgent })
+      }).catch(() => {});
+    } catch (e) {}
+  };
+  window.addEventListener('error', (e) => {
+    mandarError((e && e.message || 'error') + (e && e.filename ? ' @ ' + String(e.filename).split('/').pop() + ':' + e.lineno : ''));
+  });
+  window.addEventListener('unhandledrejection', (e) => {
+    const r = e && e.reason;
+    // Los rechazos de red ("Failed to fetch") son del internet del cliente, no un error nuestro.
+    const m = String((r && (r.stack || r.message)) || r || '');
+    if (/Failed to fetch|NetworkError|Load failed|network/i.test(m)) return;
+    mandarError('promesa: ' + m);
+  });
 }

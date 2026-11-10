@@ -106,10 +106,34 @@ function mextizzaAhoraCDMX(ahora) {
   }
 }
 
+/* Pausa y agotados que pone la cocina desde el tablero. Los trae
+   sheets-config.js (accion 'operacion') al cargar, cada 2 minutos y al volver
+   a la pestana. El servidor aplica lo mismo en crearOrden_: esto solo evita
+   mandar un pedido que de todos modos iba a rebotar. */
+window.MEXTIZZA_OPERACION = window.MEXTIZZA_OPERACION || { pausadoHasta: null, agotados: [] };
+
+function mextizzaPausa(ahora) {
+  const hasta = Number(new Date((window.MEXTIZZA_OPERACION || {}).pausadoHasta || 0));
+  return hasta > Number(ahora || new Date()) ? new Date(hasta) : null;
+}
+
+function mextizzaAgotado(id) {
+  return ((window.MEXTIZZA_OPERACION || {}).agotados || []).indexOf(id) !== -1;
+}
+
 function mextizzaEstaAbierto(ahora) {
   const h = MEXTIZZA_FACTS.horario;
   const cdmx = mextizzaAhoraCDMX(ahora);
   const abierto = h.dias.indexOf(cdmx.dia) !== -1 && cdmx.hora >= h.desde && cdmx.hora < h.hasta;
+  /* La pausa se responde como "cerrado": asi los frenos que ya existen en el
+     carrito, el formulario y la app la respetan sin tocar cada pantalla. */
+  const pausa = abierto ? mextizzaPausa(ahora) : null;
+  if (pausa) {
+    const hora = pausa.toLocaleTimeString('es-MX', { timeZone: 'America/Mexico_City', hour: 'numeric', minute: '2-digit' })
+      .replace(/\s*a\.\s*m\./i, ' am').replace(/\s*p\.\s*m\./i, ' pm');
+    return { abierto: false, texto: h.texto, pausa: true,
+      aviso: 'Estamos a tope. Volvemos a tomar pedidos a las ' + hora + '.' };
+  }
   return { abierto, texto: h.texto };
 }
 
@@ -208,4 +232,4 @@ const MEXTIZZA_SOCIAL = {
   // El link corto de "Pedir resenas" de la ficha de Google Business.
   resenaGoogle: 'https://g.page/r/CQPoNsxWP1lFEBM/review'
 };
-Object.assign(window, { MEXTIZZA_MENU, MEXTIZZA_ADDONS, MEXTIZZA_FACTS, mextizzaWhatsappLink, mextizzaEstaAbierto, mextizzaEs2x1, MEXTIZZA_2X1, mextizzaVistaPrevia, mextizzaProducto, mextizzaEsPizza, MEXTIZZA_PICKUP_DESCUENTO, MEXTIZZA_PICKUP_ACTIVO, mextizzaAceptaComplementos, MEXTIZZA_SOCIAL });
+Object.assign(window, { MEXTIZZA_MENU, MEXTIZZA_ADDONS, MEXTIZZA_FACTS, mextizzaWhatsappLink, mextizzaEstaAbierto, mextizzaPausa, mextizzaAgotado, mextizzaEs2x1, MEXTIZZA_2X1, mextizzaVistaPrevia, mextizzaProducto, mextizzaEsPizza, MEXTIZZA_PICKUP_DESCUENTO, MEXTIZZA_PICKUP_ACTIVO, mextizzaAceptaComplementos, MEXTIZZA_SOCIAL });
