@@ -27,6 +27,7 @@ function Hoja(headers) {
     getLastColumn: () => Math.max.apply(null, filas.map((f) => f.length)),
     setFrozenRows: () => {},
     appendRow: (a) => filas.push(a.slice()),
+    deleteRows: (r, n) => { filas.splice(r - 1, n); },
     getRange: (r, c, nr, nc) => ({
       setValue: (v) => {
         const f = filas[r - 1];
@@ -1351,6 +1352,36 @@ console.log('\nLO QUE MANDA EL NAVEGADOR NO ENTRA COMO FORMULA NI COMO PRECIO RA
   comparar('y los viejos van a la papelera', archivos.slice(0, 3).every((f) => f.borrado), true);
   ctx.SpreadsheetApp.getActiveSpreadsheet = ssReal;
   delete ctx.DriveApp;
+}
+
+/* Entrega 2: entorno de pruebas. En la copia no sale nada a nadie, y la
+   limpieza de datos se niega a correr en produccion. */
+{
+  console.log('\nENTORNO DE PRUEBAS');
+  const error = (fn) => { try { fn(); return ''; } catch (e) { return String(e.message); } };
+  comparar('en produccion no se puede limpiar la hoja', /solo corre en la copia de pruebas/.test(error(() => ctx.limpiarParaPruebas())), true);
+  comparar('y no borro nada', hojas[SHEETS.ordenes].filas.length > 1, true);
+
+  props.ENTORNO = 'pruebas';
+  const correos = [];
+  ctx.MailApp = { sendEmail: (m) => correos.push(m) };
+  ctx.GmailApp = { getAliases: () => ['mextizza@gmail.com'], sendEmail: () => correos.push('gmail') };
+  comparar('en pruebas un correo no sale', ctx.enviarCorreoCliente_({ to: 'cliente@real.com', subject: 'x', body: 'x' }), 'pruebas');
+  comparar('ni por Gmail ni por MailApp', correos.length, 0);
+  comparar('un push tampoco sale', ctx.enviarPush_(['token-de-un-telefono-real-0123456789'], { titulo: 'x' }).enviados, 1);
+  comparar('y Wallet se niega', /apagado en el entorno de pruebas/.test(error(() => ctx.walletPedir_('get', '/x'))), true);
+  props.TOKEN = 'token-de-prueba';
+  comparar('la consulta publica dice que es pruebas', JSON.parse(ctx.doGet({ parameter: { action: 'operacion', token: 'token-de-prueba' } })).entorno, 'pruebas');
+  delete props.TOKEN;
+
+  props.AGOTADOS = JSON.stringify({ fecha: 'x', ids: ['roni'] });
+  ctx.limpiarParaPruebas();
+  comparar('limpiar borra pedidos y clientes', [SHEETS.ordenes, SHEETS.ordenItems, SHEETS.clientes].every((h) => hojas[h].filas.length === 1), true);
+  comparar('y deja los encabezados', hojas[SHEETS.ordenes].filas[0][0], 'folio');
+  comparar('y la cola y los agotados', props.AGOTADOS === undefined, true);
+  delete props.ENTORNO;
+  delete ctx.MailApp;
+  delete ctx.GmailApp;
 }
 
 console.log('\n  ' + ok + ' pruebas ok, ' + mal + ' mal\n');

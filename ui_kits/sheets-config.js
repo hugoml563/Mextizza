@@ -22,11 +22,59 @@
 if (!window.__mextizzaSheetsConfigLoaded) {
   window.__mextizzaSheetsConfigLoaded = true;
 
-  const MEXTIZZA_SHEETS_URL = 'https://script.google.com/macros/s/AKfycby2xuAxBn7Dp5CvMmkmITIExxP7g5yJukkjv29fQhTwIt6QhPLBvJgN6Brgzjf316tDLA/exec';
-  const MEXTIZZA_SHEETS_TOKEN = 'c05186ae-0674-4f3b-bc44-243f146f5f14';
+  /* Dos entornos. La preview de la rama test y el servidor local (localhost con
+     puerto) hablan con una COPIA de la hoja: asi las pruebas no ensucian pedidos,
+     ventas ni tarjetas reales, y la copia no le manda nada a ningun cliente.
+     mextizza.com y la app (en Android es https://localhost SIN puerto) siguen
+     con produccion. Los dos tokens publicos pueden estar aqui: ya viajan en la web. */
+  const ENTORNOS = {
+    produccion: {
+      url: 'https://script.google.com/macros/s/AKfycby2xuAxBn7Dp5CvMmkmITIExxP7g5yJukkjv29fQhTwIt6QhPLBvJgN6Brgzjf316tDLA/exec',
+      token: 'c05186ae-0674-4f3b-bc44-243f146f5f14',
+      llaveAdmin: 'mextizza.admin.token'
+    },
+    pruebas: {
+      url: 'https://script.google.com/macros/s/AKfycbydJSvnNf8xeZTGLn-N7ninyM6lA6tP3LI_WL9eJAuSvMFjgBX3B1lVljRlPMUI-xK8/exec',
+      token: '047afe60-e2d7-418d-8348-3a1737fcbe4f',
+      llaveAdmin: 'mextizza.admin.token.pruebas'
+    }
+  };
+  const esEntornoPruebas = (() => {
+    try {
+      const h = location.hostname;
+      if (/-hugoml563\.vercel\.app$/.test(h)) return true;
+      return (h === 'localhost' || h === '127.0.0.1') && location.port !== '';
+    } catch (e) { return false; }
+  })();
+  const ENTORNO = esEntornoPruebas ? ENTORNOS.pruebas : ENTORNOS.produccion;
+  const MEXTIZZA_SHEETS_URL = ENTORNO.url;
+  const MEXTIZZA_SHEETS_TOKEN = ENTORNO.token;
+  window.MEXTIZZA_ENTORNO = esEntornoPruebas ? 'pruebas' : 'produccion';
+
+  /* Que nunca se confundan: en pruebas, una etiqueta fija arriba y el titulo
+     de la pestana con [PRUEBAS]. No captura toques, no tapa botones. */
+  if (esEntornoPruebas) {
+    const marcar = () => {
+      if (!document.body || document.getElementById('mx-franja-pruebas')) return;
+      const f = document.createElement('div');
+      f.id = 'mx-franja-pruebas';
+      f.textContent = 'Entorno de pruebas · no es la operación real';
+      f.style.cssText = 'position:fixed;top:0;left:50%;transform:translateX(-50%);z-index:2147483647;pointer-events:none;' +
+        'padding:3px 12px;border-radius:0 0 8px 8px;background:repeating-linear-gradient(45deg,#F4CD5E 0 10px,#1A1A1A 10px 20px);' +
+        'color:#FFFFFF;font:700 11px/1.4 Oswald,Arial,sans-serif;letter-spacing:1px;text-transform:uppercase;' +
+        'text-shadow:0 0 3px #000,0 0 3px #000;box-shadow:0 2px 6px rgba(0,0,0,.3)';
+      document.body.appendChild(f);
+      if (document.title.indexOf('[PRUEBAS]') !== 0) document.title = '[PRUEBAS] ' + document.title;
+    };
+    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', marcar);
+    else marcar();
+    // El tablero cambia el titulo con cada pedido nuevo: se vuelve a marcar.
+    setInterval(() => { if (document.title.indexOf('[PRUEBAS]') !== 0) document.title = '[PRUEBAS] ' + document.title; }, 3000);
+  }
 
   // El token admin vive solo en el navegador del Centro de Ventas, nunca en el repo.
-  const MEXTIZZA_ADMIN_LS_KEY = 'mextizza.admin.token';
+  // Cada entorno guarda el suyo: el de pruebas no sirve en produccion ni al reves.
+  const MEXTIZZA_ADMIN_LS_KEY = ENTORNO.llaveAdmin;
   const mextizzaTokenAdmin = () => {
     try { return window.localStorage.getItem(MEXTIZZA_ADMIN_LS_KEY) || ''; } catch (e) { return ''; }
   };

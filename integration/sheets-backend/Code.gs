@@ -1043,7 +1043,7 @@ function doGet(e) {
     /* Pausa y agotados: lo consultan la web y la app cada par de minutos.
        Solo lee propiedades, sin tocar la hoja, y no expone nada privado. */
     if (e.parameter.action === 'operacion') {
-      return jsonOut_({ ok: true, ...estadoOperacion_() });
+      return jsonOut_({ ok: true, ...estadoOperacion_(), entorno: esPruebas_() ? 'pruebas' : 'produccion' });
     }
     if (e.parameter.action === 'listar_abiertas') {
       requiereAdmin_(nivel);
@@ -2115,6 +2115,10 @@ function avisarCancelacion_(row, motivo) {
    cliente sin aviso. */
 const CORREO_REMITENTE = 'mextizza@gmail.com';
 function enviarCorreoCliente_(m) {
+  if (esPruebas_()) {
+    console.log('[pruebas] Correo NO enviado a ' + m.to + ': ' + m.subject);
+    return 'pruebas';
+  }
   let conAlias = false;
   try { conAlias = GmailApp.getAliases().indexOf(CORREO_REMITENTE) !== -1; } catch (e) { conAlias = false; }
   if (conAlias) {
@@ -2521,6 +2525,10 @@ function tokenAccesoGoogle_(sa, scope, claveCache) {
    reconoce (se desinstalo la app, se borraron los datos del navegador) se
    borran de la hoja para no seguir intentando. */
 function enviarPush_(tokens, msg) {
+  if (esPruebas_()) {
+    console.log('[pruebas] Push NO enviado a ' + tokens.length + ' equipo(s): ' + msg.titulo);
+    return { enviados: tokens.length, muertos: 0, errores: [] };
+  }
   const sa = cuentaServicioFcm_();
   if (!sa) throw new Error('Falta la propiedad del script FCM_CUENTA_SERVICIO.');
   const acceso = tokenAccesoFcm_(sa);
@@ -2707,6 +2715,7 @@ function walletObjeto_(emisor, telefono, t) {
 }
 
 function walletPedir_(metodo, ruta, cuerpo) {
+  if (esPruebas_()) throw new Error('Google Wallet esta apagado en el entorno de pruebas.');
   const sa = cuentaServicioFcm_();
   if (!sa) throw new Error('Falta la propiedad del script FCM_CUENTA_SERVICIO.');
   const opciones = {
@@ -3332,4 +3341,41 @@ function activarRespaldos() {
     .inTimezone('America/Mexico_City').create();
   const r = respaldarHoja();
   Logger.log('Listo: primer respaldo "' + r.nombre + '" en la carpeta "Mextizza · respaldos" de Drive. Cada noche se hace otro.');
+}
+
+
+/* ================================================= ENTORNO DE PRUEBAS =====
+   Una copia de esta hoja, con su propio Apps Script y la propiedad
+   ENTORNO=pruebas, recibe lo que hacen la preview de `test` y el servidor
+   local. Asi las pruebas no ensucian pedidos, ventas ni tarjetas reales.
+
+   En la copia no sale nada a nadie: ni correos, ni avisos push, ni Google
+   Wallet. Solo quedan en Ejecuciones como "[pruebas] ... NO enviado". */
+function esPruebas_() {
+  return PropertiesService.getScriptProperties().getProperty('ENTORNO') === 'pruebas';
+}
+
+/** Correr UNA vez en la COPIA de pruebas: borra los datos de clientes que trajo
+ *  al copiarse (pedidos, renglones, clientes, equipos push, catering, errores)
+ *  y deja la carta, los insumos y las recetas. En produccion se niega a correr. */
+function limpiarParaPruebas() {
+  if (!esPruebas_()) {
+    throw new Error('Esto solo corre en la copia de pruebas (propiedad ENTORNO=pruebas). En producción borraría los datos reales.');
+  }
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const borradas = [];
+  [SHEETS.ordenes, SHEETS.ordenItems, SHEETS.itemComplementos, SHEETS.clientes,
+   SHEETS.catering, SHEETS.push, SHEETS.errores].forEach(function (nombre) {
+    const sh = ss.getSheetByName(nombre);
+    if (!sh) return;
+    const filas = sh.getLastRow() - 1;
+    if (filas > 0) {
+      sh.deleteRows(2, filas);
+      borradas.push(nombre + ' (' + filas + ')');
+    }
+  });
+  const p = PropertiesService.getScriptProperties();
+  ['WALLET_COLA', 'COLA_AVISOS', 'PAUSA_HASTA', 'AGOTADOS'].forEach(function (k) { p.deleteProperty(k); });
+  Logger.log('Listo: la copia de pruebas quedó sin datos de clientes. Borré: ' + (borradas.join(', ') || 'nada, ya estaba limpia') + '.');
+  return borradas;
 }
