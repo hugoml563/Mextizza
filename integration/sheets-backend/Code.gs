@@ -78,7 +78,7 @@ const TS_POR_ESTADO = {
   entregada: 't_entregada'
 };
 
-const ORDENES_HEADERS = ['folio', 'canal', 'estado', 'cliente_telefono', 'cliente_nombre', 'direccion', 'colonia', 'km', 'pago_metodo', 'pago_estado', 'subtotal', 'total', 't_recibida', 't_confirmada', 't_horno', 't_lista', 't_camino', 't_entregada', 'reparto', 'notas', 'motivo_cancelacion', 'entrega_tipo', 'descuento', 'sello', 'premio', 'consecutivo', 'backflush', 'uid', 'premio_por', 'correo', 'push_token'];
+const ORDENES_HEADERS = ['folio', 'canal', 'estado', 'cliente_telefono', 'cliente_nombre', 'direccion', 'colonia', 'km', 'pago_metodo', 'pago_estado', 'subtotal', 'total', 't_recibida', 't_confirmada', 't_horno', 't_lista', 't_camino', 't_entregada', 'reparto', 'notas', 'motivo_cancelacion', 'entrega_tipo', 'descuento', 'sello', 'premio', 'consecutivo', 'backflush', 'uid', 'premio_por', 'correo', 'push_token', 'motivo_codigo'];
 const ORDEN_ITEMS_HEADERS = ['linea_id', 'folio', 'producto_id', 'producto_nombre', 'cantidad', 'precio_unit', 'complementos_total', 'importe', 'promocion'];
 const ITEM_COMPLEMENTOS_HEADERS = ['linea_id', 'complemento_id', 'complemento_nombre', 'precio'];
 const PRODUCTOS_HEADERS = ['id', 'nombre', 'descripcion', 'categoria', 'precio', 'activo', 'foto'];
@@ -1050,6 +1050,11 @@ function doGet(e) {
       return jsonOut_({ ok: true, ordenes: listarAbiertas_() });
     }
     /* Las solicitudes de catering traen nombre, telefono y direccion: solo admin. */
+    /* Ventas, horas pico, tiempos y cancelaciones. Solo la cocina. */
+    if (e.parameter.action === 'reportes') {
+      requiereAdmin_(nivel);
+      return jsonOut_({ ok: true, reporte: reportes_(Number(e.parameter.dias) || 1) });
+    }
     if (e.parameter.action === 'listar_catering') {
       requiereAdmin_(nivel);
       return jsonOut_({ ok: true, eventos: listarCatering_() });
@@ -1975,6 +1980,12 @@ function avanzarEstado_(body) {
     }
   }
 
+  /* Va en camino: si el cliente toco "Avisame", le llega un push. Por la cola
+     del activador de cada minuto, para que el boton "Salio" no espere a Google. */
+  if (nuevo === 'camino' && row[H.indexOf('push_token')]) {
+    avisarCamino_(row);
+  }
+
   if (nuevo === 'entregada') {
     const pagoMetodo = row[ORDENES_HEADERS.indexOf('pago_metodo')];
     if (pagoMetodo === 'Efectivo' || pagoMetodo === 'Terminal') {
@@ -2023,6 +2034,9 @@ function cancelarOrden_(body) {
   const motivo = String(body.motivo || '').trim().slice(0, 600) || 'Tuvimos que cancelar tu pedido.';
   sh.getRange(index, H.indexOf('estado') + 1).setValue('cancelada');
   sh.getRange(index, H.indexOf('motivo_cancelacion') + 1).setValue(textoSeguro_(motivo));
+  // El codigo del motivo, para agrupar en los reportes. Solo los conocidos.
+  const codigo = MOTIVOS_CODIGO.indexOf(String(body.motivo_codigo || '')) !== -1 ? String(body.motivo_codigo) : 'otro';
+  sh.getRange(index, H.indexOf('motivo_codigo') + 1).setValue(codigo);
   /* El sello queda anulado y el premio se libera solo: como la tarjeta nunca se
      toco al pedir, no hay nada que devolver — basta con que este pedido deje de
      estar 'pendiente' para que premiosReservados_ lo suelte. */
@@ -2835,15 +2849,19 @@ function walletEncolar_(item) {
 function procesarColaWallet() {
   const lock = LockService.getScriptLock();
   if (!lock.tryLock(10000)) return;
-  let cola = [];
+  let cola = [], avisos = [];
   try {
     const p = PropertiesService.getScriptProperties();
     cola = JSON.parse(p.getProperty('WALLET_COLA') || '[]');
     if (cola.length) p.setProperty('WALLET_COLA', '[]');
+    // Los avisos al cliente ("va en camino") viajan por la misma cola.
+    avisos = JSON.parse(p.getProperty('COLA_AVISOS') || '[]');
+    if (avisos.length) p.setProperty('COLA_AVISOS', '[]');
   } finally {
     lock.releaseLock();
   }
   cola.forEach(function (it) { walletSincronizar_(it.tel, it.antes, it.despues, it.conSello); });
+  avisos.forEach(function (a) { mandarAvisoCliente_(a); });
 }
 
 /** Correr UNA vez a mano desde el editor. Crea el activador de cada minuto y
@@ -3378,4 +3396,143 @@ function limpiarParaPruebas() {
   ['WALLET_COLA', 'COLA_AVISOS', 'PAUSA_HASTA', 'AGOTADOS'].forEach(function (k) { p.deleteProperty(k); });
   Logger.log('Listo: la copia de pruebas quedó sin datos de clientes. Borré: ' + (borradas.join(', ') || 'nada, ya estaba limpia') + '.');
   return borradas;
+}
+
+
+/* ============================================ AVISO "VA EN CAMINO" ========
+   Solo push, sin correo: un correo por pedido llenaria la bandeja del cliente.
+   Con la cola encendida (activarColaWallet) se manda en el siguiente minuto;
+   si no, en el momento. Nunca tumba el cambio de estado. */
+function avisarCamino_(row) {
+  const H = ORDENES_HEADERS;
+  const folio = String(row[H.indexOf('folio')]);
+  const aviso = {
+    token: String(row[H.indexOf('push_token')]),
+    titulo: 'Tu pedido va en camino',
+    cuerpo: 'Tu pizza ya salió del horno y va para allá. Llega en unos minutos.',
+    url: '/?pedido=' + encodeURIComponent(folio),
+    tag: 'pedido-' + folio
+  };
+  const p = PropertiesService.getScriptProperties();
+  if (p.getProperty('WALLET_COLA_ACTIVA') === 'si') {
+    try {
+      const cola = JSON.parse(p.getProperty('COLA_AVISOS') || '[]');
+      cola.push(aviso);
+      p.setProperty('COLA_AVISOS', JSON.stringify(cola.slice(-200)));
+      return 'cola';
+    } catch (e) {
+      reportar_('No se pudo anotar el aviso de camino de ' + folio + '; se manda en el momento: ' + e);
+    }
+  }
+  mandarAvisoCliente_(aviso);
+  return 'directo';
+}
+
+function mandarAvisoCliente_(a) {
+  try {
+    if (!a || !a.token || !PropertiesService.getScriptProperties().getProperty('FCM_CUENTA_SERVICIO')) return;
+    const r = enviarPush_([a.token], { titulo: a.titulo, cuerpo: a.cuerpo, url: a.url, tag: a.tag });
+    if (r.errores.length) reportar_('Aviso al cliente con error: ' + r.errores.join(' | '));
+  } catch (e) {
+    reportar_('No se pudo mandar el aviso al cliente: ' + e);
+  }
+}
+
+/* ======================================================= REPORTES ========
+   Lo que el corte del dia no dice: como va la semana o el mes. Todo sale de
+   lo que ya se guarda en cada pedido (montos, horas de cada paso, motivo de
+   cancelacion, premios). Se lee solo el final de las hojas, hasta la fecha de
+   corte, igual que la lista del dia. */
+const MOTIVOS_CODIGO = ['zona', 'tarde', 'ingrediente', 'otro'];
+
+function reportes_(dias) {
+  dias = [1, 7, 30].indexOf(dias) !== -1 ? dias : 1;
+  const hoy = hoyCDMX_();
+  const desde = hoyCDMX_(new Date(Date.now() - (dias - 1) * 86400000));
+  const fecha = function (v) { const t = new Date(v); return isNaN(t) ? '' : hoyCDMX_(t); };
+  const enRango = function (o) { const f = fecha(o.t_recibida); return !!f && f >= desde && f <= hoy; };
+
+  const todas = ultimasFilas_(sheet_(SHEETS.ordenes), function (o) {
+    const f = fecha(o.t_recibida); return !!f && f < desde;
+  }).filter(function (o) { return o.folio && enRango(o); });
+  const validas = todas.filter(function (o) { return o.estado !== 'cancelada'; });
+  const canceladas = todas.filter(function (o) { return o.estado === 'cancelada'; });
+  const ventas = validas.reduce(function (t, o) { return t + (Number(o.total) || 0); }, 0);
+
+  // Por dia, del mas viejo al de hoy (incluidos los dias sin pedidos).
+  const porDia = [];
+  for (let i = dias - 1; i >= 0; i--) {
+    const f = hoyCDMX_(new Date(Date.now() - i * 86400000));
+    const del = validas.filter(function (o) { return fecha(o.t_recibida) === f; });
+    porDia.push({ fecha: f, pedidos: del.length, ventas: del.reduce(function (t, o) { return t + (Number(o.total) || 0); }, 0) });
+  }
+
+  // Horas pico, en hora de CDMX.
+  const horas = {};
+  validas.forEach(function (o) {
+    const h = Number(Utilities.formatDate(new Date(o.t_recibida), 'America/Mexico_City', 'H'));
+    horas[h] = (horas[h] || 0) + 1;
+  });
+  const porHora = Object.keys(horas).map(Number).sort(function (a, b) { return a - b; })
+    .map(function (h) { return { hora: h, pedidos: horas[h] }; });
+
+  // Tiempos promedio en minutos, solo con las dos horas guardadas.
+  const prom = function (de, a) {
+    const m = validas.map(function (o) {
+      const t0 = new Date(o[de]), t1 = new Date(o[a]);
+      return (o[de] && o[a] && !isNaN(t0) && !isNaN(t1) && t1 >= t0) ? (t1 - t0) / 60000 : null;
+    }).filter(function (x) { return x !== null && x < 240; });
+    return m.length ? Math.round(m.reduce(function (t, x) { return t + x; }, 0) / m.length) : null;
+  };
+  const tiempos = {
+    espera: prom('t_recibida', 't_horno'),   // de que llega a que entra al horno
+    horno: prom('t_horno', 't_lista'),
+    reparto: prom('t_lista', 't_entregada'),
+    total: prom('t_recibida', 't_entregada')
+  };
+
+  // Mas vendidos (piezas cobradas y regaladas), de los renglones de esos pedidos.
+  /* Los renglones se agregan junto con su pedido, asi que los del periodo son
+     los ultimos de la hoja. La lectura se detiene en el primero que es de un
+     pedido de ANTES del periodo (no en uno cancelado, que si esta en el rango). */
+  const delPeriodo = {}, folios = {};
+  todas.forEach(function (o) { delPeriodo[o.folio] = true; });
+  validas.forEach(function (o) { folios[o.folio] = true; });
+  const items = ultimasFilas_(sheet_(SHEETS.ordenItems), function (it) { return !delPeriodo[it.folio]; })
+    .filter(function (it) { return folios[it.folio]; });
+  const piezas = {};
+  items.forEach(function (it) { piezas[it.producto_nombre] = (piezas[it.producto_nombre] || 0) + (Number(it.cantidad) || 0); });
+  const masVendidos = Object.keys(piezas).sort(function (a, b) { return piezas[b] - piezas[a]; }).slice(0, 5)
+    .map(function (n) { return { nombre: n, piezas: piezas[n] }; });
+
+  // Cancelaciones por motivo.
+  const motivos = {};
+  canceladas.forEach(function (o) {
+    const c = MOTIVOS_CODIGO.indexOf(String(o.motivo_codigo || '')) !== -1 ? String(o.motivo_codigo) : 'otro';
+    motivos[c] = (motivos[c] || 0) + 1;
+  });
+
+  // Clientes nuevos contra los que regresan: si tiene mas pedidos en total
+  // que los de este periodo, ya habia pedido antes.
+  const enPeriodo = {};
+  validas.forEach(function (o) { const t = soloDigitos_(o.cliente_telefono); if (t) enPeriodo[t] = (enPeriodo[t] || 0) + 1; });
+  const totales = {};
+  rowsAsObjects_(sheet_(SHEETS.clientes)).forEach(function (c) { totales[soloDigitos_(c.telefono)] = Number(c.pedidos) || 0; });
+  let nuevos = 0, regresan = 0;
+  Object.keys(enPeriodo).forEach(function (t) { if ((totales[t] || 0) > enPeriodo[t]) regresan++; else nuevos++; });
+
+  const premios = { brownie: 0, pizza: 0, dosPorUno: 0 };
+  validas.forEach(function (o) {
+    if (o.premio === 'tarjeta:brownie') premios.brownie++;
+    if (o.premio === 'tarjeta:pizza') premios.pizza++;
+    if (o.premio === '2x1') premios.dosPorUno++;
+  });
+
+  return {
+    dias: dias, desde: desde, hasta: hoy,
+    pedidos: validas.length, canceladas: canceladas.length,
+    ventas: ventas, ticket: validas.length ? Math.round(ventas / validas.length) : 0,
+    porDia: porDia, porHora: porHora, tiempos: tiempos, masVendidos: masVendidos,
+    motivos: motivos, clientes: { nuevos: nuevos, regresan: regresan }, premios: premios
+  };
 }

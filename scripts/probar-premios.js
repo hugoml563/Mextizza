@@ -1384,5 +1384,65 @@ console.log('\nLO QUE MANDA EL NAVEGADOR NO ENTRA COMO FORMULA NI COMO PRECIO RA
   delete ctx.GmailApp;
 }
 
+/* Entrega 4: reportes del tablero y aviso "va en camino". */
+{
+  console.log('\nREPORTES');
+  const pedir1 = (tel, items) => ctx.crearOrden_({ canal: 'Web', cliente: { telefono: tel, nombre: 'R' },
+    direccion: 'C', colonia: 'Lomas Lindas', km: 1, pago_metodo: 'Efectivo', items });
+  const a = (min) => new RealDate(DIA(45).getTime() + min * 60000);   // 15 de octubre, 6 pm CDMX
+  RELOJ = a(0);
+  const A = pedir1('5540000001', [{ producto_id: 'roni', cantidad: 2 }]).folio;
+  const B = pedir1('5540000002', [{ producto_id: 'chisi', cantidad: 1 }]).folio;
+  const C = pedir1('5540000003', [{ producto_id: 'roni', cantidad: 1 }]).folio;
+  [[2, 'confirmada'], [5, 'horno'], [15, 'lista'], [16, 'camino'], [40, 'entregada']].forEach(([m]) => { RELOJ = a(m); ctx.avanzarEstado_({ folio: A }); });
+  ctx.cancelarOrden_({ folio: C, motivo: 'Fuera de zona.', motivo_codigo: 'zona' });
+  comparar('la cancelacion guarda el motivo como codigo', campoDe(C, 'motivo_codigo'), 'zona');
+  ctx.cancelarOrden_({ folio: pedir1('5540000004', [{ producto_id: 'agua', cantidad: 1 }]).folio, motivo: 'x', motivo_codigo: '=HACK()' });
+  const r = ctx.reportes_(1);
+  comparar('cuenta los pedidos del dia sin los cancelados', [r.pedidos, r.canceladas], [2, 2]);
+  comparar('suma las ventas y saca el ticket promedio', [r.ventas, r.ticket], [597, 299]);
+  comparar('lo mas vendido no cuenta lo cancelado', r.masVendidos[0], { nombre: 'Pizza Roni', piezas: 2 });
+  comparar('agrupa las cancelaciones por motivo', r.motivos, { zona: 1, otro: 1 });
+  comparar('horas pico en hora de CDMX', r.porHora, [{ hora: 18, pedidos: 2 }]);
+  comparar('tiempos promedio de cada paso', r.tiempos, { espera: 5, horno: 10, reparto: 25, total: 40 });
+  comparar('clientes nuevos', r.clientes, { nuevos: 2, regresan: 0 });
+  const r7 = ctx.reportes_(7);
+  comparar('a 7 dias trae un renglon por dia, con hoy al final', [r7.porDia.length, r7.porDia[6].ventas], [7, 597]);
+  comparar('un periodo raro se toma como hoy', ctx.reportes_(99).dias, 1);
+
+  console.log('\nAVISO VA EN CAMINO');
+  const push = [];
+  const fetchReal = ctx.UrlFetchApp.fetch, fetchAllReal = ctx.UrlFetchApp.fetchAll;
+  ctx.UrlFetchApp.fetch = (url, opts) => {
+    if (url.indexOf('oauth2') !== -1) return { getResponseCode: () => 200, getContentText: () => '{"access_token":"x"}' };
+    if (url.indexOf('fcm.googleapis.com') !== -1) { push.push(JSON.parse(opts.payload).message.data); return { getResponseCode: () => 200, getContentText: () => '{}' }; }
+    return fetchReal(url, opts);
+  };
+  ctx.UrlFetchApp.fetchAll = (qs) => qs.map((q) => ctx.UrlFetchApp.fetch(q.url, q));
+  props.FCM_CUENTA_SERVICIO = JSON.stringify({ client_email: 'sa@p.iam.gserviceaccount.com', private_key: 'llave', project_id: 'p' });
+  const hasta = (folio, estado) => { for (let i = 0; i < 6; i++) { if (campoDe(folio, 'estado') === estado) return; ctx.avanzarEstado_({ folio }); } };
+  const D = pedir1('5540000010', [{ producto_id: 'roni', cantidad: 1 }]).folio;
+  ctx.registrarPushPedido_({ folio: D, token_push: 'token-de-un-telefono-de-cliente-0123456789' });
+  hasta(D, 'lista');
+  comparar('antes de salir no se avisa nada', push.length, 0);
+  hasta(D, 'camino');
+  comparar('al salir le llega "va en camino"', push.length === 1 && push[0].titulo, 'Tu pedido va en camino');
+  comparar('y al tocarlo abre su pedido', push[0] && push[0].url, '/?pedido=' + D);
+  props.WALLET_COLA_ACTIVA = 'si';
+  const E = pedir1('5540000011', [{ producto_id: 'roni', cantidad: 1 }]).folio;
+  ctx.registrarPushPedido_({ folio: E, token_push: 'token-de-un-telefono-de-cliente-9876543210' });
+  hasta(E, 'camino');
+  comparar('con la cola, el boton Salio no espera a Google', push.length, 1);
+  ctx.procesarColaWallet();
+  comparar('el activador de cada minuto lo manda', push.length, 2);
+  comparar('y vacia la cola', JSON.parse(props.COLA_AVISOS || '[]').length, 0);
+  const F = pedir1('5540000012', [{ producto_id: 'roni', cantidad: 1 }]).folio;
+  hasta(F, 'camino');
+  ctx.procesarColaWallet();
+  comparar('sin "Avisame" no se manda nada', push.length, 2);
+  ctx.UrlFetchApp.fetch = fetchReal; ctx.UrlFetchApp.fetchAll = fetchAllReal;
+  ['FCM_CUENTA_SERVICIO', 'WALLET_COLA_ACTIVA', 'COLA_AVISOS'].forEach((k) => { delete props[k]; });
+}
+
 console.log('\n  ' + ok + ' pruebas ok, ' + mal + ' mal\n');
 process.exit(mal ? 1 : 0);

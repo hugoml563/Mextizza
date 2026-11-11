@@ -59,7 +59,7 @@ window.__resources = Object.assign(window.__resources || {}, {
 @media (prefers-reduced-motion:reduce){.mx-badge,.mx-dock-panel{animation:none}.mx-prod{transition:none}}
 /* En tablet ya no caben los tres cuadros junto a Pausar y Agotados. "En cocina"
    repite lo que dicen los filtros Confirmadas y En horno, justo debajo. */
-@media (max-width:1300px){.mx-stat-cocina{display:none!important}}
+@media (max-width:1300px){.mx-stat-cocina,.mx-stat-ordenes{display:none!important}}
 @media (max-width:820px){
 /* En el telefono la barra se queda pegada abajo mientras se hace scroll, y el
    panel del pedido no tapa mas de media pantalla. */
@@ -188,7 +188,7 @@ window.__resources = Object.assign(window.__resources || {}, {
 </div>
 <div style="flex:1"></div>
 <div style="display:flex;gap:10px">
-<div style="min-width:84px;padding:7px 12px;white-space:nowrap;background:#FFFFFF;border:2px solid #1A1A1A;border-radius:6px">
+<div class="mx-stat-ordenes" style="min-width:84px;padding:7px 12px;white-space:nowrap;background:#FFFFFF;border:2px solid #1A1A1A;border-radius:6px">
 <div style="font-size:10.5px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:#6b6b6b">Órdenes hoy</div>
 <div style="font-family:'Bungee',cursive;font-size:19px;line-height:1.1;margin-top:2px">{{ corte.ordenes }}</div>
 </div>
@@ -669,6 +669,43 @@ window.__resources = Object.assign(window.__resources || {}, {
 </div>
 </sc-if>
 
+<sc-if value="{{ verReportes }}" hint-placeholder-val="{{ false }}">
+<!-- Reportes: lo que el corte del dia no dice. Todo sale de lo que ya se guarda
+     en cada pedido; se pide al abrir la pestana y al cambiar el periodo. -->
+<div class="mx-scroll" style="flex:1;overflow:auto;padding:16px 18px 24px;display:flex;flex-direction:column;gap:14px">
+<div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+<div style="display:flex;border:2px solid #1A1A1A;border-radius:6px;overflow:hidden">
+<sc-for list="{{ rep.periodos }}" as="p" hint-placeholder-count="3"><button onClick="{{ p.set }}" style="{{ p.estilo }}">{{ p.label }}</button></sc-for>
+</div>
+<div style="font-size:12.5px;font-weight:700;color:#6b6b6b">{{ rep.rango }}</div>
+<sc-if value="{{ rep.cargando }}" hint-placeholder-val="{{ false }}"><span class="mx-puntos" aria-label="Cargando" style="color:#C1502E"><i></i><i></i><i></i></span></sc-if>
+</div>
+<sc-if value="{{ rep.hayError }}" hint-placeholder-val="{{ false }}"><div role="alert" style="padding:10px 12px;background:#E4007C;color:#FFFFFF;border-radius:6px;font-size:12.5px;font-weight:700">{{ rep.error }}</div></sc-if>
+<sc-if value="{{ rep.listo }}" hint-placeholder-val="{{ true }}">
+<div class="mx-grid" style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px">
+<sc-for list="{{ rep.tarjetas }}" as="t" hint-placeholder-count="4">
+<div style="background:#FFFFFF;border:2px solid #1A1A1A;border-radius:8px;padding:14px 16px"><div style="font-size:10.5px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:#6b6b6b">{{ t.label }}</div><div style="font-family:'Bungee',cursive;font-size:24px;line-height:1.1;margin-top:4px;color:#C1502E">{{ t.valor }}</div><div style="font-size:11.5px;font-weight:700;color:#6b6b6b;margin-top:2px">{{ t.nota }}</div></div>
+</sc-for>
+</div>
+<div class="mx-grid" style="display:grid;grid-template-columns:repeat(2,1fr);gap:12px">
+<div style="background:#FFFFFF;border:2px solid #1A1A1A;border-radius:8px;padding:14px 16px"><div style="display:flex;align-items:center;gap:10px;font-family:'Bungee',cursive;font-size:11px;letter-spacing:1px;text-transform:uppercase;margin-bottom:12px">{{ rep.tituloSerie }}<span style="flex:1;height:2px;background:#1A1A1A;opacity:.15"></span></div>
+<sc-for list="{{ rep.serie }}" as="b" hint-placeholder-count="7"><div style="display:flex;align-items:center;gap:10px;margin-bottom:7px;font-size:12.5px;font-weight:700"><span style="width:62px;flex:none">{{ b.label }}</span><span style="flex:1;height:9px;border-radius:99px;overflow:hidden;background:rgba(0,0,0,.08)"><span style="{{ b.barra }}"></span></span><span style="width:70px;flex:none;text-align:right;color:#C1502E">{{ b.valor }}</span></div></sc-for>
+<sc-if value="{{ rep.sinSerie }}" hint-placeholder-val="{{ false }}"><div style="font-size:12.5px;font-weight:700;color:#9a9a9a">Sin pedidos en este periodo.</div></sc-if>
+</div>
+<div style="background:#FFFFFF;border:2px solid #1A1A1A;border-radius:8px;padding:14px 16px"><div style="display:flex;align-items:center;gap:10px;font-family:'Bungee',cursive;font-size:11px;letter-spacing:1px;text-transform:uppercase;margin-bottom:12px">Tiempos promedio<span style="flex:1;height:2px;background:#1A1A1A;opacity:.15"></span></div>
+<sc-for list="{{ rep.tiempos }}" as="x" hint-placeholder-count="4"><div style="display:flex;justify-content:space-between;align-items:baseline;padding:8px 0;border-bottom:1px dashed rgba(0,0,0,.14)"><span style="font-size:13px;font-weight:700">{{ x.label }}</span><span style="font-family:'Bungee',cursive;font-size:16px;color:#C1502E">{{ x.valor }}</span></div></sc-for>
+<div style="font-size:11.5px;font-weight:700;color:#6b6b6b;margin-top:8px">Salen de la hora en que se toca cada botón del tablero.</div>
+</div>
+<div style="background:#FFFFFF;border:2px solid #1A1A1A;border-radius:8px;padding:14px 16px"><div style="display:flex;align-items:center;gap:10px;font-family:'Bungee',cursive;font-size:11px;letter-spacing:1px;text-transform:uppercase;margin-bottom:12px">Más vendido<span style="flex:1;height:2px;background:#1A1A1A;opacity:.15"></span></div>
+<sc-for list="{{ rep.vendidos }}" as="b" hint-placeholder-count="5"><div style="margin-bottom:9px"><div style="display:flex;justify-content:space-between;font-size:12.5px;font-weight:700"><span>{{ b.label }}</span><span>{{ b.valor }}</span></div><div style="width:100%;height:7px;margin-top:4px;border-radius:99px;overflow:hidden;background:rgba(0,0,0,.08)"><div style="{{ b.barra }}"></div></div></div></sc-for>
+</div>
+<div style="background:#FFFFFF;border:2px solid #1A1A1A;border-radius:8px;padding:14px 16px"><div style="display:flex;align-items:center;gap:10px;font-family:'Bungee',cursive;font-size:11px;letter-spacing:1px;text-transform:uppercase;margin-bottom:12px">Clientes, premios y cancelaciones<span style="flex:1;height:2px;background:#1A1A1A;opacity:.15"></span></div>
+<sc-for list="{{ rep.extras }}" as="x" hint-placeholder-count="6"><div style="display:flex;justify-content:space-between;padding:7px 0;border-bottom:1px dashed rgba(0,0,0,.14);font-size:12.5px;font-weight:700"><span>{{ x.label }}</span><span style="color:#C1502E">{{ x.valor }}</span></div></sc-for>
+</div>
+</div>
+</sc-if>
+</div>
+</sc-if>
 
 </div>
 
@@ -1018,7 +1055,7 @@ class Component extends DCLogic {
     /* El aviso de una solicitud de catering abre directo en Eventos. */
     try {
       const v = new URLSearchParams(location.search).get('vista');
-      if (['eventos', 'inventario', 'compras'].indexOf(v) !== -1) setTimeout(() => this.cambiarVista(v), 0);
+      if (['eventos', 'inventario', 'compras', 'reportes'].indexOf(v) !== -1) setTimeout(() => this.cambiarVista(v), 0);
     } catch (e) {}
     /* Si este equipo ya recibia avisos, se revisa que su token siga vigente.
        Despues de la primera carga: el tablero va primero. */
@@ -1214,6 +1251,68 @@ class Component extends DCLogic {
        las alimenta a las dos y cambiar de una a otra es instantaneo. */
     if ((v === 'inventario' || v === 'compras') && !this.state.inv) this.cargarInv();
     if (v === 'eventos') this.cargarCatering();
+    if (v === 'reportes') this.cargarReportes(this.state.repDias || 1);
+  }
+
+  async cargarReportes(dias) {
+    this.setState({ repDias: dias, repCargando: true, repError: '' });
+    try {
+      const { reporte } = await mextizzaReportes(dias);
+      if (this.state.repDias === dias) this.setState({ rep: reporte, repCargando: false });
+    } catch (err) {
+      this.setState({ repCargando: false, repError: 'No se pudieron leer los reportes: ' + err.message });
+    }
+  }
+
+  vistaReportes() {
+    const r = this.state.rep;
+    const dias = this.state.repDias || 1;
+    const min = n => n == null ? '—' : n + ' min';
+    const barra = (v, max, color) => 'display:block;width:' + (max && v > 0 ? Math.max(3, Math.round(v / max * 100)) : 0) + '%;height:100%;border-radius:99px;background:' + (color || '#E4007C');
+    const fechaCorta = iso => { const [a, m, d] = iso.split('-').map(Number); return new Date(Date.UTC(a, m - 1, d, 12)).toLocaleDateString('es-MX', { weekday: 'short', day: 'numeric', timeZone: 'UTC' }).replace(/[,.]/g, ''); };
+    const hora12 = h => (h % 12 || 12) + (h < 12 ? ' am' : ' pm');
+    // Con un solo dia, la serie son las horas; con 7 o 30, los dias.
+    const serieDias = r && dias > 1;
+    const puntos = !r ? [] : serieDias ? r.porDia.map(d => ({ label: fechaCorta(d.fecha), v: d.ventas, valor: money(d.ventas) }))
+      : r.porHora.map(h => ({ label: hora12(h.hora), v: h.pedidos, valor: h.pedidos + (h.pedidos === 1 ? ' pedido' : ' pedidos') }));
+    const maxS = Math.max(0, ...puntos.map(p => p.v));
+    const maxV = r && r.masVendidos.length ? r.masVendidos[0].piezas : 1;
+    const NOMBRE_MOTIVO = { zona: 'Fuera de zona', tarde: 'Ya no alcanzamos', ingrediente: 'Se acabó un ingrediente', otro: 'Otro motivo' };
+    return {
+      periodos: [[1, 'Hoy'], [7, '7 días'], [30, '30 días']].map(([d, label]) => ({
+        label,
+        estilo: 'padding:10px 14px;border:none;font-family:\'Oswald\',sans-serif;font-size:12px;font-weight:700;letter-spacing:.8px;text-transform:uppercase;cursor:pointer;min-height:44px;'
+          + (dias === d ? 'background:#1A1A1A;color:#FFFFFF' : 'background:#FFFFFF;color:#1A1A1A'),
+        set: () => this.cargarReportes(d)
+      })),
+      rango: r ? (r.desde === r.hasta ? fechaCorta(r.hasta) : fechaCorta(r.desde) + ' a ' + fechaCorta(r.hasta)) : '',
+      cargando: !!this.state.repCargando,
+      hayError: !!this.state.repError, error: this.state.repError || '',
+      listo: !!r,
+      tarjetas: !r ? [] : [
+        { label: 'Pedidos', valor: String(r.pedidos), nota: r.canceladas ? '+ ' + r.canceladas + ' cancelados' : 'sin cancelaciones' },
+        { label: 'Ventas', valor: money(r.ventas), nota: dias > 1 ? money(Math.round(r.ventas / dias)) + ' por día' : 'hoy' },
+        { label: 'Ticket promedio', valor: money(r.ticket), nota: 'por pedido' },
+        { label: 'Clientes', valor: String(r.clientes.nuevos + r.clientes.regresan), nota: r.clientes.regresan + ' ya habían pedido' }
+      ],
+      tituloSerie: serieDias ? 'Ventas por día' : 'Horas pico',
+      serie: puntos.map(p => ({ label: p.label, valor: p.valor, barra: barra(p.v, maxS) })),
+      sinSerie: !!r && !puntos.some(p => p.v > 0),
+      tiempos: !r ? [] : [
+        { label: 'Llega → al horno', valor: min(r.tiempos.espera) },
+        { label: 'En el horno', valor: min(r.tiempos.horno) },
+        { label: 'Lista → entregada', valor: min(r.tiempos.reparto) },
+        { label: 'Total', valor: min(r.tiempos.total) }
+      ],
+      vendidos: !r ? [] : r.masVendidos.map(v => ({ label: v.nombre, valor: v.piezas, barra: barra(v.piezas, maxV) })),
+      extras: !r ? [] : [
+        { label: 'Clientes nuevos', valor: r.clientes.nuevos },
+        { label: 'Clientes que regresan', valor: r.clientes.regresan },
+        { label: 'Brownies de premio', valor: r.premios.brownie },
+        { label: 'Pizzas de premio', valor: r.premios.pizza },
+        { label: '2x1 aplicados', valor: r.premios.dosPorUno }
+      ].concat(Object.keys(r.motivos).map(k => ({ label: 'Cancelado · ' + (NOMBRE_MOTIVO[k] || k), valor: r.motivos[k] })))
+    };
   }
 
   /* Cancela con el motivo elegido. Con WhatsApp, el chat se abre PRIMERO,
@@ -1236,7 +1335,7 @@ class Component extends DCLogic {
       ordenes: this.state.ordenes.map(x => (x.folio === o.folio ? { ...x, estado: 'cancelada' } : x))
     });
     try {
-      const r = await mextizzaCancelarOrden(o.folio, motivo);
+      const r = await mextizzaCancelarOrden(o.folio, motivo, c.motivo);
       const por = [];
       if (conWhats && o.telefono) por.push('WhatsApp');
       if (r.avisos && r.avisos.push) por.push('notificación');
@@ -2009,7 +2108,8 @@ class Component extends DCLogic {
         { label: 'Compras', clave: 'compras' },
         /* El numero es lo que falta por contestar: una solicitud nueva no debe
            depender de que alguien abra la pestana para enterarse. */
-        { label: 'Eventos' + (pendientesCat ? ' · ' + pendientesCat : ''), clave: 'eventos' }
+        { label: 'Eventos' + (pendientesCat ? ' · ' + pendientesCat : ''), clave: 'eventos' },
+        { label: 'Reportes', clave: 'reportes' }
       ].map(v => ({
         label: v.label,
         activa: this.state.vista === v.clave,
@@ -2020,6 +2120,8 @@ class Component extends DCLogic {
       verInventario: this.state.vista === 'inventario',
       verCompras: this.state.vista === 'compras',
       verEventos: this.state.vista === 'eventos',
+      verReportes: this.state.vista === 'reportes',
+      rep: this.vistaReportes(),
       avisos: this.vistaAvisos(),
       sonido: {
         activo: this.state.sonidoPref === '1' && this.state.audioListo,

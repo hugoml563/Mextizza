@@ -195,7 +195,9 @@ if (!window.__mextizzaSheetsConfigLoaded) {
   const mextizzaClientePorTelefono = telefono => mextizzaApiGet('cliente_por_telefono', { telefono }, true);
 
   const mextizzaAvanzarEstado = folio => mextizzaApiPost('avanzar_estado', { folio }, true);
-  const mextizzaCancelarOrden = (folio, motivo) => mextizzaApiPost('cancelar', { folio, motivo }, true);
+  const mextizzaCancelarOrden = (folio, motivo, motivo_codigo) => mextizzaApiPost('cancelar', { folio, motivo, motivo_codigo }, true);
+  /** Reportes del tablero: dias = 1 (hoy), 7 o 30. Solo la cocina. */
+  const mextizzaReportes = dias => mextizzaApiGet('reportes', { dias: String(dias || 1) }, true);
   /** Estado de un solo pedido, para la pantalla de seguimiento de la app. */
   const mextizzaEstadoOrden = folio => mextizzaApiGet('estado', { folio });
   /** Ultimo pedido de un telefono: recupera el seguimiento en otro dispositivo. */
@@ -278,7 +280,7 @@ if (!window.__mextizzaSheetsConfigLoaded) {
 
   const mextizzaTarjeta = (telefono) => mextizzaApiGet('tarjeta', { telefono: telefono || '' });
 
-  Object.assign(window, { mextizzaPickup, mextizzaTarjeta, mextizzaCrearOrden, mextizzaAvanzarEstado, mextizzaCancelarOrden, mextizzaEstadoOrden, mextizzaEstadoPorTelefono, mextizzaCancelarPorCliente, mextizzaListarAbiertas, mextizzaListarHoy, mextizzaSolicitarCatering, mextizzaListarCatering, mextizzaActualizarCatering, mextizzaPushRegistrar, mextizzaPushBaja, mextizzaPushProbar, mextizzaTokenAdmin, mextizzaGuardarTokenAdmin, mextizzaOlvidarTokenAdmin, mextizzaCapturaCocina, mextizzaInvEstado, mextizzaInvCompra, mextizzaInvLote, mextizzaInvMerma, mextizzaInvConteo, mextizzaLigarTelefono, mextizzaMiCuenta, mextizzaWalletEnlace, mextizzaCapturarOrden, mextizzaClientePorTelefono, mextizzaPushPedido, mextizzaOperacion, mextizzaCambiarOperacion });
+  Object.assign(window, { mextizzaPickup, mextizzaTarjeta, mextizzaCrearOrden, mextizzaAvanzarEstado, mextizzaCancelarOrden, mextizzaEstadoOrden, mextizzaEstadoPorTelefono, mextizzaCancelarPorCliente, mextizzaListarAbiertas, mextizzaListarHoy, mextizzaSolicitarCatering, mextizzaListarCatering, mextizzaActualizarCatering, mextizzaPushRegistrar, mextizzaPushBaja, mextizzaPushProbar, mextizzaTokenAdmin, mextizzaGuardarTokenAdmin, mextizzaOlvidarTokenAdmin, mextizzaCapturaCocina, mextizzaInvEstado, mextizzaInvCompra, mextizzaInvLote, mextizzaInvMerma, mextizzaInvConteo, mextizzaLigarTelefono, mextizzaMiCuenta, mextizzaWalletEnlace, mextizzaCapturarOrden, mextizzaClientePorTelefono, mextizzaPushPedido, mextizzaOperacion, mextizzaCambiarOperacion, mextizzaReportes });
 
   /* Se pide al cargar, cada 2 minutos y al volver a la pestana. Si el
      servidor aun no conoce la accion, no pasa nada: queda sin pausa. */
