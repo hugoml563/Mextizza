@@ -190,6 +190,38 @@ function AppMobile() {
     return () => { cancelled = true; try { handle && handle.remove(); } catch (e) {} };
   }, [handleBack]);
 
+  /* Aviso de version nueva. Los APK no se actualizan solos: la app pregunta a
+     mextizza.com/app-version.json al abrir y al volver del fondo (como mucho
+     una vez por hora). Con una version nueva, un aviso que se puede cerrar;
+     si la suya es menor que la minima (un arreglo de seguridad), uno fijo. */
+  const [aviso, setAviso] = React.useState(null);
+  const ultimaRevision = React.useRef(0);
+  const revisarVersion = React.useCallback(async () => {
+    const cap = window.Capacitor;
+    const AppCap = cap && cap.isNativePlatform && cap.isNativePlatform() && cap.Plugins && cap.Plugins.App;
+    if (!AppCap || !AppCap.getInfo) return; // vista previa en navegador
+    if (Date.now() - ultimaRevision.current < 3600000) return;
+    ultimaRevision.current = Date.now();
+    try {
+      const [info, v] = await Promise.all([
+        AppCap.getInfo(),
+        fetch('https://mextizza.com/app-version.json', { cache: 'no-store' }).then(r => r.json())
+      ]);
+      const mia = Number(info && info.build);
+      if (!mia || !v || !v.ultima) return;
+      if (mia < Number(v.minima)) return setAviso({ fijo: true, nombre: v.ultimaNombre, url: v.url });
+      let cerrada = 0;
+      try { cerrada = Number(localStorage.getItem('mextizza.app.version.cerrada') || 0); } catch (e) {}
+      if (mia < Number(v.ultima) && cerrada < Number(v.ultima)) setAviso({ fijo: false, nombre: v.ultimaNombre, ultima: v.ultima, url: v.url });
+    } catch (e) { ultimaRevision.current = 0; /* sin red: se intenta en la siguiente vuelta */ }
+  }, []);
+  React.useEffect(() => { revisarVersion(); }, [revisarVersion]);
+  if (typeof useAlVolver === 'function') useAlVolver(revisarVersion);
+  const cerrarAviso = () => {
+    try { localStorage.setItem('mextizza.app.version.cerrada', String(aviso.ultima)); } catch (e) {}
+    setAviso(null);
+  };
+
   let content;
   if (!entered) {
     content = <AppWelcome onEnter={() => {
@@ -243,6 +275,34 @@ function AppMobile() {
   return (
     <>
       {content}
+      {aviso && (
+        <div role={aviso.fijo ? 'alert' : 'status'} style={{
+          position: 'fixed', left: 12, right: 12, top: 'calc(env(safe-area-inset-top, 0px) + 12px)', zIndex: 998,
+          background: aviso.fijo ? 'var(--rosa-mexicano)' : 'var(--negro-carbon)', color: '#FFFFFF',
+          borderRadius: 14, padding: '14px 14px 14px 16px', boxShadow: 'var(--shadow-raised)',
+          display: 'flex', alignItems: 'center', gap: 12, fontFamily: 'var(--font-body)'
+        }}>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{ fontWeight: 700, fontSize: 15, lineHeight: 1.25 }}>
+              {aviso.fijo ? 'Actualiza la app para seguir pidiendo' : 'Hay una versión nueva de la app'}
+            </div>
+            <div style={{ fontSize: 12.5, lineHeight: 1.35, opacity: 0.85, marginTop: 2 }}>
+              {aviso.fijo ? 'Trae un arreglo de seguridad. Bájala e instálala encima, sin borrar nada.' : 'La ' + aviso.nombre + ' ya está lista. Se instala encima, sin borrar nada.'}
+            </div>
+          </div>
+          <button onClick={() => { window.location.href = aviso.url; }} style={{
+            flex: 'none', minHeight: 44, padding: '0 14px', borderRadius: 10, border: 'none', cursor: 'pointer',
+            background: aviso.fijo ? '#FFFFFF' : 'var(--rosa-mexicano)', color: aviso.fijo ? 'var(--rosa-mexicano-texto)' : '#FFFFFF',
+            fontFamily: 'var(--font-body)', fontWeight: 700, fontSize: 13, letterSpacing: 0.6, textTransform: 'uppercase'
+          }}>Actualizar</button>
+          {!aviso.fijo && (
+            <button onClick={cerrarAviso} aria-label="Cerrar el aviso" style={{
+              flex: 'none', width: 36, height: 44, border: 'none', background: 'transparent', color: '#FFFFFF',
+              fontSize: 20, fontWeight: 700, cursor: 'pointer', marginLeft: -4
+            }}>×</button>
+          )}
+        </div>
+      )}
       <PopupPromo abierto={promoAbierta} onCerrar={cerrarPromo}
         vistaPrevia={typeof mextizzaVistaPrevia === 'function' && mextizzaVistaPrevia('2x1')}
         onVerMenu={() => { cerrarPromo(); goTab('menu'); }} />

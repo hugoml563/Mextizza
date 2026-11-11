@@ -1,0 +1,49 @@
+# Las pruebas del backend (premios, tarjeta, inventario, avisos) corren solas en
+# cada cambio a test y main. Antes solo corrian cuando alguien compilaba en la
+# compu de Hugo. Si algo falla, GitHub avisa por correo.
+#
+# No hace falta instalar paquetes: las pruebas solo usan Node.
+name: Pruebas
+
+on:
+  push:
+    branches: [test, main]
+  pull_request:
+    branches: [test, main]
+  schedule:
+    # Cada lunes a las 9 am de CDMX (15:00 UTC): revisa vulnerabilidades nuevas.
+    - cron: '0 15 * * 1'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  pruebas:
+    if: github.event_name != 'schedule'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - name: Premios, tarjeta, Wallet, avisos y operacion
+        run: node scripts/probar-premios.js
+      - name: Inventario
+        run: node scripts/probar-inventario.js
+      - name: Version de la app
+        run: node scripts/build-version-app.js
+
+  vulnerabilidades:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      # Solo lo que viaja en la app (no las herramientas de compilacion), y solo
+      # lo alto o critico: lo moderado de las herramientas de iOS no aplica.
+      - name: npm audit
+        run: npm audit --omit=dev --audit-level=high

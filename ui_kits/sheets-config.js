@@ -58,10 +58,10 @@ if (!window.__mextizzaSheetsConfigLoaded) {
       if (!document.body || document.getElementById('mx-franja-pruebas')) return;
       const f = document.createElement('div');
       f.id = 'mx-franja-pruebas';
-      f.textContent = 'Entorno de pruebas · no es la operación real';
+      f.textContent = 'Pruebas · no es la operación real';
       f.style.cssText = 'position:fixed;top:0;left:50%;transform:translateX(-50%);z-index:2147483647;pointer-events:none;' +
-        'padding:3px 12px;border-radius:0 0 8px 8px;background:repeating-linear-gradient(45deg,#F4CD5E 0 10px,#1A1A1A 10px 20px);' +
-        'color:#FFFFFF;font:700 11px/1.4 Oswald,Arial,sans-serif;letter-spacing:1px;text-transform:uppercase;' +
+        'padding:2px 10px;border-radius:0 0 8px 8px;white-space:nowrap;background:repeating-linear-gradient(45deg,#F4CD5E 0 10px,#1A1A1A 10px 20px);' +
+        'color:#FFFFFF;font:700 10px/1.4 Oswald,Arial,sans-serif;letter-spacing:.8px;text-transform:uppercase;' +
         'text-shadow:0 0 3px #000,0 0 3px #000;box-shadow:0 2px 6px rgba(0,0,0,.3)';
       document.body.appendChild(f);
       if (document.title.indexOf('[PRUEBAS]') !== 0) document.title = '[PRUEBAS] ' + document.title;
