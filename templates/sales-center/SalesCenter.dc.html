@@ -2090,7 +2090,7 @@ class Component extends DCLogic {
              manda y entonces no se ofrece. */
           hayTicket: !!(o.ticket && window.mextizzaTicket),
           imprimirTicket: () => mextizzaTicket.imprimir(o.ticket, { ancho: anchoTicket() }),
-          whatsTicket: () => window.open('https://wa.me/52' + o.telefono + '?text=' + encodeURIComponent(mextizzaTicket.texto(o.ticket)), '_blank', 'noopener'),
+          whatsTicket: () => window.open('https://wa.me/52' + o.telefono + '?text=' + encodeURIComponent(mextizzaTicket.texto(o.ticket, mextizzaTicket.enlace(o.ticket))), '_blank', 'noopener'),
           ...this.vistaCancelar(o, i)
         };
       });

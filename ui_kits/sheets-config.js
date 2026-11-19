@@ -217,6 +217,8 @@ if (!window.__mextizzaSheetsConfigLoaded) {
     try { window.dispatchEvent(new Event('mextizza:operacion')); } catch (e) {}
     return window.MEXTIZZA_OPERACION;
   };
+  /** El ticket publico de un pedido, con la clave que trae el enlace de WhatsApp. */
+  const mextizzaTicketPublico = (folio, clave) => mextizzaApiGet('ticket', { folio, clave });
   /** El navegador del cliente pide que le avisen si algo cambia con su pedido. */
   const mextizzaPushPedido = (folio, token_push) => mextizzaApiPost('push_pedido', { folio, token_push });
   /** El cliente cancela su propio pedido, solo dentro de la ventana permitida. */
@@ -280,7 +282,7 @@ if (!window.__mextizzaSheetsConfigLoaded) {
 
   const mextizzaTarjeta = (telefono) => mextizzaApiGet('tarjeta', { telefono: telefono || '' });
 
-  Object.assign(window, { mextizzaPickup, mextizzaTarjeta, mextizzaCrearOrden, mextizzaAvanzarEstado, mextizzaCancelarOrden, mextizzaEstadoOrden, mextizzaEstadoPorTelefono, mextizzaCancelarPorCliente, mextizzaListarAbiertas, mextizzaListarHoy, mextizzaSolicitarCatering, mextizzaListarCatering, mextizzaActualizarCatering, mextizzaPushRegistrar, mextizzaPushBaja, mextizzaPushProbar, mextizzaTokenAdmin, mextizzaGuardarTokenAdmin, mextizzaOlvidarTokenAdmin, mextizzaCapturaCocina, mextizzaInvEstado, mextizzaInvCompra, mextizzaInvLote, mextizzaInvMerma, mextizzaInvConteo, mextizzaLigarTelefono, mextizzaMiCuenta, mextizzaWalletEnlace, mextizzaCapturarOrden, mextizzaClientePorTelefono, mextizzaPushPedido, mextizzaOperacion, mextizzaCambiarOperacion, mextizzaReportes });
+  Object.assign(window, { mextizzaPickup, mextizzaTarjeta, mextizzaCrearOrden, mextizzaAvanzarEstado, mextizzaCancelarOrden, mextizzaEstadoOrden, mextizzaEstadoPorTelefono, mextizzaCancelarPorCliente, mextizzaListarAbiertas, mextizzaListarHoy, mextizzaSolicitarCatering, mextizzaListarCatering, mextizzaActualizarCatering, mextizzaPushRegistrar, mextizzaPushBaja, mextizzaPushProbar, mextizzaTokenAdmin, mextizzaGuardarTokenAdmin, mextizzaOlvidarTokenAdmin, mextizzaCapturaCocina, mextizzaInvEstado, mextizzaInvCompra, mextizzaInvLote, mextizzaInvMerma, mextizzaInvConteo, mextizzaLigarTelefono, mextizzaMiCuenta, mextizzaWalletEnlace, mextizzaCapturarOrden, mextizzaClientePorTelefono, mextizzaPushPedido, mextizzaOperacion, mextizzaCambiarOperacion, mextizzaReportes, mextizzaTicketPublico });
 
   /* Se pide al cargar, cada 2 minutos y al volver a la pestana. Si el
      servidor aun no conoce la accion, no pasa nada: queda sin pausa. */

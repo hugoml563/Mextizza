@@ -1042,6 +1042,12 @@ function doGet(e) {
     const nivel = checkToken_(token);
     /* Pausa y agotados: lo consultan la web y la app cada par de minutos.
        Solo lee propiedades, sin tocar la hoja, y no expone nada privado. */
+    /* El ticket que el cliente abre desde el enlace de WhatsApp. Publico,
+       pero solo con el folio Y su clave firmada (claveTicket_), y con una
+       version recortada: sin telefono, calle ni notas. */
+    if (e.parameter.action === 'ticket') {
+      return jsonOut_({ ok: true, ticket: ticketPublico_(e.parameter.folio, e.parameter.clave) });
+    }
     if (e.parameter.action === 'operacion') {
       return jsonOut_({ ok: true, ...estadoOperacion_(), entorno: esPruebas_() ? 'pruebas' : 'produccion' });
     }
@@ -3098,7 +3104,7 @@ function armarOrdenes_(ordenes, itemsLeidos, addonsLeidos) {
         : o.direccion + (o.colonia ? ' · ' + o.colonia : ''),
       pago: o.pago_metodo, pagado: o.pago_estado === 'pagado',
       total: o.total, min: minTranscurridos, notas: o.notas || '', lineas,
-      ticket: desgloseTicket_(o, lineas)
+      ticket: Object.assign(desgloseTicket_(o, lineas), { clave: claveTicket_(o.folio) })
     };
   });
 }
@@ -3595,5 +3601,82 @@ function desgloseTicket_(o, lineas) {
     pago: o.pago_metodo, pagado: o.pago_estado === 'pagado',
     notas: o.notas || '', motivoCancelacion: o.motivo_cancelacion || '',
     sello: String(o.sello || ''), premio: String(o.premio || '')
+  };
+}
+
+
+/* =================================================== TICKET PUBLICO ========
+   El mensaje de WhatsApp lleva un enlace a mextizza.com/ticket/ con el folio
+   y una clave: la firma HMAC del folio con un secreto que vive en las
+   propiedades del script (nunca en el repositorio). Sin la clave correcta no
+   se ve nada, y no se puede adivinar ni sacar de otro folio.
+
+   La version publica va recortada a proposito: nombre de pila y colonia, sin
+   telefono, sin calle y sin notas (pueden traer como entrar a la casa). El
+   ticket impreso de la cocina si los lleva. */
+const ERROR_TICKET = 'No encontramos este ticket.';
+
+function secretoTicket_() {
+  const p = PropertiesService.getScriptProperties();
+  let secreto = p.getProperty('TICKET_SECRETO');
+  if (secreto) return secreto;
+  /* La primera vez se crea solo. Con candado y volviendo a leer adentro: dos
+     consultas al mismo tiempo crearian dos secretos y los primeros enlaces
+     quedarian rotos. */
+  const lock = LockService.getScriptLock();
+  lock.waitLock(10000);
+  try {
+    secreto = p.getProperty('TICKET_SECRETO');
+    if (!secreto) {
+      secreto = Utilities.getUuid() + Utilities.getUuid();
+      p.setProperty('TICKET_SECRETO', secreto);
+    }
+  } finally {
+    lock.releaseLock();
+  }
+  return secreto;
+}
+
+/* 32 caracteres hexadecimales: sin simbolos que WhatsApp pueda cortar o
+   convertir en formato al armar el enlace. */
+function claveTicket_(folio) {
+  const firma = Utilities.computeHmacSha256Signature(String(folio), secretoTicket_());
+  return firma.map(function (b) { return ((b + 256) % 256).toString(16).padStart(2, '0'); }).join('').slice(0, 32);
+}
+
+function claveValida_(folio, clave) {
+  const esperada = claveTicket_(folio);
+  if (clave.length !== esperada.length) return false;
+  let dif = 0;
+  for (let i = 0; i < esperada.length; i++) dif |= esperada.charCodeAt(i) ^ clave.charCodeAt(i);
+  return dif === 0;
+}
+
+function ticketPublico_(folio, clave) {
+  folio = String(folio || '').toUpperCase();
+  clave = String(clave || '').toLowerCase();
+  // El formato se revisa antes de leer cualquier hoja, y todo falla igual:
+  // no se distingue un folio que no existe de una clave equivocada.
+  if (!/^MX-[A-Z0-9]{4,8}$/.test(folio) || !/^[0-9a-f]{32}$/.test(clave) || !claveValida_(folio, clave)) {
+    throw new Error(ERROR_TICKET);
+  }
+  const o = rowsAsObjects_(sheet_(SHEETS.ordenes)).find(function (x) { return String(x.folio) === folio; });
+  if (!o) throw new Error(ERROR_TICKET);
+  const items = rowsAsObjects_(sheet_(SHEETS.ordenItems)).filter(function (it) { return it.folio === folio; });
+  const addons = rowsAsObjects_(sheet_(SHEETS.itemComplementos));
+  const lineas = items.map(function (it) {
+    const extras = addons.filter(function (a) { return a.linea_id === it.linea_id; })
+      .map(function (a) { return { nombre: a.complemento_nombre, precio: Number(a.precio) || 0 }; });
+    return { cant: it.cantidad, nombre: it.producto_nombre, importe: it.importe,
+      precioUnit: Number(it.precio_unit) || 0, extras: extras, promocion: String(it.promocion || '') };
+  });
+  const t = desgloseTicket_(o, lineas);
+  return {
+    folio: t.folio, fecha: t.fecha, canal: t.canal, estado: t.estado, entrega: t.entrega,
+    cliente: String(o.cliente_nombre || '').trim().split(/\s+/)[0],
+    destino: t.entrega === 'pickup' ? '' : String(o.colonia || ''),
+    renglones: t.renglones, subtotal: t.subtotal, regalado: t.regalado, descuento: t.descuento,
+    total: t.total, cuadra: t.cuadra, pago: t.pago, pagado: t.pagado,
+    motivoCancelacion: t.motivoCancelacion, sello: t.sello, premio: t.premio
   };
 }

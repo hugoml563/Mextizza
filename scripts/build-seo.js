@@ -63,6 +63,8 @@ const robots = [
   'Disallow: /templates/sales-center/',
   'Disallow: /capturar',
   'Disallow: /cocina',
+  // El ticket de cada cliente: se abre solo con su enlace y no debe indexarse.
+  'Disallow: /ticket/',
   '',
   'Sitemap: ' + SITIO + '/sitemap.xml',
   '',
@@ -160,7 +162,7 @@ const llms = [
 ].join('\n');
 fs.writeFileSync(path.join(RAIZ, 'llms.txt'), llms);
 
-console.log('  robots.txt    ' + robots.split('\n').length + ' líneas, 3 rutas internas excluidas');
+console.log('  robots.txt    ' + robots.split('\n').length + ' líneas, 4 rutas internas excluidas');
 console.log('  sitemap.xml   ' + PAGINAS.length + ' páginas, lastmod real: ' +
   PAGINAS.map((p) => p.ruta + ' ' + p.lastmod).join(', '));
 console.log('  llms.txt      ' + llms.length + ' caracteres para rastreadores de IA');

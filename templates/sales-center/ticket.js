@@ -69,15 +69,23 @@ html,body{margin:0;background:#fff;color:#111;font-family:'Oswald',Arial,sans-se
 .alerta{text-align:center;font-weight:700;margin-top:2mm;border:2px solid #111;padding:1.5mm}
 `;
 
-  /* El ticket como pagina completa, lista para imprimir. ancho: 80 o 58 (mm). */
-  function documento(t, opciones) {
-    const ancho = opciones && Number(opciones.ancho) === 58 ? 58 : 80;
-    const base = opciones && opciones.base ? opciones.base : '/';
+  /* Los estilos del ticket para un ancho de papel (80 o 58 mm). Los usa la
+     pagina de impresion y la pagina publica /ticket/. */
+  function estilos(ancho) {
+    ancho = Number(ancho) === 58 ? 58 : 80;
     const tam = ancho === 58
       ? { ZONA: 50, BASE: 11.5, CHICO: 10, FOLIO: 17, TOTAL: 16, SELLO: 22 }
       : { ZONA: 72, BASE: 13.5, CHICO: 11.5, FOLIO: 22, TOTAL: 20, SELLO: 30 };
     let css = CSS;
     Object.keys(tam).forEach((k) => { css = css.replace(new RegExp(k + 'px|' + k + 'mm', 'g'), (m) => tam[k] + m.slice(k.length)); });
+    return css;
+  }
+
+  /* El ticket como pagina completa, lista para imprimir. ancho: 80 o 58 (mm). */
+  function documento(t, opciones) {
+    const ancho = opciones && Number(opciones.ancho) === 58 ? 58 : 80;
+    const base = opciones && opciones.base ? opciones.base : '/';
+    const css = estilos(ancho);
     return '<!doctype html><html lang="es"><head><meta charset="utf-8"><title>Ticket ' + esc(t.folio) + '</title>' +
       '<link rel="stylesheet" href="' + base + 'tokens/fonts.css"><style>' + css + '</style></head><body>' +
       cuerpo(t, base) + '</body></html>';
@@ -120,8 +128,10 @@ html,body{margin:0;background:#fff;color:#111;font-family:'Oswald',Arial,sans-se
     '</div>';
   }
 
-  /* El mismo ticket en texto, para WhatsApp. WhatsApp entiende *negritas*. */
-  function texto(t) {
+  /* El mismo ticket en texto, para WhatsApp. WhatsApp entiende *negritas*.
+     enlace: la pagina /ticket/ con su clave; va sola en su renglon para que
+     WhatsApp la reconozca entera. */
+  function texto(t, enlace) {
     const L = [];
     const cancelado = t.estado === 'cancelada';
     L.push('*Mextizza* · Ticket *' + t.folio + '*' + (cancelado ? ' · *CANCELADO*' : ''));
@@ -141,6 +151,7 @@ html,body{margin:0;background:#fff;color:#111;font-family:'Oswald',Arial,sans-se
     if (cancelado && t.motivoCancelacion) { L.push(''); L.push(t.motivoCancelacion); }
     const tarjeta = textoTarjeta(t);
     if (tarjeta) { L.push(''); L.push(tarjeta); }
+    if (enlace) { L.push(''); L.push('Tu ticket, para verlo o guardarlo en PDF:'); L.push(enlace); }
     L.push('');
     L.push('Gracias por pedir con nosotros. Este ticket no es un comprobante fiscal.');
     return L.join('\n');
@@ -168,5 +179,13 @@ html,body{margin:0;background:#fff;color:#111;font-family:'Oswald',Arial,sans-se
     setTimeout(lanzar, 3000);
   }
 
-  window.mextizzaTicket = { documento, cuerpo, texto, imprimir };
+  /* El enlace publico del ticket, en el mismo sitio que lo pide: desde el
+     tablero de pruebas apunta a la preview, que habla con la hoja de pruebas.
+     Folio y clave van despues de #, asi no llegan a los registros del servidor. */
+  function enlace(t, origen) {
+    if (!t || !t.clave) return '';
+    return (origen || location.origin) + '/ticket/#f=' + encodeURIComponent(t.folio) + '&c=' + t.clave;
+  }
+
+  window.mextizzaTicket = { documento, cuerpo, texto, imprimir, estilos, enlace };
 }

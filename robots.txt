@@ -4,5 +4,6 @@ Allow: /
 Disallow: /templates/sales-center/
 Disallow: /capturar
 Disallow: /cocina
+Disallow: /ticket/
 
 Sitemap: https://mextizza.com/sitemap.xml

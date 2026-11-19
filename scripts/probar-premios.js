@@ -119,6 +119,8 @@ Object.assign(ctx.Utilities, {
   Charset: { UTF_8: 'utf8' },
   computeDigest: (alg, texto) => Array.from(require('crypto').createHash('sha256').update(texto, 'utf8').digest()),
   base64EncodeWebSafe: (bytes) => Buffer.from(bytes).toString('base64url'),
+  // HMAC de verdad, con bytes con signo como los entrega Apps Script.
+  computeHmacSha256Signature: (valor, llave) => Array.from(require('crypto').createHmac('sha256', llave).update(valor, 'utf8').digest()).map((b) => (b > 127 ? b - 256 : b)),
 });
 vm.createContext(ctx);
 /* El servicio de recoger esta apagado en produccion (PICKUP_ACTIVO = false),
@@ -1495,6 +1497,29 @@ console.log('\nLO QUE MANDA EL NAVEGADOR NO ENTRA COMO FORMULA NI COMO PRECIO RA
   comparar('y los extras cobrados de la regalada', /\+ Drizzle de miel {2}\$15/.test(textoA), true);
   const docA = ventana.mextizzaTicket.documento(tA, { ancho: 58 });
   comparar('el impreso trae el folio y el total, y no avisa de descuadre', docA.indexOf(A.folio) !== -1 && docA.indexOf('$259') !== -1 && docA.indexOf('REVISAR') === -1, true);
+  console.log('\nTICKET PUBLICO (enlace de WhatsApp)');
+  const claveA = tA.clave;
+  comparar('la cocina recibe una clave de 32 caracteres hexadecimales', /^[0-9a-f]{32}$/.test(claveA), true);
+  comparar('la clave es la misma cada vez para el mismo folio', ticketDe(A.folio).clave, claveA);
+  const pub = ctx.ticketPublico_(A.folio, claveA);
+  comparar('con su clave, el cliente ve su ticket con el mismo total', [pub.folio, pub.total, pub.regalado, pub.cuadra], [A.folio, 259, 189, true]);
+  const json = JSON.stringify(pub);
+  comparar('sin el telefono', json.indexOf('5550000001') === -1 && json.indexOf('telefono') === -1, true);
+  comparar('sin la calle ni las notas', json.indexOf('Calle Pino') === -1 && json.indexOf('notas') === -1, true);
+  comparar('con solo el nombre de pila y la colonia', [pub.cliente, pub.destino], ['Ana', 'Lomas Lindas']);
+  comparar('y sin la clave', json.indexOf(claveA) === -1, true);
+  const err = (fn) => { try { fn(); return 'paso'; } catch (e) { return String(e.message); } };
+  comparar('la clave de otro folio no abre este', err(() => ctx.ticketPublico_(A.folio, tB.clave)), 'No encontramos este ticket.');
+  comparar('sin clave no se ve', err(() => ctx.ticketPublico_(A.folio, '')), 'No encontramos este ticket.');
+  comparar('un folio mal formado tampoco', err(() => ctx.ticketPublico_('=IMPORTXML()', claveA)), 'No encontramos este ticket.');
+  comparar('ni uno que no existe', err(() => ctx.ticketPublico_('MX-ZZZZZ', ctx.claveTicket_('MX-ZZZZZ'))), 'No encontramos este ticket.');
+  props.TOKEN = 'token-de-prueba';
+  const porApi = JSON.parse(ctx.doGet({ parameter: { action: 'ticket', token: 'token-de-prueba', folio: A.folio, clave: claveA } }));
+  comparar('funciona con el token publico de la web', porApi.ok && porApi.ticket.total, 259);
+  delete props.TOKEN;
+  comparar('el WhatsApp lleva el enlace en su propio renglon', /\nhttps:\/\/mextizza\.com\/ticket\/#f=MX-[A-Z0-9]+&c=[0-9a-f]{32}\n/.test(
+    ventana.mextizzaTicket.texto(tA, ventana.mextizzaTicket.enlace(tA, 'https://mextizza.com'))), true);
+
   ctx.cancelarOrden_({ folio: D.folio, motivo: 'Fuera de zona.', motivo_codigo: 'zona' });
   comparar('un cancelado trae su estado y su motivo', [ticketDe(D.folio).estado, ticketDe(D.folio).motivoCancelacion], ['cancelada', 'Fuera de zona.']);
 }
