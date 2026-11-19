@@ -1,0 +1,214 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Maqueta · Ticket de venta</title>
+<link rel="stylesheet" href="../tokens/fonts.css">
+<style>
+/* Ticket para impresora termica de 80 mm (zona imprimible de ~72 mm). Todo va
+   en negro: las termicas no imprimen color. En pantalla se ven lado a lado,
+   uno por regla, para revisarlos de un vistazo. */
+:root{--tinta:#111;--gris:#555;--papel:#fff}
+*{box-sizing:border-box}
+body{margin:0;background:#E9E4DA;font-family:'Oswald',Arial,sans-serif;color:var(--tinta)}
+header.guia{max-width:1200px;margin:0 auto;padding:28px 20px 8px}
+header.guia h1{font-family:'Bungee',sans-serif;font-size:22px;margin:0}
+header.guia p{font-size:14px;line-height:1.5;max-width:760px;color:#3d3a36}
+.galeria{max-width:1200px;margin:0 auto;padding:12px 20px 60px;display:flex;flex-wrap:wrap;gap:26px;align-items:flex-start}
+.caso{width:302px}
+.caso h2{font-family:'Bungee',sans-serif;font-size:12px;letter-spacing:1px;text-transform:uppercase;margin:0 0 4px}
+.caso .nota{font-size:12.5px;line-height:1.4;color:#3d3a36;margin:0 0 10px;min-height:52px}
+.caso .nota b{color:#B0004F}
+.ticket{width:302px;background:var(--papel);padding:16px 15px 20px;box-shadow:0 6px 18px rgba(0,0,0,.18);position:relative;
+  -webkit-mask:radial-gradient(circle 6px at 50% 100%,#0000 98%,#000) 0 0/16px 100%}
+.t-logo{display:block;width:150px;margin:0 auto 4px}
+.t-centro{text-align:center}
+.t-chico{font-size:11.5px;line-height:1.4;color:var(--gris)}
+.t-folio{font-family:'Bungee',sans-serif;font-size:22px;letter-spacing:1px;margin-top:10px}
+.t-sep{border:0;border-top:1.5px dashed var(--tinta);margin:10px 0}
+.t-fila{display:flex;justify-content:space-between;gap:10px;font-size:13.5px;line-height:1.35}
+.t-fila .izq{flex:1;min-width:0}
+.t-fila .der{flex:none;font-variant-numeric:tabular-nums}
+.t-linea{margin-bottom:6px}
+.t-extra{font-size:12px;color:var(--gris);padding-left:18px}
+.t-promo{font-size:12.5px;font-weight:700;padding-left:18px}
+.t-etq{font-size:10.5px;font-weight:700;letter-spacing:1.4px;text-transform:uppercase;color:var(--gris)}
+.t-total{font-family:'Bungee',sans-serif;font-size:20px;margin-top:6px}
+.t-caja{border:1.5px solid var(--tinta);border-radius:6px;padding:8px 10px;margin-top:10px;font-size:12.5px;line-height:1.45}
+.t-sello{position:absolute;top:235px;left:50%;transform:translateX(-50%) rotate(-14deg);border:4px solid var(--tinta);
+  padding:4px 14px;font-family:'Bungee',sans-serif;font-size:30px;letter-spacing:2px;opacity:.85;background:rgba(255,255,255,.6)}
+.t-tachado .t-linea,.t-tachado .t-totales{opacity:.55}
+.botonera{max-width:1200px;margin:0 auto;padding:0 20px}
+.botonera button{font:700 13px Oswald,Arial;letter-spacing:1px;text-transform:uppercase;padding:10px 16px;border:2px solid #111;border-radius:6px;background:#111;color:#fff;cursor:pointer}
+@media print{
+  /* Al imprimir sale UN ticket por hoja, a 80 mm, sin la guia. */
+  @page{size:80mm auto;margin:3mm 4mm}
+  body{background:#fff}
+  header.guia,.caso h2,.caso .nota,.botonera{display:none}
+  .galeria{display:block;padding:0;max-width:none}
+  .caso{width:72mm;break-after:page}
+  .ticket{width:72mm;box-shadow:none;padding:0;-webkit-mask:none}
+}
+</style>
+</head>
+<body>
+<header class="guia">
+  <h1>Ticket de venta · maqueta</h1>
+  <p>Un ticket por cada regla del sistema, con precios reales de la carta. Todo se calcula a partir de lo que guarda el
+  pedido: el precio de lista de cada renglón, lo que se cobró y lo que se regaló. Al final, siempre tiene que cuadrar
+  <b>renglones − promoción − descuento = total</b>. Los dos últimos casos son decisiones pendientes.</p>
+</header>
+<div class="botonera"><button onclick="window.print()">Imprimir de prueba (80 mm)</button></div>
+<div class="galeria" id="galeria"></div>
+
+<script>
+/* ---- Datos del negocio (los mismos de menu-data.js) ---------------------- */
+const NEGOCIO = {
+  zona: 'Col. Lomas Lindas, Atizapán',
+  whatsapp: '55 2657 7352',
+  web: 'mextizza.com'
+};
+const NOMBRE_PROMO = {
+  '2x1': '2x1 de miércoles',
+  'tarjeta:pizza': 'Traviesa de tu tarjeta',
+  'tarjeta:brownie': 'Brownie de tu tarjeta'
+};
+const pesos = n => '$' + Math.round(n).toLocaleString('es-MX');
+
+function fechaCDMX(iso) {
+  const d = new Date(iso);
+  const dia = d.toLocaleDateString('es-MX', { timeZone: 'America/Mexico_City', weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' }).replace(/[,.]/g, '').replace(/ de /g, ' ');
+  const hora = d.toLocaleTimeString('es-MX', { timeZone: 'America/Mexico_City', hour: 'numeric', minute: '2-digit' })
+    .replace(/\s*a\.\s*m\./i, ' am').replace(/\s*p\.\s*m\./i, ' pm');
+  return dia.charAt(0).toUpperCase() + dia.slice(1) + ' · ' + hora;
+}
+
+/* El desglose. Mismo calculo que hara Code.gs en el servidor:
+     lista de un renglon = (precio + extras) × cantidad
+     ahorro             = lista − importe cobrado (solo renglones con promocion)
+     total              = lo cobrado − descuento de recoger */
+function desglose(t) {
+  const lineas = t.lineas.map(l => {
+    const extras = (l.extras || []).reduce((s, x) => s + x.precio, 0);
+    const lista = (l.precioUnit + extras) * l.cant;
+    return { ...l, lista, ahorro: l.promocion ? lista - l.importe : 0 };
+  });
+  const subtotal = lineas.reduce((s, l) => s + l.lista, 0);
+  const promo = lineas.reduce((s, l) => s + l.ahorro, 0);
+  const cobrado = lineas.reduce((s, l) => s + l.importe, 0);
+  const total = cobrado - (t.descuento || 0);
+  return { lineas, subtotal, promo, total, cuadra: total === t.total };
+}
+
+/* Lo que dice el ticket de la tarjeta. El sello se gana al ENTREGAR y es uno
+   por dia: antes de entregar no se promete, se explica. */
+function textoTarjeta(t) {
+  if (t.estado === 'cancelada') return '';
+  const premio = t.premio && t.premio.indexOf('tarjeta:') === 0
+    ? 'Usaste el ' + (t.premio === 'tarjeta:pizza' ? 'premio de pizza' : 'brownie') + ' de tu tarjeta. ' : '';
+  if (t.sello === 'contado') return premio + 'Este pedido horneó una rebanada de tu tarjeta.';
+  if (t.sello === 'pendiente') return premio + 'Este pedido hornea una rebanada de tu tarjeta cuando te lo entreguemos.';
+  return premio + 'Los pedidos sin pizza no hornean rebanada.';
+}
+
+function ticketHTML(t) {
+  const d = desglose(t);
+  const cancelado = t.estado === 'cancelada';
+  const entrega = t.entrega === 'pickup'
+    ? '<div class="t-fila"><span class="izq"><b>Pasa a recoger</b></span></div>'
+    : '<div class="t-fila"><span class="izq"><b>A domicilio</b> · ' + t.destino + '</span></div>';
+  const renglones = d.lineas.map(l =>
+    '<div class="t-linea">' +
+      '<div class="t-fila"><span class="izq">' + l.cant + '× ' + l.nombre + '</span><span class="der">' + pesos((l.precioUnit) * l.cant) + '</span></div>' +
+      (l.extras || []).map(x => '<div class="t-fila t-extra"><span class="izq">+ ' + x.nombre + '</span><span class="der">' + pesos(x.precio * l.cant) + '</span></div>').join('') +
+      (l.ahorro ? '<div class="t-fila t-promo"><span class="izq">' + (NOMBRE_PROMO[l.promocion] || 'Promoción') + '</span><span class="der">−' + pesos(l.ahorro) + '</span></div>' : '') +
+    '</div>').join('');
+  const tarjeta = textoTarjeta(t);
+  return '<div class="ticket' + (cancelado ? ' t-tachado' : '') + '">' +
+    (cancelado ? '<div class="t-sello">CANCELADO</div>' : '') +
+    '<img class="t-logo" src="../assets/lockup-pala.png" alt="Mextizza">' +
+    '<div class="t-centro t-chico">Pizza de masa fermentada 48 horas<br>' + NEGOCIO.zona + '<br>WhatsApp ' + NEGOCIO.whatsapp + ' · ' + NEGOCIO.web + '</div>' +
+    '<div class="t-centro t-folio">' + t.folio + '</div>' +
+    '<div class="t-centro t-chico">' + fechaCDMX(t.fecha) + ' · ' + t.canal + '</div>' +
+    '<hr class="t-sep">' +
+    '<div class="t-fila"><span class="izq">' + t.cliente + '</span><span class="der t-chico">Tel. ···· ' + t.telefono.slice(-4) + '</span></div>' +
+    entrega +
+    '<hr class="t-sep">' +
+    renglones +
+    '<hr class="t-sep">' +
+    '<div class="t-totales">' +
+      '<div class="t-fila"><span class="izq">Subtotal</span><span class="der">' + pesos(d.subtotal) + '</span></div>' +
+      (d.promo ? '<div class="t-fila"><span class="izq">Te regalamos</span><span class="der">−' + pesos(d.promo) + '</span></div>' : '') +
+      (t.descuento ? '<div class="t-fila"><span class="izq">Recoges tú</span><span class="der">−' + pesos(t.descuento) + '</span></div>' : '') +
+      (t.entrega !== 'pickup' ? '<div class="t-fila"><span class="izq">Envío</span><span class="der">Incluido</span></div>' : '') +
+      '<div class="t-fila t-total"><span class="izq">Total</span><span class="der">' + pesos(d.total) + '</span></div>' +
+      '<div class="t-fila t-chico" style="margin-top:4px"><span class="izq">' + t.pago + '</span><span class="der">' + (cancelado ? 'sin cobro' : t.pagado ? 'Pagado' : 'Por cobrar') + '</span></div>' +
+    '</div>' +
+    (t.notas ? '<div class="t-caja"><span class="t-etq">Notas</span><br>' + t.notas + '</div>' : '') +
+    (cancelado ? '<div class="t-caja"><span class="t-etq">Por qué se canceló</span><br>' + t.motivoCancelacion + '</div>' : '') +
+    (tarjeta ? '<div class="t-caja"><span class="t-etq">Tu tarjeta</span><br>' + tarjeta + '</div>' : '') +
+    '<hr class="t-sep">' +
+    '<div class="t-centro" style="font-size:13.5px;font-weight:700">Gracias por pedir con nosotros</div>' +
+    '<div class="t-centro t-chico">Si algo no llegó como esperabas, escríbenos con tu folio.<br>Este ticket no es un comprobante fiscal.</div>' +
+    (d.cuadra ? '' : '<div class="t-centro" style="color:#B0004F;font-weight:700;margin-top:8px">NO CUADRA con el total guardado (' + pesos(t.total) + ')</div>') +
+  '</div>';
+}
+
+/* ---- Casos: uno por regla, con precios de la carta ----------------------- */
+const base = { canal: 'Web', estado: 'recibida', entrega: 'domicilio', cliente: 'Ana López', telefono: '5591112233',
+  destino: 'Calle Pino 14 · Lomas Lindas', descuento: 0, pago: 'Efectivo', pagado: false, notas: '', sello: 'pendiente', premio: '' };
+const casos = [
+  { titulo: 'Pedido normal', nota: 'Dos pizzas, un extra y dos refrescos. Paga en efectivo con cambio (sale de las notas, no se interpreta).',
+    t: { ...base, folio: 'MX-7KQ2P', fecha: '2026-11-19T19:42:00-06:00', total: 508,
+      notas: 'Paga con $600 (cambio $92) · Sin cebolla en la Serranita',
+      lineas: [
+        { cant: 1, nombre: 'Pizza Serranita', precioUnit: 229, extras: [{ nombre: 'Extra parmesano', precio: 20 }], importe: 249 },
+        { cant: 1, nombre: 'Pizza Roni', precioUnit: 189, importe: 189 },
+        { cant: 2, nombre: 'Refresco Coca-Cola', precioUnit: 35, importe: 70 }] } },
+  { titulo: '2x1 de miércoles', nota: 'Se regala la más barata del par. Pagó con tarjeta en la puerta y ya se entregó: la rebanada ya contó.',
+    t: { ...base, folio: 'MX-3HV8D', fecha: '2026-11-18T19:15:00-06:00', canal: 'App', estado: 'entregada', total: 229,
+      pago: 'Tarjeta (terminal)', pagado: true, sello: 'contado', premio: '2x1',
+      lineas: [
+        { cant: 1, nombre: 'Pizza Provola', precioUnit: 229, importe: 229 },
+        { cant: 1, nombre: 'Pizza Aloha', precioUnit: 189, importe: 0, promocion: '2x1' }] } },
+  { titulo: '2x1 con dos iguales', nota: 'Si piden 2 Roni en un renglón, el servidor lo parte en dos: una se cobra y la otra se regala.',
+    t: { ...base, folio: 'MX-9TRMB', fecha: '2026-11-18T20:05:00-06:00', canal: 'WhatsApp', total: 189, premio: '2x1',
+      pago: 'Transferencia', notas: '',
+      lineas: [
+        { cant: 1, nombre: 'Pizza Roni', precioUnit: 189, importe: 189 },
+        { cant: 1, nombre: 'Pizza Roni', precioUnit: 189, importe: 0, promocion: '2x1' }] } },
+  { titulo: 'Brownie de la tarjeta', nota: 'Llegó a la rebanada 4. El brownie sale en cero y la pizza se cobra. Por transferencia, todavía por cobrar.',
+    t: { ...base, folio: 'MX-B4WQZ', fecha: '2026-11-20T18:30:00-06:00', total: 219, pago: 'Transferencia', premio: 'tarjeta:brownie',
+      lineas: [
+        { cant: 1, nombre: 'Pizza Chisi', precioUnit: 219, importe: 219 },
+        { cant: 1, nombre: 'Brownie', precioUnit: 40, importe: 0, promocion: 'tarjeta:brownie' }] } },
+  { titulo: 'Miércoles con premio de pizza', nota: 'Tenía la Traviesa de la tarjeta y era miércoles. No se acumulan: gana la que más le conviene (Traviesa $199 contra Roni $189).',
+    t: { ...base, folio: 'MX-P6NXA', fecha: '2026-11-18T21:10:00-06:00', total: 189, premio: 'tarjeta:pizza',
+      lineas: [
+        { cant: 1, nombre: 'Pizza Traviesa', precioUnit: 199, importe: 0, promocion: 'tarjeta:pizza' },
+        { cant: 1, nombre: 'Pizza Roni', precioUnit: 189, importe: 189 }] } },
+  { titulo: 'Pedido cancelado', nota: 'Se imprime igual, marcado, con el motivo que escribió la cocina. No promete rebanada.',
+    t: { ...base, folio: 'MX-ZK2QE', fecha: '2026-11-19T20:48:00-06:00', estado: 'cancelada', total: 418, sello: 'no',
+      motivoCancelacion: 'Tu dirección queda fuera de nuestra zona de reparto. Perdón por la espera.',
+      destino: 'Av. Lago 220 · Valle de México',
+      lineas: [
+        { cant: 1, nombre: 'Pizza Provola', precioUnit: 229, importe: 229 },
+        { cant: 1, nombre: 'Pizza Roni', precioUnit: 189, importe: 189 }] } },
+  { titulo: 'A decidir: pizza regalada con extras', nota: '<b>Hoy el servidor regala también los extras</b> de la pizza regalada: la Roni con miel y habanero sale en $0 completa ($219), no solo los $189 de la pizza.',
+    t: { ...base, folio: 'MX-E3Y9C', fecha: '2026-11-18T19:55:00-06:00', total: 229, premio: '2x1',
+      lineas: [
+        { cant: 1, nombre: 'Pizza Provola', precioUnit: 229, importe: 229 },
+        { cant: 1, nombre: 'Pizza Roni', precioUnit: 189, extras: [{ nombre: 'Drizzle de miel', precio: 15 }, { nombre: 'Toque de salsa habanero', precio: 15 }], importe: 0, promocion: '2x1' }] } },
+  { titulo: 'A decidir: dos iguales con extras', nota: '<b>Hoy la pizza regalada se guarda sin sus extras.</b> Pidieron 2 Roni con extra provolone: la cocina vería la regalada como Roni sencilla.',
+    t: { ...base, folio: 'MX-H8DLW', fecha: '2026-11-18T20:20:00-06:00', total: 244, premio: '2x1',
+      lineas: [
+        { cant: 1, nombre: 'Pizza Roni', precioUnit: 189, extras: [{ nombre: 'Extra provolone', precio: 55 }], importe: 244 },
+        { cant: 1, nombre: 'Pizza Roni', precioUnit: 189, importe: 0, promocion: '2x1' }] } }
+];
+
+document.getElementById('galeria').innerHTML = casos.map(c =>
+  '<section class="caso"><h2>' + c.titulo + '</h2><p class="nota">' + c.nota + '</p>' + ticketHTML(c.t) + '</section>').join('');
+</script>
+</body>
+</html>
