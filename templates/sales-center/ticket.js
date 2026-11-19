@@ -44,7 +44,9 @@ if (!window.mextizzaTicket) {
 
   const CSS = `
 *{box-sizing:border-box}
-@page{size:ANCHOmm auto;margin:2mm 3mm}
+/* Sin "size": "80mm auto" no es valido y el navegador lo descarta. El largo del
+   rollo lo decide la impresora; el ancho se elige en el dialogo de imprimir. */
+@page{margin:2mm 3mm}
 html,body{margin:0;background:#fff;color:#111;font-family:'Oswald',Arial,sans-serif;-webkit-print-color-adjust:exact;print-color-adjust:exact}
 .ticket{width:100%;max-width:ZONAmm;margin:0 auto;padding:2mm 0 4mm;position:relative}
 .logo{display:block;width:62%;margin:0 auto 1mm}
@@ -74,7 +76,7 @@ html,body{margin:0;background:#fff;color:#111;font-family:'Oswald',Arial,sans-se
     const tam = ancho === 58
       ? { ZONA: 50, BASE: 11.5, CHICO: 10, FOLIO: 17, TOTAL: 16, SELLO: 22 }
       : { ZONA: 72, BASE: 13.5, CHICO: 11.5, FOLIO: 22, TOTAL: 20, SELLO: 30 };
-    let css = CSS.replace(/ANCHO/g, ancho);
+    let css = CSS;
     Object.keys(tam).forEach((k) => { css = css.replace(new RegExp(k + 'px|' + k + 'mm', 'g'), (m) => tam[k] + m.slice(k.length)); });
     return '<!doctype html><html lang="es"><head><meta charset="utf-8"><title>Ticket ' + esc(t.folio) + '</title>' +
       '<link rel="stylesheet" href="' + base + 'tokens/fonts.css"><style>' + css + '</style></head><body>' +

@@ -1487,6 +1487,14 @@ console.log('\nLO QUE MANDA EL NAVEGADOR NO ENTRA COMO FORMULA NI COMO PRECIO RA
   const tD = ticketDe(D.folio);
   comparar('un pedido sin promocion no regala nada y cuadra', [tD.subtotal, tD.regalado, tD.total, tD.cuadra], [319, 0, 319, true]);
   comparar('el ticket trae el precio de cada extra', tD.renglones[0].extras, [{ nombre: 'Extra parmesano', precio: 20 }]);
+  // De punta a punta: el ticket del servidor pasa por ticket.js, el mismo que usa el tablero.
+  const ventana = {};
+  vm.runInNewContext(fs.readFileSync(path.join(RAIZ, 'templates/sales-center/ticket.js'), 'utf8'), { window: ventana, Intl, Date, Number, String, Math, RegExp });
+  const textoA = ventana.mextizzaTicket.texto(tA);
+  comparar('el WhatsApp dice lo que se regalo y el total del servidor', /Te regalamos −\$189/.test(textoA) && /\*Total \$259\*/.test(textoA), true);
+  comparar('y los extras cobrados de la regalada', /\+ Drizzle de miel {2}\$15/.test(textoA), true);
+  const docA = ventana.mextizzaTicket.documento(tA, { ancho: 58 });
+  comparar('el impreso trae el folio y el total, y no avisa de descuadre', docA.indexOf(A.folio) !== -1 && docA.indexOf('$259') !== -1 && docA.indexOf('REVISAR') === -1, true);
   ctx.cancelarOrden_({ folio: D.folio, motivo: 'Fuera de zona.', motivo_codigo: 'zona' });
   comparar('un cancelado trae su estado y su motivo', [ticketDe(D.folio).estado, ticketDe(D.folio).motivoCancelacion], ['cancelada', 'Fuera de zona.']);
 }
