@@ -137,6 +137,7 @@ const ev = (expr) => vm.runInContext(expr, ctx);
 const SHEETS = ev('SHEETS');
 const CLIENTES_HEADERS = ev('CLIENTES_HEADERS');
 const ORDENES_HEADERS = ev('ORDENES_HEADERS');
+const ORDEN_ITEMS_HEADERS_T = ev('ORDEN_ITEMS_HEADERS');
 const CATALOGO = ev('CATALOGO');
 const PREMIOS = ev('PREMIOS');
 
@@ -1442,6 +1443,52 @@ console.log('\nLO QUE MANDA EL NAVEGADOR NO ENTRA COMO FORMULA NI COMO PRECIO RA
   comparar('sin "Avisame" no se manda nada', push.length, 2);
   ctx.UrlFetchApp.fetch = fetchReal; ctx.UrlFetchApp.fetchAll = fetchAllReal;
   ['FCM_CUENTA_SERVICIO', 'WALLET_COLA_ACTIVA', 'COLA_AVISOS'].forEach((k) => { delete props[k]; });
+}
+
+/* Ticket de venta: el desglose sale del servidor y siempre tiene que cuadrar
+   con el total que se guardo al pedir. Y la regla de los extras: el 2x1 y la
+   tarjeta regalan el producto, no sus extras. */
+{
+  console.log('\nTICKET Y EXTRAS EN PROMOCIONES');
+  const miercoles = new RealDate(Date.UTC(2026, 9, 22, 1, 30));   // mie 21 oct, 7:30 pm CDMX
+  const pedirT = (tel, items, extra) => ctx.crearOrden_(Object.assign({ canal: 'Web', cliente: { telefono: tel, nombre: 'Ana López' },
+    direccion: 'Calle Pino 14', colonia: 'Lomas Lindas', km: 1, pago_metodo: 'Efectivo', items }, extra || {}));
+  const ticketDe = (folio) => ctx.listarHoy_().find((o) => o.folio === folio).ticket;
+  RELOJ = miercoles;
+
+  const A = pedirT('5550000001', [{ producto_id: 'provola', cantidad: 1 },
+    { producto_id: 'roni', cantidad: 1, addons: [{ id: 'miel' }, { id: 'habanero' }] }]);
+  comparar('en el 2x1 la pizza se regala pero sus extras se cobran', A.total, 229 + 30);
+  const tA = ticketDe(A.folio);
+  comparar('el ticket dice cuanto se regalo: el precio de la pizza', tA.regalado, 189);
+  comparar('y nombra la promocion con su dia', tA.renglones.find((r) => r.promo).promo, '2x1 de miércoles');
+  comparar('subtotal - regalado = total, y cuadra con lo guardado', [tA.subtotal - tA.regalado, tA.cuadra], [259, true]);
+
+  const B = pedirT('5550000002', [{ producto_id: 'roni', cantidad: 2, addons: [{ id: 'provolone' }] }]);
+  comparar('dos iguales con extras: se cobra una completa y los extras de la regalada', B.total, 189 + 55 + 55);
+  const filasB = hojas[SHEETS.ordenItems].filas.filter((f) => f[1] === B.folio);
+  const regaladaB = filasB.find((f) => f[ORDEN_ITEMS_HEADERS_T.indexOf('promocion')]);
+  comparar('la regalada conserva sus extras para la cocina',
+    hojas[SHEETS.itemComplementos].filas.filter((f) => f[0] === regaladaB[0]).map((f) => f[2]), ['Extra provolone']);
+  const tB = ticketDe(B.folio);
+  comparar('y el ticket de dos iguales cuadra', [tB.regalado, tB.total, tB.cuadra], [189, 299, true]);
+
+  RELOJ = new RealDate(Date.UTC(2026, 9, 22, 0, 0));   // mie 21 oct, 6 pm: todavia no hay 2x1
+  const tel = '5550000003';
+  const tok = asegurarCuenta(tel);
+  const fila = hojas[SHEETS.clientes].filas.find((f, i) => i > 0 && String(f[0]) === tel);
+  fila[CLIENTES_HEADERS.indexOf('dias_ciclo')] = 4;
+  const C = pedirT(tel, [{ producto_id: 'chisi', cantidad: 1 }, { producto_id: 'chocolatoso', cantidad: 1 }], { usarPremio: 'brownie', idToken: tok });
+  const tC = ticketDe(C.folio);
+  comparar('el brownie de la tarjeta sale en el ticket con su nombre', [tC.renglones.find((r) => r.promo).promo, tC.regalado, tC.total], ['Brownie de tu tarjeta', 40, 219]);
+  comparar('el ticket sabe que la rebanada se hornea al entregar', tC.sello, 'pendiente');
+
+  const D = pedirT('5550000004', [{ producto_id: 'serranita', cantidad: 1, addons: [{ id: 'parmesano' }] }, { producto_id: 'refresco-coca', cantidad: 2 }]);
+  const tD = ticketDe(D.folio);
+  comparar('un pedido sin promocion no regala nada y cuadra', [tD.subtotal, tD.regalado, tD.total, tD.cuadra], [319, 0, 319, true]);
+  comparar('el ticket trae el precio de cada extra', tD.renglones[0].extras, [{ nombre: 'Extra parmesano', precio: 20 }]);
+  ctx.cancelarOrden_({ folio: D.folio, motivo: 'Fuera de zona.', motivo_codigo: 'zona' });
+  comparar('un cancelado trae su estado y su motivo', [ticketDe(D.folio).estado, ticketDe(D.folio).motivoCancelacion], ['cancelada', 'Fuera de zona.']);
 }
 
 console.log('\n  ' + ok + ' pruebas ok, ' + mal + ' mal\n');

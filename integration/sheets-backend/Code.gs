@@ -1587,7 +1587,11 @@ function crearOrden_(body, nivel) {
     const lineaId = folio + '-' + (i + 1);
     // Una linea regalada conserva su precio_unit para saber cuanto se regalo,
     // pero su importe es 0: la cocina la hace y el corte no la cobra.
-    const importe = l.promocion ? 0 : (l.precio_unit + l.complementosTotal) * l.cantidad;
+    /* Una linea regalada no cobra el producto, pero SI sus extras: el 2x1 y la
+       tarjeta regalan la pizza, no la miel ni el provolone que se le agregue.
+       Asi el descuento es exactamente el precio de carta que promete la
+       pantalla. Una linea regalada siempre es de 1 unidad. */
+    const importe = l.promocion ? l.complementosTotal * l.cantidad : (l.precio_unit + l.complementosTotal) * l.cantidad;
     subtotal += importe;
     itemsSh.appendRow([lineaId, folio, textoSeguro_(l.producto_id), textoSeguro_(l.nombre),
       l.cantidad, l.precio_unit, l.complementosTotal, importe, textoSeguro_(l.promocion)]);
@@ -1792,7 +1796,9 @@ function aplicarPromos_(lineas, telefono, usarPremio, ahora) {
     l.cantidad -= 1;
     lineas.push({
       producto_id: l.producto_id, nombre: l.nombre, cat: l.cat, cantidad: 1,
-      precio_unit: l.precio_unit, complementos: [], complementosTotal: 0,
+      /* La regalada lleva los mismos extras que las demas: antes se guardaba
+         sin ellos y la cocina la veia como una pizza sencilla. */
+      precio_unit: l.precio_unit, complementos: l.complementos.slice(), complementosTotal: l.complementosTotal,
       promocion: gana.tipo
     });
   } else {
@@ -3066,7 +3072,11 @@ function armarOrdenes_(ordenes, itemsLeidos, addonsLeidos) {
       cant: it.cantidad,
       nombre: it.producto_nombre,
       importe: it.importe,
-      addons: addons.filter(a => a.linea_id === it.linea_id).map(a => a.complemento_nombre)
+      addons: addons.filter(a => a.linea_id === it.linea_id).map(a => a.complemento_nombre),
+      // Para el ticket: precio de carta, precio de cada extra y la promocion.
+      precioUnit: Number(it.precio_unit) || 0,
+      extras: addons.filter(a => a.linea_id === it.linea_id).map(a => ({ nombre: a.complemento_nombre, precio: Number(a.precio) || 0 })),
+      promocion: String(it.promocion || '')
     }));
     const minTranscurridos = o.t_recibida ? Math.floor((Date.now() - new Date(o.t_recibida).getTime()) / 60000) : 0;
     return {
@@ -3087,7 +3097,8 @@ function armarOrdenes_(ordenes, itemsLeidos, addonsLeidos) {
         ? ''
         : o.direccion + (o.colonia ? ' · ' + o.colonia : ''),
       pago: o.pago_metodo, pagado: o.pago_estado === 'pagado',
-      total: o.total, min: minTranscurridos, notas: o.notas || '', lineas
+      total: o.total, min: minTranscurridos, notas: o.notas || '', lineas,
+      ticket: desgloseTicket_(o, lineas)
     };
   });
 }
@@ -3534,5 +3545,55 @@ function reportes_(dias) {
     ventas: ventas, ticket: validas.length ? Math.round(ventas / validas.length) : 0,
     porDia: porDia, porHora: porHora, tiempos: tiempos, masVendidos: masVendidos,
     motivos: motivos, clientes: { nuevos: nuevos, regresan: regresan }, premios: premios
+  };
+}
+
+
+/* ========================================================= TICKET ==========
+   El desglose del ticket de venta. Se calcula aqui, en el servidor, para que
+   el ticket impreso, el de WhatsApp y el corte digan exactamente lo mismo.
+   El tablero solo lo pinta (templates/sales-center/ticket.js).
+
+     lista de un renglon = (precio de carta + extras) x cantidad
+     regalado           = lista - lo que se cobro (solo renglones con promocion)
+     total              = lo cobrado - descuento de recoger
+
+   `cuadra` revisa que eso de el mismo total que se guardo al pedir: si un dia
+   no cuadra, el ticket lo dice en vez de imprimir un numero distinto. */
+const NOMBRES_DIA = ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado'];
+const NOMBRE_PROMO_TICKET = {
+  '2x1': '2x1 de ' + NOMBRES_DIA[DIA_2X1],
+  'tarjeta:pizza': 'Pizza de tu tarjeta',
+  'tarjeta:brownie': 'Brownie de tu tarjeta'
+};
+
+function desgloseTicket_(o, lineas) {
+  const renglones = lineas.map(function (l) {
+    const cant = Number(l.cant) || 0;
+    const extras = (l.extras || []).reduce(function (t, x) { return t + x.precio; }, 0);
+    const lista = (l.precioUnit + extras) * cant;
+    const importe = Number(l.importe) || 0;
+    return {
+      cant: cant, nombre: l.nombre, precioUnit: l.precioUnit, extras: l.extras || [],
+      lista: lista, importe: importe,
+      regalado: l.promocion ? Math.max(0, lista - importe) : 0,
+      promo: l.promocion ? (NOMBRE_PROMO_TICKET[l.promocion] || 'Promoción') : ''
+    };
+  });
+  const subtotal = renglones.reduce(function (t, r) { return t + r.lista; }, 0);
+  const regalado = renglones.reduce(function (t, r) { return t + r.regalado; }, 0);
+  const cobrado = renglones.reduce(function (t, r) { return t + r.importe; }, 0);
+  const descuento = Number(o.descuento) || 0;
+  const total = cobrado - descuento;
+  return {
+    folio: o.folio, fecha: o.t_recibida, canal: o.canal, estado: o.estado,
+    entrega: o.entrega_tipo === 'pickup' ? 'pickup' : 'domicilio',
+    cliente: o.cliente_nombre, telefono: soloDigitos_(o.cliente_telefono),
+    destino: o.entrega_tipo === 'pickup' ? '' : o.direccion + (o.colonia ? ' · ' + o.colonia : ''),
+    renglones: renglones, subtotal: subtotal, regalado: regalado, descuento: descuento, total: total,
+    cuadra: total === (Number(o.total) || 0),
+    pago: o.pago_metodo, pagado: o.pago_estado === 'pagado',
+    notas: o.notas || '', motivoCancelacion: o.motivo_cancelacion || '',
+    sello: String(o.sello || ''), premio: String(o.premio || '')
   };
 }

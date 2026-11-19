@@ -30,6 +30,8 @@
 window.MX_CAPTURA = { menu: MEXTIZZA_MENU, extras: MEXTIZZA_ADDONS, zona: MEXTIZZA_ZONE, dosxuno: MEXTIZZA_2X1 };
 </script>
 <script src="./avisos-push.js"></script>
+<!-- Ticket de venta: imprimir (80 o 58 mm) o mandarlo por WhatsApp. -->
+<script src="./ticket.js"></script>
 <!-- vendor:local -->
 <script>
 /* Generado por scripts/build-sales-center.js. React se sirve desde este
@@ -141,6 +143,11 @@ window.__resources = Object.assign(window.__resources || {}, {
 <div style="margin-top:10px;font-size:11px;font-weight:700;letter-spacing:1.2px;text-transform:uppercase;color:#C1502E">Sonido</div>
 <div style="font-size:12.5px;font-weight:700;line-height:1.4;margin-top:3px;color:#4A4A4A">{{ avisos.sonidoTexto }}</div>
 <button onClick="{{ avisos.sonidoAccion }}" style="width:100%;margin-top:7px;padding:10px;border:2px solid #1A1A1A;border-radius:6px;background:transparent;color:#1A1A1A;font-family:'Bungee',cursive;font-size:11px;letter-spacing:1px;text-transform:uppercase;cursor:pointer;min-height:42px" style-hover="background:#1A1A1A;color:#F5F0E8">{{ avisos.sonidoBoton }}</button>
+
+<div style="margin-top:14px;padding-top:12px;border-top:2px dashed rgba(0,0,0,.14);font-size:11px;font-weight:700;letter-spacing:1.2px;text-transform:uppercase;color:#C1502E">Impresora de tickets</div>
+<div style="display:flex;border:2px solid #1A1A1A;border-radius:6px;overflow:hidden;margin-top:7px">
+<sc-for list="{{ avisos.anchos }}" as="a" hint-placeholder-count="2"><button onClick="{{ a.set }}" style="{{ a.estilo }}">{{ a.label }}</button></sc-for>
+</div>
 
 <div style="margin-top:14px;padding-top:12px;border-top:2px dashed rgba(0,0,0,.14);font-size:11px;font-weight:700;letter-spacing:1.2px;text-transform:uppercase;color:#C1502E">Notificaciones</div>
 <div style="font-size:12.5px;font-weight:700;line-height:1.4;margin-top:3px;color:#4A4A4A">{{ avisos.pushTexto }}</div>
@@ -306,6 +313,12 @@ window.__resources = Object.assign(window.__resources || {}, {
 <span style="font-family:'Bungee',cursive;font-size:21px;color:#C1502E">{{ o.total }}</span>
 </div>
 <div style="margin-top:5px;font-size:12px;font-weight:700">{{ o.pago }} · <sc-if value="{{ o.pagado }}" hint-placeholder-val="{{ true }}"><span style="color:#2E7D5B">pagado</span></sc-if><sc-if value="{{ o.porCobrar }}" hint-placeholder-val="{{ false }}"><span style="color:#E4007C">por cobrar</span></sc-if></div>
+<sc-if value="{{ o.hayTicket }}" hint-placeholder-val="{{ true }}">
+<div style="display:flex;gap:6px;margin-top:8px">
+<button onClick="{{ o.imprimirTicket }}" aria-label="Imprimir el ticket" style="flex:1;padding:8px 6px;border:2px solid #1A1A1A;border-radius:6px;background:#FFFFFF;color:#1A1A1A;font-family:'Oswald',sans-serif;font-size:11.5px;font-weight:700;letter-spacing:.8px;text-transform:uppercase;cursor:pointer;min-height:40px" style-hover="background:#1A1A1A;color:#FFFFFF">Ticket</button>
+<sc-if value="{{ o.conTelefono }}" hint-placeholder-val="{{ true }}"><button onClick="{{ o.whatsTicket }}" aria-label="Mandar el ticket por WhatsApp" style="flex:1;padding:8px 6px;border:2px solid #1A1A1A;border-radius:6px;background:#FFFFFF;color:#1A1A1A;font-family:'Oswald',sans-serif;font-size:11.5px;font-weight:700;letter-spacing:.8px;text-transform:uppercase;cursor:pointer;min-height:40px" style-hover="background:#2E7D5B;color:#FFFFFF;border-color:#2E7D5B">WhatsApp</button></sc-if>
+</div>
+</sc-if>
 </div>
 <div style="display:flex;gap:8px">
 <button onClick="{{ o.avanzar }}" style="flex:1;padding:14px 8px;border:none;border-radius:6px;background:#1A1A1A;color:#FFFFFF;font-family:'Bungee',cursive;font-size:12px;letter-spacing:1px;text-transform:uppercase;cursor:pointer;min-height:48px" style-hover="background:#C1502E"><sc-if value="{{ o.quieto }}" hint-placeholder-val="{{ true }}">{{ o.siguiente }}</sc-if><sc-if value="{{ o.enVuelo }}" hint-placeholder-val="{{ false }}"><span class="mx-puntos" aria-label="Actualizando el estado"><i></i><i></i><i></i></span></sc-if></button>
@@ -894,6 +907,10 @@ function tocar(ctx, tipo) {
 }
 const TITULO = 'Mextizza — Cocina';
 
+/* Ancho del papel de la impresora de tickets, por equipo. */
+const TICKET_LS = 'mextizza.cocina.ticket.ancho';
+const anchoTicket = () => { try { return localStorage.getItem(TICKET_LS) === '58' ? 58 : 80; } catch (e) { return 80; } };
+
 /* Motivos de cancelacion. El texto es para el CLIENTE: lo ve en su
    seguimiento, en la notificacion, en el correo y en el WhatsApp. */
 const MOTIVOS_CANCELAR = [
@@ -1167,6 +1184,12 @@ class Component extends DCLogic {
         : (this.state.audioListo ? 'Activo. Suena con el tablero abierto y la pantalla no se apaga.'
           : 'Activado, pero el navegador lo pausó. Toca la pantalla para despertarlo.'),
       sonidoBoton: pref === '1' ? 'Apagar el sonido' : 'Activar el sonido',
+      anchos: [80, 58].map(mm => ({
+        label: mm + ' mm',
+        estilo: 'flex:1;padding:9px;border:none;font-family:\'Oswald\',sans-serif;font-size:12px;font-weight:700;cursor:pointer;min-height:40px;'
+          + (anchoTicket() === mm ? 'background:#1A1A1A;color:#FFFFFF' : 'background:#FFFFFF;color:#1A1A1A'),
+        set: () => { try { localStorage.setItem(TICKET_LS, String(mm)); } catch (e) {} this.setState({ pushVer: this.state.pushVer + 1 }); }
+      })),
       sonidoAccion: () => (pref === '1' ? this.apagarSonido() : this.activarSonido()),
       pushTexto: TEXTO[st],
       pushActivable: st === 'inactivo',
@@ -2047,7 +2070,12 @@ class Component extends DCLogic {
           esWeb: o.canal === 'Web', esApp: o.canal === 'App', esWhats: o.canal === 'WhatsApp', esTelefono: o.canal === 'Teléfono', esMostradorCanal: o.canal === 'Mostrador', nuevo: !!o.nuevo,
           espera: o.min + ' min',
           tarde, aTiempo: !tarde,
-          lineas: o.lineas.map(l => ({ cant: l.cant, nombre: l.nombre, importe: money(l.importe) })),
+          /* Los extras y la promocion, para que la cocina vea la pizza completa: una
+             Roni regalada con miel no es "Roni $15". */
+          lineas: o.lineas.map(l => ({ cant: l.cant,
+            nombre: l.nombre + ((l.addons && l.addons.length) ? ' + ' + l.addons.map(a => String(a).replace(/^Extra /, '')).join(', ') : '')
+              + (l.promocion ? (l.promocion === '2x1' ? ' · 2x1' : ' · premio de tarjeta') : ''),
+            importe: money(l.importe) })),
           total: money(this.total(o)),
           pago: o.pago,
           pagado: !!o.pagado,
@@ -2058,6 +2086,11 @@ class Component extends DCLogic {
           enVuelo: !!(this._enVuelo && this._enVuelo[o.folio]),
           quieto: !(this._enVuelo && this._enVuelo[o.folio]),
           avanzar: () => this.avanzar(i),
+          /* El ticket viene desglosado del servidor; un Apps Script viejo no lo
+             manda y entonces no se ofrece. */
+          hayTicket: !!(o.ticket && window.mextizzaTicket),
+          imprimirTicket: () => mextizzaTicket.imprimir(o.ticket, { ancho: anchoTicket() }),
+          whatsTicket: () => window.open('https://wa.me/52' + o.telefono + '?text=' + encodeURIComponent(mextizzaTicket.texto(o.ticket)), '_blank', 'noopener'),
           ...this.vistaCancelar(o, i)
         };
       });
